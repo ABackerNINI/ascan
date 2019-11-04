@@ -23,4 +23,4 @@ chmod +x install.sh
 2. Support files with other extension, such as `.cc`, `.hpp`.
 
 ## LICENSE
-[`LICENSE`](https://github.com/ABackerNINI/ascan/blob/master/LICENSE)
+[`GNU General Public License v3.0`](https://github.com/ABackerNINI/ascan/blob/master/LICENSE)
