@@ -8,12 +8,13 @@
 #include <fcntl.h>
 #include <stdlib.h>
 
-#include "cfiles.h"
+#include "common.h"
+#include "cfile.h"
 #include "parser.h"
 
-/*%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
+/*==========================================================================*/
 
-cfiles::cfiles(const string &filename, const string &name)
+cfile::cfile(const string &filename, const string &name)
     : m_filename(filename), m_name(name) {
     m_ext = get_ext(m_filename.c_str());
     m_have_main_func = false;
@@ -27,9 +28,9 @@ cfiles::cfiles(const string &filename, const string &name)
     m_visited = false;
 }
 
-void cfiles::set_visited(bool visited) { m_visited = visited; }
+void cfile::set_visited(bool visited) { m_visited = visited; }
 
-void cfiles::match_includes(vector<cfiles> &files) {
+void cfile::match_includes(vector<cfile> &files) {
     if (m_includes_matched) {
         return;
     }
@@ -55,7 +56,7 @@ void cfiles::match_includes(vector<cfiles> &files) {
     m_includes_matched = true;
 }
 
-void cfiles::associate_h(vector<cfiles> &files) {
+void cfile::associate_header(vector<cfile> &files) {
     size_t len = m_filename.length() - strlen(m_ext);
     for (auto file = files.begin(); file != files.end(); ++file) {
         if (strncmp(m_filename.c_str(), file->m_filename.c_str(), len) == 0 &&
@@ -70,43 +71,28 @@ void cfiles::associate_h(vector<cfiles> &files) {
     }
 }
 
-const string &cfiles::filename() const { return m_filename; }
+const string &cfile::filename() const { return m_filename; }
 
-const string &cfiles::name() const { return m_name; }
+const string &cfile::name() const { return m_name; }
 
-const char *cfiles::ext() const { return m_ext; }
+const char *cfile::ext() const { return m_ext; }
 
-bool cfiles::have_main_func() const { return m_have_main_func; }
+bool cfile::have_main_func() const { return m_have_main_func; }
 
-enum cfiles::FILE_TYPE cfiles::file_type() const { return m_file_type; }
+enum cfile::FILE_TYPE cfile::file_type() const { return m_file_type; }
 
-const vector<cfiles *> &cfiles::includes() const { return m_includes; }
+const vector<cfile *> &cfile::includes() const { return m_includes; }
 
-const cfiles *cfiles::associate() const { return m_associate; }
+const cfile *cfile::associate() const { return m_associate; }
 
-cfiles *cfiles::associate() { return m_associate; }
+cfile *cfile::associate() { return m_associate; }
 
-bool cfiles::visited() const { return m_visited; }
+bool cfile::visited() const { return m_visited; }
 
-/*%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
-
-bool is_exist(const char *filename) { return access(filename, F_OK) == 0; }
-
-const char *get_ext(const char *filename, size_t length) {
-    if (length == 0) {
-        length = strlen(filename);
-    }
-
-    for (const char *p = filename + length - 1; length > 0; --p, --length) {
-        if (*p == '.') {
-            return p;
-        }
-    }
-    return NULL;
-}
+/*==========================================================================*/
 
 static bool recursion_scan_dir_c_cxx_files_helper(const char *dir,
-                                                  vector<cfiles> &vec,
+                                                  vector<cfile> &vec,
                                                   string &path) {
     DIR *p_dir = NULL;
     struct dirent *p_entry = NULL;
@@ -155,8 +141,8 @@ static bool recursion_scan_dir_c_cxx_files_helper(const char *dir,
     return ret;
 }
 
-vector<cfiles> recursion_scan_dir_c_cxx_files(const char *dir) {
-    vector<cfiles> vec;
+vector<cfile> recursion_scan_dir_c_cxx_files(const char *dir) {
+    vector<cfile> vec;
 
     char *cur_path = getcwd(NULL, 0);
 
@@ -171,4 +157,8 @@ vector<cfiles> recursion_scan_dir_c_cxx_files(const char *dir) {
     return vec;
 }
 
-/*%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
+vector<cfile> recursion_scan_dir_c_cxx_files(const string &dir) {
+    return recursion_scan_dir_c_cxx_files(dir.c_str());
+}
+
+/*==========================================================================*/
