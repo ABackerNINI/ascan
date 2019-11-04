@@ -12,9 +12,11 @@ _CXXFLAGS               = -W -Wall
 
 # Build Executable
 
+all: ascan
+
 # executable 1
 _exe1 = ascan
-_objects1 = main.o cfiles.o parser.o config.o ascan.o
+_objects1 = ascan.o mfile.o common.o parser.o cfile.o config.o
 
 .PHONY: ascan
 ascan: $(_objects1)
@@ -22,12 +24,12 @@ ascan: $(_objects1)
 
 # Dependencies
 
-cfiles.o: cfiles.h parser.h
-commom.o: common.h
+mfile.o: mfile.h cfile.h config.h
+common.o: common.h
 parser.o: parser.h
+cfile.o: common.h cfile.h parser.h
 config.o: config.h parser.h
-ascan.o: ascan.h cfiles.h config.h
-main.o: cfiles.h ascan.h config.h parser.h
+ascan.o: ascan.h cfile.h config.h mfile.h common.h
 
 # Clean up
 

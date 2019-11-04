@@ -11,6 +11,12 @@ using std::map;
 using std::string;
 using std::vector;
 
+#define CONFIG_FILENAME "ascan.conf"
+#define CONFIG_DEFAULT_CC "gcc"
+#define CONFIG_DEFAULT_CXX "g++"
+#define CONFIG_DEFAULT_CFLAG "-W -Wall -lm"
+#define CONFIG_DEFAULT_CXXFLAG "-W -Wall"
+
 struct Config {
     string cc;
     string cxx;
