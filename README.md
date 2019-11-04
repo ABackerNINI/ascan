@@ -9,7 +9,7 @@ Ascan is suitable for c/c++ projects are:
 
 `cd` to the project directory and run `ascan`.
 
-## Install
+## Installation
 Run the following commands to install:
 ```bash
 git clone git@github.com:ABackerNINI/ascan.git
@@ -18,7 +18,7 @@ chmod +x install.sh
 ./install.sh
 ```
 
-## Future
+## Future Work
 1. Develop to work with multi-directory projects.
 2. Support files with other extension, such as `.cc`, `.hpp`.
 
