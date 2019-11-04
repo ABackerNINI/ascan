@@ -1,3 +1,13 @@
+# Visual Studio Code Files
+.vscode
+
+# Objects Files
+*.o
+
+# Executable
+ascan
+main
+
 # Prerequisites
 *.d
 
