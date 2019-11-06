@@ -37,28 +37,32 @@ extern int debug_level;  // --d=0: debug level
 #define CC_UNDERLINE "4"
 
 #define _CLR_BEGIN(clr) "\033[" clr "m"
-#define _CLR_BEGIN2(clr1, clr2) "\033[" #clr1 ";" #clr2 "m"
+#define _CLR_BEGIN2(clr1, clr2) "\033[" clr1 ";" clr2 "m"
 #define _CLR_END "\033[0m"
 
 #define _DEBUG_PRINT(...) fprintf(stderr, __VA_ARGS__);
 
-#define print_error(...)                                             \
-    {                                                                \
-        _DEBUG_PRINT("[" _CLR_BEGIN(CC_RED) "ERROR" _CLR_END "]: "); \
-        _DEBUG_PRINT(__VA_ARGS__);                                   \
+#define print_error(...)                                                       \
+    {                                                                          \
+        _DEBUG_PRINT("[" _CLR_BEGIN2(CC_RED, CC_BOLD) "ERROR" _CLR_END "]: "); \
+        _DEBUG_PRINT(__VA_ARGS__);                                             \
+        _DEBUG_PRINT("\n");                                                    \
     }
 #define print_warning(...)                                                    \
     {                                                                         \
         if (debug_level >= ADL_WARNING) {                                     \
             _DEBUG_PRINT("[" _CLR_BEGIN(CC_YELLOW) "WARNING" _CLR_END "]: "); \
             _DEBUG_PRINT(__VA_ARGS__);                                        \
+            _DEBUG_PRINT("\n");                                               \
         }                                                                     \
     }
-#define print_info(...)                \
-    {                                  \
-        if (debug_level >= ADL_INFO) { \
-            _DEBUG_PRINT(__VA_ARGS__); \
-        }                              \
+#define print_info(...)                                                   \
+    {                                                                     \
+        if (debug_level >= ADL_WARNING) {                                 \
+            _DEBUG_PRINT("[" _CLR_BEGIN(CC_GREEN) "INFO" _CLR_END "]: "); \
+            _DEBUG_PRINT(__VA_ARGS__);                                    \
+            _DEBUG_PRINT("\n");                                           \
+        }                                                                 \
     }
 #define print_debug(...)                \
     {                                   \
@@ -83,6 +87,5 @@ bool all_nums(const char *s);
 // dp should be longer than dp[(len1+1)*(len2+1)]
 size_t edit_distance(const char *s1, size_t len1, const char *s2, size_t len2);
 size_t edit_distance(const string &source, const string &target);
-
 
 #endif  //_AUTO_SCAN_COMMON_H_

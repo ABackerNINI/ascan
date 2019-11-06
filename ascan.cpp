@@ -47,10 +47,14 @@ static const as_option g_options[] = {
     {OT_DEBUG, NULL, "debug", "DEBUG_LEVEL",
      "Set debug level: \n\t\t\t- 0: ERROR\n\t\t\t- "
      "1: WARNING\n\t\t\t- 2: INFO\n\t\t\t- 3: DEBUG"},
-    {OT_CC, NULL, "cc", "CC", "Set c compiler"},
-    {OT_CXX, NULL, "cxx", "CXX", "Set c++ compiler"},
-    {OT_CFLAGS, NULL, "cflags", "CFLAGS", "Set c compile flags"},
-    {OT_CXXFLAGS, NULL, "cxxflags", "CXXFLAGS", "Set c++ compile flags"},
+    {OT_CC, NULL, "cc", "CC",
+     "Set c compiler, default: '" CONFIG_DEFAULT_CC "'"},
+    {OT_CXX, NULL, "cxx", "CXX",
+     "Set c++ compiler, default: '" CONFIG_DEFAULT_CXX "'"},
+    {OT_CFLAGS, NULL, "cflags", "CFLAGS",
+     "Set c compile flags, default: '" CONFIG_DEFAULT_CFLAG "'"},
+    {OT_CXXFLAGS, NULL, "cxxflags", "CXXFLAGS",
+     "Set c++ compile flags, default: '" CONFIG_DEFAULT_CXXFLAG "'"},
 };
 
 #define OPTS_SIZE (sizeof(g_options) / sizeof(as_option))
@@ -82,7 +86,7 @@ static int find_opt(enum OPT_TYPE type) {
     return -1;
 }
 
-static int find_opt(const char *opt) {
+static int find_similar_opt(const char *opt) {
     print_debug("%s\n", opt);
     size_t len1 = 0;
     while (*opt == '-') {
@@ -272,7 +276,7 @@ bool ascan::parse_cmd_args(int argc, char **argv) {
                 m_cfg.cxxflag = string(optarg);
                 break;
             default:
-
+                // find the option in case missing argument
                 opt_idx = find_opt(OPT_TYPE(optopt));
                 if (opt_idx != -1) {
                     if ((optarg && !g_options[opt_idx].arg) ||
@@ -292,7 +296,8 @@ bool ascan::parse_cmd_args(int argc, char **argv) {
                     print_error("unrecognized option: '%s'\n",
                                 argv[optind - 1]);
 
-                    opt_idx = find_opt(argv[optind - 1]);
+                    // find similar option
+                    opt_idx = find_similar_opt(argv[optind - 1]);
                     if (opt_idx != -1) {
                         printf("\tDo you mean \"");
                         const char *short_opt = g_options[opt_idx].short_opt;
@@ -335,31 +340,8 @@ END:
 }
 
 void ascan::print_help(int ind) const {
-    //     OT_ALL = 'a',    // -a
-    //     OT_BUILD = 'b',  // -b
-    //     OT_FORCE = 'f',  // -f
-    //     OT_HELP = 200,   // --help
-    //     OT_DEBUG,        // --d
-    //     OT_CC,           // --cc
-    //     OT_CXX,          // --cxx
-    //     OT_CFLAGS,       // --cflags
-    //     OT_CXXFLAGS,     // --cxxflags
-    //     OT_ALL_SECS
-
-    // static const char *help_msg[] = {
-    //     "-a: Overwrite all sections, ascan will only overwrite the "
-    //     "'# Dependencies' section on default",
-    //     "-b: Put binaries to 'build' subdirectory",
-    //     "-f: Force overwrite",
-    //     "--d: Set debug level: \n\t\t- 0: ERROR\n\t\t- "
-    //     "1: WARNING\n\t\t- 2: INFO\n\t\t- 3: DEBUG",
-    //     "--cc: Set c compiler",
-    //     "--cxx: Set c++ compiler",
-    //     "--cflags: Set c compile flags",
-    //     "--cxxflags: Set c++ compile flags"};
-
     static const char *desc =
-        "Auto scan c/c++ project and create simple makefile.\n\n"
+        "Ascan will scan the c/c++ project and create simple makefile.\n\n"
         "\tAscan is suitable for c/c++ projects are:\n"
         "\t\t1. Simple structured that all source codes are in one "
         "directory.\n"
@@ -371,7 +353,7 @@ void ascan::print_help(int ind) const {
         PRINT("ascan - auto scan");
 
         PRINT_TITLE("SYNOPSIS");
-        PRINT("ascan [OPTION]");
+        PRINT("ascan [OPTION]...");
 
         PRINT_TITLE("DESCRIPTION");
         PRINT(desc);
@@ -384,7 +366,22 @@ void ascan::print_help(int ind) const {
                        g_options[i].arg);
             PRINT_DESC(g_options[i].description);
         }
-        // printf("\n");
+
+        PRINT_TITLE("AUTHOR");
+        PRINT("Written by ABacker.");
+
+        PRINT_TITLE("REPORTING BUGS");
+        PRINT("<" AS_URL ">");
+
+        PRINT_TITLE("COPYRIGHT");
+        PRINT(
+            "License GPLv3+: GNU GPL version 3 or later "
+            "<http://gnu.org/licenses/gpl.html>.");
+        PRINT(
+            "This is free software: you are free to change and redistribute "
+            "it.  There is NO WARRANTY, to the extent permitted by law.");
+
+        // PRINT_TITLE("SEE ALSO");
     } else if (ind == HT_VER) {
         printf("ascan version: " AS_VERSION "\n");
     } else {
