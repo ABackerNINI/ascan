@@ -6,12 +6,12 @@
 #include <vector>
 #include <string>
 
-using std::string;
+using std::string; 
 using std::vector;
 
 class cfile {
    public:
-    enum FILE_TYPE { H, C, CPP,ELSE };
+    enum FILE_TYPE { H, C, CPP, ELSE };
 
    public:
     cfile(const string &filename, const string &name);

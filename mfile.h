@@ -15,7 +15,8 @@ using std::vector;
 
 class mfile {
    public:
-    mfile(const string &makefile, vector<cfile> &cfiles, Config &config);
+    mfile(const string &makefile, vector<cfile> &cfiles, Config &cfg,
+          bool flag_all);
     int output();
 
    private:
@@ -24,11 +25,13 @@ class mfile {
     void output_build_executable();
     void output_dependencies();
     void output_clean_up();
+    void output_part();
 
    private:
     string m_makefile;
     vector<cfile> &m_cfiles;
     Config &m_cfg;
+    bool m_flag_a;
     FILE *m_fout;
     vector<cfile *> m_executable;
 };
