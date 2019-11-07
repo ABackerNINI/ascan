@@ -33,12 +33,13 @@ void get_date(char *date) {
             ltm->tm_mday);
 }
 
+
 bool all_nums(const char *s) {
     if (*s == '\0') {
         return false;
     }
-    
-    while (*s && isalnum(*s)) {
+
+    while (*s && isdigit(*s)) {
         ++s;
     }
     return *s == '\0';
