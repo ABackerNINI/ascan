@@ -7,7 +7,7 @@
 
 _CXX                    = g++
 _CXXFLAGS               = -W -Wall -g
-_BD						= build
+_BD						= ./build
 
 # Compile to objects
 
@@ -23,12 +23,12 @@ all: $(_BD)/ascan
 rebuild: clean all
 
 # executable 1
-_exe1 = ascan
+_exe1 = $(_BD)/ascan
 _objects1 = ascan.o mfile.o common.o parser.o cfile.o config.o
 _objects1_b = $(_objects1:%=$(_BD)/%)
 
 $(_BD)/ascan: $(_objects1_b)
-	$(_CXX) $(_CXXFLAGS) -o $(_BD)/$(_exe1) $(_objects1_b)
+	$(_CXX) $(_CXXFLAGS) -o $(_exe1) $(_objects1_b)
 
 # Dependencies
 
@@ -43,4 +43,4 @@ $(_BD)/ascan.o: ascan.h cfile.h config.h mfile.h common.h
 
 .PHONY: clean
 clean:
-	rm -f "$(_BD)/$(_exe1)" $(_objects1_b)
+	rm -f "$(_exe1)" $(_objects1_b)
