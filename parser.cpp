@@ -8,6 +8,7 @@ enum PARSER_STATE {
     STA_INIT,
     STA_IDENTIFIER,
     STA_SYM,
+    STA_NEW_LINE,
     STA_NUMBER,
     STA_COMMENT1,
     STA_COMMENT2_1,
@@ -246,6 +247,149 @@ vector<string> scan_includes_and_main_func(const char *filename,
     return includes;
 }
 
+struct syntax_node {
+    enum PARSER_TOKEN_TYPE token_type;
+    string token_string;
+    bool optional;
+    vector<syntax_node> seq;
+    vector<syntax_node> alternative;
+    syntax_node() : optional(false) {}
+    syntax_node(enum PARSER_TOKEN_TYPE token_type, const string &token_string,
+                bool optional = false)
+        : token_type(token_type),
+          token_string(token_string),
+          optional(optional) {}
+};
+
+const syntax_node build_main_syntax() {
+    static bool init = false;
+    static syntax_node syntax;
+
+    if (init) {
+        return syntax;
+    }
+
+    init = true;
+
+    syntax_node sn_int = {TYPE_IDENTIFIER, "int"};
+    syntax_node sn_void = {TYPE_IDENTIFIER, "void"};
+    syntax_node sn_const = {TYPE_IDENTIFIER, "const", true};
+    syntax_node sn_char = {TYPE_IDENTIFIER, "char"};
+    syntax_node sn_pointer = {TYPE_SYM, "*"};
+    syntax_node sn_lbracket = {TYPE_SYM, "["};
+    syntax_node sn_rbracket = {TYPE_SYM, "]"};
+    syntax_node sn_comma = {TYPE_SYM, ","};
+    syntax_node sn_arg_name = {TYPE_IDENTIFIER, ""};  // any
+
+    syntax_node sn_return_type;
+    {
+        sn_return_type.alternative.push_back(sn_int);
+        sn_return_type.alternative.push_back(sn_void);
+    }
+
+    syntax_node sn_main = {TYPE_IDENTIFIER, "main"};
+
+    syntax_node sn_left_paren = {TYPE_SYM, "("};
+
+    //! MAIN FUNC:
+    // return type maybe (int | void)
+    // function name should be (main)
+    // arguments list maybe (NULL | void | int, [const] char [const] **argv |
+    // int,[const] char [const] *argv[] ) should ignore comments (// | /**/)
+    syntax_node sn_args;
+    {
+        syntax_node alter1;
+        {
+            alter1.seq.push_back(sn_int);
+            alter1.seq.push_back(sn_arg_name);
+            alter1.seq.push_back(sn_comma);
+
+            alter1.seq.push_back(sn_const);
+            alter1.seq.push_back(sn_char);
+            alter1.seq.push_back(sn_const);
+            alter1.seq.push_back(sn_pointer);
+            alter1.seq.push_back(sn_pointer);
+            alter1.seq.push_back(sn_arg_name);
+        }
+        syntax_node alter2;
+        {
+            alter1.seq.push_back(sn_int);
+            alter1.seq.push_back(sn_arg_name);
+            alter1.seq.push_back(sn_comma);
+
+            alter1.seq.push_back(sn_const);
+            alter1.seq.push_back(sn_char);
+            alter1.seq.push_back(sn_const);
+            alter1.seq.push_back(sn_pointer);
+            alter1.seq.push_back(sn_arg_name);
+            alter1.seq.push_back(sn_lbracket);
+            alter1.seq.push_back(sn_rbracket);
+        }
+
+        sn_args.alternative.push_back(sn_void);
+        sn_args.alternative.push_back(alter1);
+        sn_args.alternative.push_back(alter2);
+        sn_args.optional = true;
+    }
+
+    syntax_node sn_right_paren = {TYPE_SYM, ")"};
+
+    syntax.seq.push_back(sn_return_type);
+    syntax.seq.push_back(sn_main);
+    syntax.seq.push_back(sn_left_paren);
+    syntax.seq.push_back(sn_args);
+    syntax.seq.push_back(sn_right_paren);
+
+    return syntax;
+}
+
+vector<string> scan_includes_and_main_func_v2(const char *filename,
+                                              bool *main_func) {
+    //! INCLUDES:
+    // # include "header.h"
+    // should ignore comments (// | /**/)
+
+    //! MAIN FUNC:
+    // return type maybe (int | void)
+    // function name should be (main)
+    // arguments list maybe (empty | void | int, [const] char [const] **argv |
+    // int,[const] char [const] *argv[] )
+    // should ignore comments (// | /**/)
+
+    vector<string> includes;
+
+    *main_func = false;
+
+    FILE *fp = fopen(filename, "r");
+    if (fp == NULL) {
+        fprintf(stderr, "Can't open source file \"%s\" @%s line %d\n", filename,
+                __func__, __LINE__);
+        return includes;
+    }
+
+    INCLUDE_MAIN_STATE state = IMS_INIT;
+    PARSER_TOKEN_TYPE type;
+
+    char buff[BUFSIZ];
+    syntax_node syntax;
+    const syntax_node &syntax_main = build_main_syntax();
+    while ((type = next_token(fp, buff, BUFSIZ)) != TYPE_EOF) {
+        // void main()
+        // int main()
+        // int main(void)
+        // int main(int argc,char **argv)
+        // int main(int argc,char *argv[])
+
+        if (type == TYPE_EOF) break;
+
+        syntax.seq.emplace_back(type, buff);
+    }
+
+    fclose(fp);
+
+    return includes;
+}
+
 enum PARSER_TOKEN_TYPE next_token(FILE *fp, char *buff, size_t buff_size) {
     static char c = '\0';
     enum PARSER_STATE state = STA_INIT;
@@ -278,9 +422,12 @@ enum PARSER_TOKEN_TYPE next_token(FILE *fp, char *buff, size_t buff_size) {
             case STA_INIT:
                 if (isalpha(c) || c == '_') {
                     state = STA_IDENTIFIER;
-                } else if (isspace(c)) {
+                } else if (c == ' ' || c == '\t' || c == '\v' || c == '\f' ||
+                           c == '\r') {
                     // still STA_INIT
                     --len;
+                } else if (c == '\n') {
+                    state = STA_NEW_LINE;
                 } else if (isdigit(c)) {
                     state = STA_NUMBER;
                 } else if (c == '/') {
@@ -303,6 +450,9 @@ enum PARSER_TOKEN_TYPE next_token(FILE *fp, char *buff, size_t buff_size) {
                 break;
             case STA_SYM:
                 type = TYPE_SYM;
+                goto END;
+            case STA_NEW_LINE:
+                type = TYPE_NEW_LINE;
                 goto END;
             case STA_SLASH:
                 if (c == '/') {

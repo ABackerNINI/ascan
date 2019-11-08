@@ -10,12 +10,13 @@ using std::string;
 using std::vector;
 
 enum PARSER_TOKEN_TYPE {
-    TYPE_IDENTIFIER,
-    TYPE_SYM,
-    TYPE_NUMBER,    // '(0-9)+'
-    TYPE_COMMENT1,  // '//*\n'
-    TYPE_COMMENT2,  // '/***/'
-    TYPE_STRING,    // '"*"'
+    TYPE_IDENTIFIER,  // '[_a-zA-Z][_0-9a-zA-Z]*'
+    TYPE_SYM,         // '[]()<>{},;:+-*/#',etc
+    TYPE_NEW_LINE,    // '\n'
+    TYPE_NUMBER,      // '[0-9]+'
+    TYPE_COMMENT1,    // '//*\n'
+    TYPE_COMMENT2,    // '/***/'
+    TYPE_STRING,      // '"*"'
     TYPE_REACH_MAX_BUFFER_SIZE,
     TYPE_EOF  // EOF
 };
