@@ -427,6 +427,10 @@ bool ascan::test_makefile() {
         }
     }
 
+    if (!exist) {
+        m_flag_a = true;
+    }
+
     return true;
 }
 
