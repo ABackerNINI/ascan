@@ -40,7 +40,9 @@ static const as_option g_options[] = {
     {OT_ALL_SECS, "a", "all", NULL,
      "Overwrite all sections, ascan will only overwrite the "
      "'Dependencies' section on default"},
-    {OT_BUILD, "b", "build", NULL, "Put binaries to 'build' subdirectory"},
+    {OT_BUILD, "b", "build", NULL,
+     "Put binaries to 'build' subdirectory, Option \"-b\" is not implemented "
+     "yet!"},
     {OT_FORCE, "f", "force", NULL, "Force overwrite"},
     {OT_HELP, "h", "help", NULL, "Print help information"},
     {OT_VER, "v", "ver", NULL, "Print ascan version"},
@@ -232,6 +234,7 @@ bool ascan::parse_cmd_args(int argc, char **argv) {
                 m_flag_a = true;
                 break;
             case OT_BUILD:
+                print_warning("Option \"-b\" is not implemented yet!\n");
                 m_flag_b = true;
                 break;
             case OT_FORCE:
@@ -282,6 +285,7 @@ bool ascan::parse_cmd_args(int argc, char **argv) {
                     if ((optarg && !g_options[opt_idx].arg) ||
                         (!optarg && g_options[opt_idx].arg)) {
                         if (optarg) {
+                            // control will never reach here
                             print_error("unexpected option argument, '%s'.\n",
                                         optarg);
                         } else {
