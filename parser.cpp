@@ -73,6 +73,10 @@ vector<string> scan_includes_and_main_func(const char *filename,
 
     char buff[BUFSIZ];
     while ((type = next_token(fp, buff, BUFSIZ)) != TYPE_EOF) {
+        if (IMS_MAIN_ARG_1_COMMA <= state && state <= IMS_MAIN_RIGHT_PAREN &&
+            strcmp(buff, "const") == 0) {
+            continue;
+        }
         switch (state) {
             case IMS_INIT:
                 if (type == TYPE_SYM) {
@@ -367,7 +371,7 @@ vector<string> scan_includes_and_main_func_v2(const char *filename,
         return includes;
     }
 
-    INCLUDE_MAIN_STATE state = IMS_INIT;
+    // INCLUDE_MAIN_STATE state = IMS_INIT;
     PARSER_TOKEN_TYPE type;
 
     char buff[BUFSIZ];
