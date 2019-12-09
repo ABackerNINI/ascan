@@ -15,6 +15,7 @@ enum OPT_TYPE {
     OT_ALL_SECS = 'a',  // -a
     OT_BUILD = 'b',     // -b
     OT_FORCE = 'f',     // -f
+    OT_G = 'g',         // -g
     OT_HELP = 'h',      // -h,--help
     OT_VER = 'v',       // -v,--ver
     OT_DEBUG = 200,     // --debug
@@ -34,7 +35,7 @@ struct as_option {
 
 enum HELP_TYPE { HT_ALL = -1, HT_VER = -2 };
 
-const char g_short_opts[] = "abfhv";
+static const char g_short_opts[] = "abfghv";
 
 static const as_option g_options[] = {
     {OT_ALL_SECS, "a", "all", NULL,
@@ -44,6 +45,7 @@ static const as_option g_options[] = {
      "Put binaries to 'build' subdirectory, Option \"-b\" is not implemented "
      "yet!"},
     {OT_FORCE, "f", "force", NULL, "Force overwrite"},
+    {OT_G, "g", NULL, NULL, "add '-g' flag to cflags or cxxflags"},
     {OT_HELP, "h", "help", NULL, "Print help information"},
     {OT_VER, "v", "ver", NULL, "Print ascan version"},
     {OT_DEBUG, NULL, "debug", "DEBUG_LEVEL",
@@ -146,9 +148,10 @@ ascan::ascan(int argc, char **argv) {
     m_cfg.cflag = CONFIG_DEFAULT_CFLAG;
     m_cfg.cxxflag = CONFIG_DEFAULT_CXXFLAG;
 
-    m_flag_a = false;
-    m_flag_b = false;
-    m_flag_f = false;
+    // m_flag_a = false;
+    // m_flag_b = false;
+    // m_flag_f = false;
+    m_flags = 0;
 
     m_proceed = parse_cmd_args(argc, argv);
 
@@ -170,7 +173,7 @@ int ascan::start() {
     match_c_cpp_includes();
     associate_header();
 
-    mfile mf(m_makefile, m_cfiles, m_cfg, m_flag_a);
+    mfile mf(m_makefile, m_cfiles, m_cfg, m_flags);
 
     return mf.output();
 }
@@ -213,7 +216,6 @@ bool ascan::parse_cmd_args(int argc, char **argv) {
     print_debug("long options size: %d\n", los);
     assert(los < 15);
 
-    m_flag_f = false;
     opterr = 0;  // do NOT print error message
 
     int opt, long_ind;
@@ -231,14 +233,21 @@ bool ascan::parse_cmd_args(int argc, char **argv) {
 
         switch (opt) {
             case OT_ALL_SECS:
-                m_flag_a = true;
+                // m_flag_a = true;
+                m_flags |= FLAG_A;
                 break;
             case OT_BUILD:
                 print_warning("Option \"-b\" is not implemented yet!\n");
-                m_flag_b = true;
+                // m_flag_b = true;
+                m_flags |= FLAG_B;
                 break;
             case OT_FORCE:
-                m_flag_f = true;
+                // m_flag_f = true;
+                m_flags |= FLAG_F;
+                break;
+            case OT_G:
+                // m_flag_g = true;
+                m_flags |= FLAG_G;
                 break;
             case OT_HELP:
                 help = 1;
@@ -415,7 +424,7 @@ bool ascan::test_makefile() {
         m_makefile = makefile1;
     }
 
-    if (!m_flag_f && exist) {
+    if (!(m_flags & FLAG_F) && exist) {
         printf(
             "There is already one %s in \"%s\", "
             "overwrite it? [y/N] ",
@@ -432,7 +441,8 @@ bool ascan::test_makefile() {
     }
 
     if (!exist) {
-        m_flag_a = true;
+        // m_flag_a = true;
+        m_flags |= FLAG_A;
     }
 
     return true;

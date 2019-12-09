@@ -32,12 +32,12 @@ $(_BD)/ascan: $(_objects1_b)
 
 # Dependencies
 
-$(_BD)/mfile.o: mfile.h cfile.h config.h
+$(_BD)/mfile.o: mfile.h cfile.h config.h flags.h
 $(_BD)/common.o: common.h
 $(_BD)/parser.o: parser.h
 $(_BD)/cfile.o: common.h cfile.h parser.h
 $(_BD)/config.o: config.h parser.h
-$(_BD)/ascan.o: ascan.h cfile.h config.h mfile.h common.h
+$(_BD)/ascan.o: ascan.h cfile.h config.h mfile.h common.h flags.h
 
 # Clean up
 

@@ -9,6 +9,7 @@
 
 #include "cfile.h"
 #include "config.h"
+#include "flags.h"
 
 using std::string;
 using std::vector;
@@ -16,7 +17,7 @@ using std::vector;
 class mfile {
    public:
     mfile(const string &makefile, vector<cfile> &cfiles, Config &cfg,
-          bool flag_all);
+          uint32_t flags);
     int output();
 
    private:
@@ -31,7 +32,8 @@ class mfile {
     string m_makefile;
     vector<cfile> &m_cfiles;
     Config &m_cfg;
-    bool m_flag_a;
+    // bool m_flag_a;
+    uint32_t m_flags;
     FILE *m_fout;
     vector<cfile *> m_executable;
 };

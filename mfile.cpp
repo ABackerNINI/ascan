@@ -36,6 +36,7 @@ static const char *g_sections[] = {
     "# Dependencies",
     "# Clean up"};
 
+// static bool contain_flag_g(const char *c_cxx_flags);
 static void find_all_headers(vector<cfile> &files, cfile *file);
 static void print_all_headers(FILE *m_fout, vector<cfile> &files, cfile *file);
 static void output_dependencies_helper(FILE *m_fout, vector<cfile> &files,
@@ -44,8 +45,8 @@ static void output_dependencies_helper(FILE *m_fout, vector<cfile> &files,
 /*==========================================================================*/
 
 mfile::mfile(const string &makefile, vector<cfile> &cfiles, Config &cfg,
-             bool flag_all)
-    : m_makefile(makefile), m_cfiles(cfiles), m_cfg(cfg), m_flag_a(flag_all) {}
+             uint32_t flags)
+    : m_makefile(makefile), m_cfiles(cfiles), m_cfg(cfg), m_flags(flags) {}
 
 int mfile::output() {
     m_fout = fopen(m_makefile.c_str(), "w");
@@ -55,7 +56,7 @@ int mfile::output() {
         return EXIT_FAILURE;
     }
 
-    if (m_flag_a) {
+    if (m_flags & FLAG_A) {
         output_header_comments();
         output_build_details_and_compile_to_objects();
         output_build_executable();
@@ -78,6 +79,21 @@ void mfile::output_header_comments() {
     OUT_SEC2(SEC_HEADER_COMMENT, date);
 }
 
+// static bool contain_flag_g(const char *c_cxx_flags) {
+//     const char *p = c_cxx_flags;
+
+//     // only detects format: '-g', not '-O2g'
+//     while (*p) {
+//         if (*p == '-') {
+//             if (*(p + 1) == 'g') {
+//                 return true;
+//             }
+//         }
+//         ++p;
+//     }
+//     return false;
+// }
+
 void mfile::output_build_details_and_compile_to_objects() {
     bool h_c = false, h_cxx = false;
     for (auto it = m_cfiles.begin(); it != m_cfiles.end(); ++it) {
@@ -99,6 +115,8 @@ void mfile::output_build_details_and_compile_to_objects() {
 
     OUT_SEC(SEC_BUILD_DETAILS);
 
+    const char *flag_g = (m_flags & FLAG_G) ? " -g" : "";
+
     if (h_c) {
         OUT("_CC                     = %s\n", m_cfg.cc.c_str());
     }
@@ -106,10 +124,10 @@ void mfile::output_build_details_and_compile_to_objects() {
         OUT("_CXX                    = %s\n", m_cfg.cxx.c_str());
     }
     if (h_c) {
-        OUT("_CFLAGS                 = %s\n", m_cfg.cflag.c_str());
+        OUT("_CFLAGS                 = %s%s\n", m_cfg.cflag.c_str(), flag_g);
     }
     if (h_cxx) {
-        OUT("_CXXFLAGS               = %s\n", m_cfg.cxxflag.c_str());
+        OUT("_CXXFLAGS               = %s%s\n", m_cfg.cxxflag.c_str(), flag_g);
     }
     OUT("\n");
 

@@ -8,6 +8,7 @@
 #include <iostream>
 #include "cfile.h"
 #include "config.h"
+#include "flags.h"
 
 using std::string;
 using std::vector;
@@ -56,9 +57,11 @@ class ascan {
 
    private:
     bool m_proceed;          // whether need to proceed makefile
-    bool m_flag_a;           // flag -a: overwrite all sections
-    bool m_flag_b;           // flag -b: put binaries to 'build' subdirectory
-    bool m_flag_f;           // flag -f: force overwrite
+    // bool m_flag_a;           // flag -a: overwrite all sections
+    // bool m_flag_b;           // flag -b: put binaries to 'build' subdirectory
+    // bool m_flag_f;           // flag -f: force overwrite
+    // bool m_flag_g;           // flag -g: add '-g' flag to cflags or cxxflags
+    uint32_t m_flags;       // contains all flags
     Config m_cfg;            // config
     string m_cwd;            // current working dir
     string m_makefile;       // filename of makefile
