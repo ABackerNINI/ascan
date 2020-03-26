@@ -95,22 +95,19 @@ void mfile::output_header_comments() {
 // }
 
 void mfile::output_build_details_and_compile_to_objects() {
-    bool h_c = false, h_cxx = false;
+    bool h_c = false, h_cpp = false, h_cc = false;
     for (auto it = m_cfiles.begin(); it != m_cfiles.end(); ++it) {
-        if (it->file_type() == cfile::C) {
+        if (it->file_type() == cfile::FILE_TYPE_C) {
             h_c = true;
-            if (h_cxx) {
-                break;
-            }
-        } else if (it->file_type() == cfile::CPP) {
-            h_cxx = true;
-            if (h_c) {
-                break;
-            }
+        } else if (it->file_type() == cfile::FILE_TYPE_CPP) {
+            h_cpp = true;
+        } else if (it->file_type() == cfile::FILE_TYPE_CC) {
+            h_cc = true;
         }
     }
-    if (!h_c && !h_cxx) {
-        h_c = h_cxx = true;
+
+    if (!h_c && !h_cpp && !h_cc) {
+        h_c = h_cpp = h_cc = true;
     }
 
     OUT_SEC(SEC_BUILD_DETAILS);
@@ -120,13 +117,13 @@ void mfile::output_build_details_and_compile_to_objects() {
     if (h_c) {
         OUT("_CC                     = %s\n", m_cfg.cc.c_str());
     }
-    if (h_cxx) {
+    if (h_cpp || h_cc) {
         OUT("_CXX                    = %s\n", m_cfg.cxx.c_str());
     }
     if (h_c) {
         OUT("_CFLAGS                 = %s%s\n", m_cfg.cflag.c_str(), flag_g);
     }
-    if (h_cxx) {
+    if (h_cpp || h_cc) {
         OUT("_CXXFLAGS               = %s%s\n", m_cfg.cxxflag.c_str(), flag_g);
     }
     OUT("\n");
@@ -137,9 +134,12 @@ void mfile::output_build_details_and_compile_to_objects() {
         OUT("%%.o: %%.c\n");
         OUT("\t$(_CC) $(_CFLAGS) -c -o $@ $<\n\n");
     }
-
-    if (h_cxx) {
+    if (h_cpp) {
         OUT("%%.o: %%.cpp\n");
+        OUT("\t$(_CXX) $(_CXXFLAGS) -c -o $@ $<\n\n");
+    }
+    if (h_cc) {
+        OUT("%%.o: %%.cc\n");
         OUT("\t$(_CXX) $(_CXXFLAGS) -c -o $@ $<\n\n");
     }
 }
@@ -161,7 +161,7 @@ static void find_all_headers(vector<cfile> &files, cfile *file) {
 void mfile::output_build_executable() {
     // find all executable
     for (auto cfile = m_cfiles.begin(); cfile != m_cfiles.end(); ++cfile) {
-        if (cfile->have_main_func() && cfile->file_type() != cfile::H) {
+        if (cfile->have_main_func() && cfile->is_source()) {
             m_executable.push_back(&(*cfile));
         }
     }
@@ -186,9 +186,7 @@ void mfile::output_build_executable() {
         find_all_headers(m_cfiles, *exec);
         for (auto cfile = m_cfiles.begin(); cfile != m_cfiles.end(); ++cfile) {
             if (cfile->visited()) {
-                if (cfile->associate() != NULL &&
-                    (cfile->file_type() == cfile::C ||
-                     cfile->file_type() == cfile::CPP) &&
+                if (cfile->associate() != NULL && cfile->is_source() &&
                     &(*cfile) != *exec) {
                     OUT(" %s.o", cfile->associate()->name().c_str());
                 }
@@ -198,10 +196,12 @@ void mfile::output_build_executable() {
         OUT("\n\n");
 
         OUT("%s: $(_objects%d)\n", (*exec)->name().c_str(), i);
-        if ((*exec)->file_type() == cfile::C) {
+        if ((*exec)->is_c_source()) {
             OUT("\t$(_CC) $(_CFLAGS) -o $(_exe%d) $(_objects%d)\n", i, i);
-        } else {
+        } else if ((*exec)->is_cxx_source()) {
             OUT("\t$(_CXX) $(_CXXFLAGS) -o $(_exe%d) $(_objects%d)\n", i, i);
+        } else {
+            // TODO error check
         }
         OUT("\n");
 
@@ -224,7 +224,7 @@ static void output_dependencies_helper(FILE *m_fout, vector<cfile> &files,
                                        cfile *file) {
     file->set_visited(true);
     if (file->includes().size() > 0) {
-        // .c/.cpp depends on all headers it includes, recursively
+        // .c/.cpp/.cc depends on all headers it includes, recursively
         OUT("%s.o:", file->name().c_str());
         print_all_headers(m_fout, files, file);
         OUT("\n");
@@ -236,7 +236,7 @@ static void output_dependencies_helper(FILE *m_fout, vector<cfile> &files,
             }
         }
     } else {
-        // .c/.cpp depends on itself if it has no includes
+        // .c/.cpp/.cc depends on itself if it has no includes
         OUT("%s.o: %s%s\n", file->name().c_str(), file->name().c_str(),
             file->ext());
     }
@@ -246,12 +246,12 @@ void mfile::output_dependencies() {
     OUT_SEC(SEC_DEPENDENCIES);
 
     for (auto cfile = m_cfiles.begin(); cfile != m_cfiles.end(); ++cfile) {
-        if (cfile->file_type() != cfile::H) {
+        if (cfile->is_source()) {
             output_dependencies_helper(m_fout, m_cfiles, &(*cfile));
         }
         for (auto cfile2 = m_cfiles.begin(); cfile2 != m_cfiles.end();
              ++cfile2) {
-            if (cfile2->file_type() == cfile::H) {
+            if (cfile2->is_header()) {
                 cfile2->set_visited(false);
             }
         }

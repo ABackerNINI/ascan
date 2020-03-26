@@ -6,12 +6,18 @@
 #include <vector>
 #include <string>
 
-using std::string; 
+using std::string;
 using std::vector;
 
 class cfile {
    public:
-    enum FILE_TYPE { H, C, CPP, ELSE };
+    enum FILE_TYPE {
+        FILE_TYPE_H,
+        FILE_TYPE_C,
+        FILE_TYPE_CPP,
+        FILE_TYPE_CC,
+        FILE_TYPE_ELSE
+    };
 
    public:
     cfile(const string &filename, const string &name);
@@ -24,6 +30,10 @@ class cfile {
     const char *ext() const;
     bool have_main_func() const;
     enum FILE_TYPE file_type() const;
+    bool is_header() const;
+    bool is_source() const;
+    bool is_c_source() const;
+    bool is_cxx_source() const;
     const vector<cfile *> &includes() const;
     const cfile *associate() const;
     cfile *associate();

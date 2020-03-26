@@ -52,7 +52,7 @@ class ascan {
     // found.
     // --- false: otherwise.
     bool test_makefile();
-    void match_c_cpp_includes();
+    void match_c_cxx_includes();
     void associate_header();
 
    private:

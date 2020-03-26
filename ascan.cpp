@@ -170,7 +170,7 @@ int ascan::start() {
     }
     m_cfiles = recursion_scan_dir_c_cxx_files(m_cwd);
 
-    match_c_cpp_includes();
+    match_c_cxx_includes();
     associate_header();
 
     mfile mf(m_makefile, m_cfiles, m_cfg, m_flags);
@@ -358,7 +358,7 @@ void ascan::print_help(int ind) const {
         "\tAscan is suitable for c/c++ projects are:\n"
         "\t\t1. Simple structured that all source codes are in one "
         "directory.\n"
-        "\t\t2. Source codes are `.h` or `.c` or `.cpp`.\n"
+        "\t\t2. Source codes are `.h` or `.c` or `.cpp` or `.cc`.\n"
         "\t`cd` to the project directory and run `ascan`.";
 
     if (ind == HT_ALL) {
@@ -448,9 +448,9 @@ bool ascan::test_makefile() {
     return true;
 }
 
-void ascan::match_c_cpp_includes() {
+void ascan::match_c_cxx_includes() {
     for (auto file = m_cfiles.begin(); file != m_cfiles.end(); ++file) {
-        if (file->file_type() == cfile::C || file->file_type() == cfile::CPP) {
+        if (file->is_source()) {
             print_info("%s\n", file->filename().c_str());
             file->match_includes(m_cfiles);
             for (auto include = file->includes().begin();
@@ -463,7 +463,7 @@ void ascan::match_c_cpp_includes() {
 
 void ascan::associate_header() {
     for (auto file = m_cfiles.begin(); file != m_cfiles.end(); ++file) {
-        if (file->file_type() == cfile::C || file->file_type() == cfile::CPP) {
+        if (file->is_source()) {
             file->associate_header(m_cfiles);
         }
     }

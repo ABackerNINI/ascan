@@ -19,11 +19,19 @@ cfile::cfile(const string &filename, const string &name)
     m_ext = get_ext(m_filename.c_str());
     m_have_main_func = false;
     m_includes_matched = false;
-    m_file_type = strcmp(m_ext, ".h") == 0
-                      ? H
-                      : (strcmp(m_ext, ".c") == 0
-                             ? C
-                             : (strcmp(m_ext, ".cpp") == 0 ? CPP : ELSE));
+
+    if (strcmp(m_ext, ".h") == 0) {
+        m_file_type = FILE_TYPE_H;
+    } else if (strcmp(m_ext, ".c") == 0) {
+        m_file_type = FILE_TYPE_C;
+    } else if (strcmp(m_ext, ".cpp") == 0) {
+        m_file_type = FILE_TYPE_CPP;
+    } else if (strcmp(m_ext, ".cc") == 0) {
+        m_file_type = FILE_TYPE_CC;
+    } else {
+        m_file_type = FILE_TYPE_ELSE;
+    }
+
     m_associate = NULL;
     m_visited = false;
 }
@@ -81,6 +89,19 @@ bool cfile::have_main_func() const { return m_have_main_func; }
 
 enum cfile::FILE_TYPE cfile::file_type() const { return m_file_type; }
 
+bool cfile::is_header() const { return file_type() == FILE_TYPE_H; }
+
+bool cfile::is_source() const {
+    return file_type() == FILE_TYPE_C || file_type() == FILE_TYPE_CPP ||
+           file_type() == FILE_TYPE_CC;
+}
+
+bool cfile::is_c_source() const { return file_type() == FILE_TYPE_C; }
+
+bool cfile::is_cxx_source() const {
+    return file_type() == FILE_TYPE_CPP || file_type() == FILE_TYPE_CC;
+}
+
 const vector<cfile *> &cfile::includes() const { return m_includes; }
 
 const cfile *cfile::associate() const { return m_associate; }
@@ -125,7 +146,8 @@ static bool recursion_scan_dir_c_cxx_files_helper(const char *dir,
         } else {
             const char *ext = get_ext(p_entry->d_name);
             if (ext && (!strcmp(ext, ".h") || !strcmp(ext, ".c") ||
-                        !strcmp(ext, ".cpp") /*|| !strcmp(ext, ".hpp")*/)) {
+                        !strcmp(ext, ".cpp") ||
+                        !strcmp(ext, ".cc") /*|| !strcmp(ext, ".hpp")*/)) {
                 vec.emplace_back(
                     path + p_entry->d_name,
                     string(p_entry->d_name).substr(0, ext - p_entry->d_name));
