@@ -25,7 +25,7 @@ chmod +x install.sh
 ## Future Work
 
 1. Develop to work with multi-directory projects.
-2. Support files with other extension, such as `.cc`, `.hpp`.
+2. Support files with other extension, such as `.hpp`.
 
 ## LICENSE
 
