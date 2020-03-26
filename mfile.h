@@ -24,6 +24,8 @@ class mfile {
     void output_header_comments();
     void output_build_details_and_compile_to_objects();
     void output_build_executable();
+    void output_dependencies_helper(FILE *m_fout, vector<cfile> &files,
+                                    cfile *file);
     void output_dependencies();
     void output_clean_up();
     void output_part();

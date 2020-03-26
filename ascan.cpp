@@ -237,7 +237,6 @@ bool ascan::parse_cmd_args(int argc, char **argv) {
                 m_flags |= FLAG_A;
                 break;
             case OT_BUILD:
-                print_warning("Option \"-b\" is not implemented yet!\n");
                 // m_flag_b = true;
                 m_flags |= FLAG_B;
                 break;

@@ -39,8 +39,6 @@ static const char *g_sections[] = {
 // static bool contain_flag_g(const char *c_cxx_flags);
 static void find_all_headers(vector<cfile> &files, cfile *file);
 static void print_all_headers(FILE *m_fout, vector<cfile> &files, cfile *file);
-static void output_dependencies_helper(FILE *m_fout, vector<cfile> &files,
-                                       cfile *file);
 
 /*==========================================================================*/
 
@@ -126,19 +124,31 @@ void mfile::output_build_details_and_compile_to_objects() {
     if (h_cpp || h_cc) {
         OUT("_CXXFLAGS               = %s%s\n", m_cfg.cxxflag.c_str(), flag_g);
     }
+    if (m_flags & FLAG_B) {
+        OUT("_BD                     = ./build\n");
+    }
     OUT("\n");
 
     OUT_SEC(SEC_COMPILE_TO_OBJECTS);
 
     if (h_c) {
+        if (m_flags & FLAG_B) {
+            OUT("$(_BD)/");
+        }
         OUT("%%.o: %%.c\n");
         OUT("\t$(_CC) $(_CFLAGS) -c -o $@ $<\n\n");
     }
     if (h_cpp) {
+        if (m_flags & FLAG_B) {
+            OUT("$(_BD)/");
+        }
         OUT("%%.o: %%.cpp\n");
         OUT("\t$(_CXX) $(_CXXFLAGS) -c -o $@ $<\n\n");
     }
     if (h_cc) {
+        if (m_flags & FLAG_B) {
+            OUT("$(_BD)/");
+        }
         OUT("%%.o: %%.cc\n");
         OUT("\t$(_CXX) $(_CXXFLAGS) -c -o $@ $<\n\n");
     }
@@ -176,6 +186,12 @@ void mfile::output_build_executable() {
     }
     OUT("\n\n");
 
+    // print prepare
+    if (m_flags & FLAG_B) {
+        OUT(".PHONY: prepare\nprepare:\n\t$(if $(wildcard $(_BD)),,mkdir -p "
+            "$(_BD))\n\n");
+    }
+
     // print rebuild
     OUT(".PHONY: rebuild\nrebuild: clean all\n\n");
 
@@ -185,7 +201,7 @@ void mfile::output_build_executable() {
         // OUT("# Executable %d\n", i);
         OUT_SEC2(SEC_EXECUTABLE, i);
         OUT("_exe%d = %s\n", i, (*exec)->name().c_str());
-        OUT("_objects%d = %s.o", i, (*exec)->name().c_str());
+        OUT("_objs%d = %s.o", i, (*exec)->name().c_str());
 
         find_all_headers(m_cfiles, *exec);
         for (auto cfile = m_cfiles.begin(); cfile != m_cfiles.end(); ++cfile) {
@@ -197,13 +213,31 @@ void mfile::output_build_executable() {
                 cfile->set_visited(false);
             }
         }
-        OUT("\n\n");
+        OUT("\n");
 
-        OUT("%s: $(_objects%d)\n", (*exec)->name().c_str(), i);
+        if (m_flags & FLAG_B) {
+            OUT("_objs_bd%d = $(_objs%d:%%=$(_BD)/%%)\n", i, i);
+        }
+        OUT("\n");
+
+        if (m_flags & FLAG_B) {
+            OUT("%s: prepare $(_objs_bd%d)\n", (*exec)->name().c_str(), i);
+        } else {
+            OUT("%s: $(_objs%d)\n", (*exec)->name().c_str(), i);
+        }
         if ((*exec)->is_c_source()) {
-            OUT("\t$(_CC) $(_CFLAGS) -o $(_exe%d) $(_objects%d)\n", i, i);
+            if (m_flags & FLAG_B) {
+                OUT("\t$(_CC) $(_CFLAGS) -o $(_exe%d) $(_objs_bd%d)\n", i, i);
+            } else {
+                OUT("\t$(_CC) $(_CFLAGS) -o $(_exe%d) $(_objs%d)\n", i, i);
+            }
         } else if ((*exec)->is_cxx_source()) {
-            OUT("\t$(_CXX) $(_CXXFLAGS) -o $(_exe%d) $(_objects%d)\n", i, i);
+            if (m_flags & FLAG_B) {
+                OUT("\t$(_CXX) $(_CXXFLAGS) -o $(_exe%d) $(_objs_bd%d)\n", i,
+                    i);
+            } else {
+                OUT("\t$(_CXX) $(_CXXFLAGS) -o $(_exe%d) $(_objs%d)\n", i, i);
+            }
         } else {
             // TODO error check
         }
@@ -224,12 +258,17 @@ static void print_all_headers(FILE *m_fout, vector<cfile> &files, cfile *file) {
     }
 }
 
-static void output_dependencies_helper(FILE *m_fout, vector<cfile> &files,
+void mfile::output_dependencies_helper(FILE *m_fout, vector<cfile> &files,
                                        cfile *file) {
     file->set_visited(true);
     if (file->includes().size() > 0) {
         // .c/.cpp/.cc depends on all headers it includes, recursively
-        OUT("%s.o:", file->name().c_str());
+
+        if (m_flags & FLAG_B) {
+            OUT("$(_BD)/%s.o:", file->name().c_str());
+        } else {
+            OUT("%s.o:", file->name().c_str());
+        }
         print_all_headers(m_fout, files, file);
         OUT("\n");
 
@@ -270,10 +309,18 @@ void mfile::output_clean_up() {
     OUT("clean:\n");
     OUT("\trm -f");
 
-    for (unsigned int i = 0; i < m_executable.size(); ++i) {
-        OUT(" \"$(_exe%u)\" $(_objects%u)", i + 1, i + 1);
+    if (m_flags & FLAG_B) {
+        for (unsigned int i = 0; i < m_executable.size(); ++i) {
+            OUT(" \"$(_exe%u)\" $(_objs_bd%u)", i + 1, i + 1);
+        }
+        OUT("\n");
+        OUT("\trm -fd \"$(_BD)\"\n");
+    } else {
+        for (unsigned int i = 0; i < m_executable.size(); ++i) {
+            OUT(" \"$(_exe%u)\" $(_objs%u)", i + 1, i + 1);
+        }
+        OUT("\n");
     }
-    OUT("\n");
 }
 
 void mfile::output_part() {
