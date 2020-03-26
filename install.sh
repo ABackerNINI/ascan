@@ -1,4 +1,4 @@
 #!/bin/bash
 
 make
-sudo cp ./build/ascan /usr/local/bin/ascan
+sudo cp ./ascan /usr/local/bin/ascan

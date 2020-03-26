@@ -17,18 +17,23 @@ $(_BD)/%.o: %.cpp
 # Build Executable
 
 .PHONY: all
-all: $(_BD)/ascan
+all: ascan
+
+.PHONY: BD
+BD:
+	mkdir $(_BD)
 
 .PHONY: rebuild
 rebuild: clean all
 
-# executable 1
-_exe1 = $(_BD)/ascan
-_objects1 = ascan.o mfile.o common.o parser.o cfile.o config.o
-_objects1_b = $(_objects1:%=$(_BD)/%)
+# Executable 1
 
-$(_BD)/ascan: $(_objects1_b)
-	$(_CXX) $(_CXXFLAGS) -o $(_exe1) $(_objects1_b)
+_exe1 = ascan
+_objs1 = ascan.o mfile.o common.o parser.o cfile.o config.o
+_objs1_bd = $(_objs1:%=$(_BD)/%)
+
+ascan: BD $(_objs1_bd)
+	$(_CXX) $(_CXXFLAGS) -o $(_exe1) $(_objs1_bd)
 
 # Dependencies
 
@@ -43,4 +48,4 @@ $(_BD)/ascan.o: ascan.h cfile.h config.h mfile.h common.h flags.h
 
 .PHONY: clean
 clean:
-	rm -f "$(_exe1)" $(_objects1_b)
+	rm -f "$(_exe1)" $(_objs1_bd)
