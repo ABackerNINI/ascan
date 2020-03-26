@@ -18,8 +18,8 @@ const char *get_ext(const char *filename, size_t length) {
     return NULL;
 }
 
-const char *get_ext(const string &filename, size_t length) {
-    return get_ext(filename.c_str(), length);
+const char *get_ext(const string &filename) {
+    return get_ext(filename.c_str(), filename.length());
 }
 
 bool is_exist(const char *filename) { return access(filename, F_OK) == 0; }
@@ -27,12 +27,11 @@ bool is_exist(const char *filename) { return access(filename, F_OK) == 0; }
 bool is_exist(const string &filename) { return is_exist(filename.c_str()); }
 
 void get_date(char *date) {
-    time_t t = time(0);
+    time_t t = time(NULL);
     tm *ltm = localtime(&t);
     sprintf(date, "%4d/%02d/%02d", ltm->tm_year + 1900, ltm->tm_mon + 1,
             ltm->tm_mday);
 }
-
 
 bool all_nums(const char *s) {
     if (*s == '\0') {
@@ -49,6 +48,7 @@ bool all_nums(const char *s) {
 
 size_t edit_distance(const char *s1, size_t len1, const char *s2, size_t len2) {
 #define DP(i, j) dp[(i)*len2 + (j)]
+    // dp should be longer than dp[(len1+1)*(len2+1)]
     size_t *dp = new size_t[(len1 + 1) * (len2 + 1)];
     for (size_t i = 0; i <= len1; ++i) {
         DP(i, 0) = i;
@@ -71,6 +71,7 @@ size_t edit_distance(const char *s1, size_t len1, const char *s2, size_t len2) {
     delete[] dp;
 
     return ret;
+#undef DP
 }
 
 size_t edit_distance(const string &s1, const string &s2) {

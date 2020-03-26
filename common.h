@@ -71,20 +71,22 @@ extern int debug_level;  // --d=0: debug level
         }                               \
     }
 
+// Get file extention.
 const char *get_ext(const char *filename, size_t length = 0);
-const char *get_ext(const string &filename, size_t length = 0);
+// Get file extention.
+const char *get_ext(const string &filename);
 
-/* Check if the file is exist */
+// Check if the file is exist
 bool is_exist(const char *filename);
-/* Check if the file is exist */
+// Check if the file is exist
 bool is_exist(const string &filename);
 
 // Get date string, format: yyyy/mm/dd
 void get_date(char *date);
 
+// Check if the string are all digit numbers.
 bool all_nums(const char *s);
 
-// dp should be longer than dp[(len1+1)*(len2+1)]
 size_t edit_distance(const char *s1, size_t len1, const char *s2, size_t len2);
 size_t edit_distance(const string &source, const string &target);
 

@@ -19,8 +19,8 @@ class ascan {
     // Start to proceed auto-scan.
     //
     // Return:
-    // --- EXIT_SUCCESS: if no error occurred.
-    // --- EXIT_FAILURE: otherwise.
+    // -- EXIT_SUCCESS: if no error occurred.
+    // -- EXIT_FAILURE: otherwise.
     int start();
 
    private:
@@ -39,29 +39,29 @@ class ascan {
     // Parse the command arguments.
     //
     // Return:
-    // --- true: if one of the argument '--help', '-v', '--ver' is presented or
+    // -- true: if one of the argument '--help', '-v', '--ver' is presented or
     // an error occurred.
-    // --- false: otherwise.
+    // -- false: otherwise.
     bool parse_cmd_args(int argc, char **argv);
     void print_help(int ind) const;
 
     // Check if there is one makefile, prompt overwrite when -f is not set.
     //
     // Return:
-    // --- true: if -f is set or user entered 'yes' to overwrite or no makefile
+    // -- true: if -f is set or user entered 'yes' to overwrite or no makefile
     // found.
-    // --- false: otherwise.
+    // -- false: otherwise.
     bool test_makefile();
     void match_c_cxx_includes();
     void associate_header();
 
    private:
-    bool m_proceed;          // whether need to proceed makefile
+    bool m_proceed;  // whether need to proceed makefile
     // bool m_flag_a;           // flag -a: overwrite all sections
     // bool m_flag_b;           // flag -b: put binaries to 'build' subdirectory
     // bool m_flag_f;           // flag -f: force overwrite
     // bool m_flag_g;           // flag -g: add '-g' flag to cflags or cxxflags
-    uint32_t m_flags;       // contains all flags
+    uint32_t m_flags;        // contains all flags
     Config m_cfg;            // config
     string m_cwd;            // current working dir
     string m_makefile;       // filename of makefile
