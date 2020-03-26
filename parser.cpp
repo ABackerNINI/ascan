@@ -73,10 +73,19 @@ vector<string> scan_includes_and_main_func(const char *filename,
 
     char buff[BUFSIZ];
     while ((type = next_token(fp, buff, BUFSIZ)) != TYPE_EOF) {
-        if (IMS_MAIN_ARG_1_COMMA <= state && state <= IMS_MAIN_RIGHT_PAREN &&
-            strcmp(buff, "const") == 0) {
-            continue;
+        // skip new lines
+        if (IMS_MAIN_RETURN_TYPE <= state && state <= IMS_MAIN_RIGHT_PAREN) {
+            if (type == TYPE_NEW_LINE) {
+                continue;
+            }
         }
+        // skip "const"
+        if (IMS_MAIN_ARG_1_COMMA <= state && state <= IMS_MAIN_RIGHT_PAREN) {
+            if (strcmp(buff, "const") == 0) {
+                continue;
+            }
+        }
+
         switch (state) {
             case IMS_INIT:
                 if (type == TYPE_SYM) {
