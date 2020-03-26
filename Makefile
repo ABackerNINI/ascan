@@ -19,9 +19,9 @@ $(_BD)/%.o: %.cpp
 .PHONY: all
 all: ascan
 
-.PHONY: BD
-BD:
-	mkdir $(_BD)
+.PHONY: prepare
+prepare:
+	$(if $(wildcard $(_BD)),,mkdir -p $(_BD))
 
 .PHONY: rebuild
 rebuild: clean all
@@ -32,7 +32,7 @@ _exe1 = ascan
 _objs1 = ascan.o mfile.o common.o parser.o cfile.o config.o
 _objs1_bd = $(_objs1:%=$(_BD)/%)
 
-ascan: BD $(_objs1_bd)
+ascan: prepare $(_objs1_bd)
 	$(_CXX) $(_CXXFLAGS) -o $(_exe1) $(_objs1_bd)
 
 # Dependencies
@@ -49,3 +49,4 @@ $(_BD)/ascan.o: ascan.h cfile.h config.h mfile.h common.h flags.h
 .PHONY: clean
 clean:
 	rm -f "$(_exe1)" $(_objs1_bd)
+	rm -fd "$(_BD)"
