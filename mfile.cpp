@@ -32,7 +32,7 @@ static const char *g_sections[] = {
     "# Build details",
     "# Compile to objects",
     "# Build Executable",
-    "# executable %d",
+    "# Executable %d",
     "# Dependencies",
     "# Clean up"};
 
@@ -74,9 +74,9 @@ int mfile::output() {
 /*==========================================================================*/
 
 void mfile::output_header_comments() {
-    char date[20];
-    get_date(date);
-    OUT_SEC2(SEC_HEADER_COMMENT, date);
+    // char date[20];
+    // get_date(date);
+    // OUT_SEC2(SEC_HEADER_COMMENT, date);
 }
 
 // static bool contain_flag_g(const char *c_cxx_flags) {
@@ -176,10 +176,14 @@ void mfile::output_build_executable() {
     }
     OUT("\n\n");
 
+    // print rebuild
+    OUT(".PHONY: rebuild\nrebuild: clean all\n\n");
+
     // print executable
     int i = 1;
     for (auto exec = m_executable.begin(); exec != m_executable.end(); ++exec) {
-        OUT("# executable %d\n", i);
+        // OUT("# Executable %d\n", i);
+        OUT_SEC2(SEC_EXECUTABLE, i);
         OUT("_exe%d = %s\n", i, (*exec)->name().c_str());
         OUT("_objects%d = %s.o", i, (*exec)->name().c_str());
 
