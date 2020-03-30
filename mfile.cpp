@@ -1,4 +1,4 @@
-
+#include <cassert>
 #include "mfile.h"
 #include "common.h"
 
@@ -113,19 +113,21 @@ void mfile::output_build_details_and_compile_to_objects() {
     const char *flag_g = (m_flags & FLAG_G) ? " -g" : "";
 
     if (h_c) {
-        OUT("_CC                     = %s\n", m_cfg.cc.c_str());
+        OUT("%s = %s\n", m_cfg.k_cc.c_str(), m_cfg.v_cc.c_str());
     }
     if (h_cpp || h_cc) {
-        OUT("_CXX                    = %s\n", m_cfg.cxx.c_str());
+        OUT("%s = %s\n", m_cfg.k_cxx.c_str(), m_cfg.v_cxx.c_str());
     }
     if (h_c) {
-        OUT("_CFLAGS                 = %s%s\n", m_cfg.cflag.c_str(), flag_g);
+        OUT("%s = %s%s\n", m_cfg.k_cflags.c_str(), m_cfg.v_cflag.c_str(),
+            flag_g);
     }
     if (h_cpp || h_cc) {
-        OUT("_CXXFLAGS               = %s%s\n", m_cfg.cxxflag.c_str(), flag_g);
+        OUT("%s = %s%s\n", m_cfg.k_cxxflags.c_str(), m_cfg.v_cxxflag.c_str(),
+            flag_g);
     }
     if (m_flags & FLAG_B) {
-        OUT("_BD                     = ./build\n");
+        OUT("%s = %s\n", m_cfg.k_bd.c_str(), m_cfg.v_bd.c_str());
     }
     OUT("\n");
 
@@ -133,24 +135,27 @@ void mfile::output_build_details_and_compile_to_objects() {
 
     if (h_c) {
         if (m_flags & FLAG_B) {
-            OUT("$(_BD)/");
+            OUT("$(%s)/", m_cfg.k_bd.c_str());
         }
         OUT("%%.o: %%.c\n");
-        OUT("\t$(_CC) $(_CFLAGS) -c -o $@ $<\n\n");
+        OUT("\t$(%s) -c -o $@ $< $(%s)\n\n", m_cfg.k_cc.c_str(),
+            m_cfg.k_cflags.c_str());
     }
     if (h_cpp) {
         if (m_flags & FLAG_B) {
-            OUT("$(_BD)/");
+            OUT("$(%s)/", m_cfg.k_bd.c_str());
         }
         OUT("%%.o: %%.cpp\n");
-        OUT("\t$(_CXX) $(_CXXFLAGS) -c -o $@ $<\n\n");
+        OUT("\t$(%s) -c -o $@ $< $(%s)\n\n", m_cfg.k_cxx.c_str(),
+            m_cfg.k_cxxflags.c_str());
     }
     if (h_cc) {
         if (m_flags & FLAG_B) {
-            OUT("$(_BD)/");
+            OUT("$(%s)/", m_cfg.k_bd.c_str());
         }
         OUT("%%.o: %%.cc\n");
-        OUT("\t$(_CXX) $(_CXXFLAGS) -c -o $@ $<\n\n");
+        OUT("\t$(%s) -c -o $@ $< $(%s)\n\n", m_cfg.k_cxx.c_str(),
+            m_cfg.k_cxxflags.c_str());
     }
 }
 
@@ -169,7 +174,7 @@ static void find_all_headers(vector<cfile> &files, cfile *file) {
 }
 
 void mfile::output_build_executable() {
-    // find all executable
+    // Find all executable
     for (auto cfile = m_cfiles.begin(); cfile != m_cfiles.end(); ++cfile) {
         if (cfile->have_main_func() && cfile->is_source()) {
             m_executable.push_back(&(*cfile));
@@ -178,36 +183,51 @@ void mfile::output_build_executable() {
 
     OUT_SEC(SEC_BUILD_EXECUTABLE);
 
-    // print all
+    // Print bin1 var before all
+    int i = m_executable.size() == 1 ? -1 : 1;
+    for (auto &exec : m_executable) {
+        // OUT: bin1 = ascan
+        OUT("%s = %s\n", m_cfg.make_bin(i).c_str(), exec->name().c_str());
+
+        ++i;
+    }
+    OUT("\n");
+
+    // Print all
     OUT(".PHONY: all\n");
     OUT("all:");
+    i = m_executable.size() == 1 ? -1 : 1;
     for (auto exec = m_executable.begin(); exec != m_executable.end(); ++exec) {
-        OUT(" %s", (*exec)->name().c_str());
+        OUT(" $(%s)", m_cfg.make_bin(i).c_str());
     }
     OUT("\n\n");
 
-    // print prepare
+    // Print prepare
     if (m_flags & FLAG_B) {
-        OUT(".PHONY: prepare\nprepare:\n\t$(if $(wildcard $(_BD)),,mkdir -p "
-            "$(_BD))\n\n");
+        OUT(".PHONY: prepare\n");
+        OUT("prepare:\n");
+        OUT("\t$(if $(wildcard $(%s)),,mkdir -p $(%s))\n\n", m_cfg.k_bd.c_str(),
+            m_cfg.k_bd.c_str());
     }
 
-    // print rebuild
+    // Print rebuild
     OUT(".PHONY: rebuild\nrebuild: clean all\n\n");
 
-    // print executable
-    int i = 1;
-    for (auto exec = m_executable.begin(); exec != m_executable.end(); ++exec) {
+    // Print executable
+    // if only one executable, hide the index number
+    // TODO:add new flag to disable "hide the index number"
+    i = m_executable.size() == 1 ? -1 : 1;
+    for (auto &exec : m_executable) {
         // OUT("# Executable %d\n", i);
-        OUT_SEC2(SEC_EXECUTABLE, i);
-        OUT("_exe%d = %s\n", i, (*exec)->name().c_str());
-        OUT("_objs%d = %s.o", i, (*exec)->name().c_str());
-
-        find_all_headers(m_cfiles, *exec);
+        OUT_SEC2(SEC_EXECUTABLE, (i == -1 ? 1 : i));
+        // OUT: obj1 = ascan.o
+        OUT("%s = %s.o", m_cfg.make_obj(i).c_str(), exec->name().c_str());
+        // OUT: all objects dependecy.
+        find_all_headers(m_cfiles, exec);
         for (auto cfile = m_cfiles.begin(); cfile != m_cfiles.end(); ++cfile) {
             if (cfile->visited()) {
                 if (cfile->associate() != NULL && cfile->is_source() &&
-                    &(*cfile) != *exec) {
+                    &(*cfile) != exec) {
                     OUT(" %s.o", cfile->associate()->name().c_str());
                 }
                 cfile->set_visited(false);
@@ -216,30 +236,49 @@ void mfile::output_build_executable() {
         OUT("\n");
 
         if (m_flags & FLAG_B) {
-            OUT("_objs_bd%d = $(_objs%d:%%=$(_BD)/%%)\n", i, i);
+            // OUT: obj1_bd = $(obj1:%=$(BD)/%)
+            OUT("%s = $(%s:%%=$(%s)/%%)\n", m_cfg.make_obj_bd(i).c_str(),
+                m_cfg.make_obj(i).c_str(), m_cfg.k_bd.c_str());
         }
         OUT("\n");
 
         if (m_flags & FLAG_B) {
-            OUT("%s: prepare $(_objs_bd%d)\n", (*exec)->name().c_str(), i);
+            // OUT: $(bin1): prepare $(obj1_bd)
+            OUT("$(%s): prepare $(%s)\n", m_cfg.make_bin(i).c_str(),
+                m_cfg.make_obj_bd(i).c_str());
         } else {
-            OUT("%s: $(_objs%d)\n", (*exec)->name().c_str(), i);
+            // OUT: $(bin1): $(obj1)
+            OUT("%s: $(%s)\n", exec->name().c_str(), m_cfg.make_obj(i).c_str());
         }
-        if ((*exec)->is_c_source()) {
+        //! CXXFLAGS may contain dynamic libs such as -lm, this should be
+        //! put behind the objects which use them.
+        if (exec->is_c_source()) {
             if (m_flags & FLAG_B) {
-                OUT("\t$(_CC) $(_CFLAGS) -o $(_exe%d) $(_objs_bd%d)\n", i, i);
+                // OUT: $(CC) -o $(bin1) $(obj1_bd) $(CXXFLAGS)
+                OUT("\t$(%s) -o $(%s) $(%s) $(%s)\n", m_cfg.k_cc.c_str(),
+                    m_cfg.make_bin(i).c_str(), m_cfg.make_obj_bd(i).c_str(),
+                    m_cfg.k_cflags.c_str());
             } else {
-                OUT("\t$(_CC) $(_CFLAGS) -o $(_exe%d) $(_objs%d)\n", i, i);
+                // OUT: $(CC) -o $(bin1) $(obj1) $(CXXFLAGS)
+                OUT("\t$(%s) -o $(%s) $(%s) $(%s)\n", m_cfg.k_cc.c_str(),
+                    m_cfg.make_bin(i).c_str(), m_cfg.make_obj(i).c_str(),
+                    m_cfg.k_cflags.c_str());
             }
-        } else if ((*exec)->is_cxx_source()) {
+        } else if (exec->is_cxx_source()) {
             if (m_flags & FLAG_B) {
-                OUT("\t$(_CXX) $(_CXXFLAGS) -o $(_exe%d) $(_objs_bd%d)\n", i,
-                    i);
+                // OUT: $(CXX) -o $(bin1) $(obj1_bd) $(CXXFLAGS)
+                OUT("\t$(%s) -o $(%s) $(%s) $(%s)\n", m_cfg.k_cxx.c_str(),
+                    m_cfg.make_bin(i).c_str(), m_cfg.make_obj_bd(i).c_str(),
+                    m_cfg.k_cxxflags.c_str());
             } else {
-                OUT("\t$(_CXX) $(_CXXFLAGS) -o $(_exe%d) $(_objs%d)\n", i, i);
+                // OUT: $(CXX) -o $(bin1) $(obj1) $(CXXFLAGS)
+                OUT("\t$(%s) -o $(%s) $(%s) $(%s)\n", m_cfg.k_cxx.c_str(),
+                    m_cfg.make_bin(i).c_str(), m_cfg.make_obj(i).c_str(),
+                    m_cfg.k_cxxflags.c_str());
             }
         } else {
-            // TODO error check
+            // TODO error handle
+            assert(0);
         }
         OUT("\n");
 
@@ -265,7 +304,7 @@ void mfile::output_dependencies_helper(FILE *m_fout, vector<cfile> &files,
         // .c/.cpp/.cc depends on all headers it includes, recursively
 
         if (m_flags & FLAG_B) {
-            OUT("$(_BD)/%s.o:", file->name().c_str());
+            OUT("$(%s)/%s.o:", m_cfg.k_bd.c_str(), file->name().c_str());
         } else {
             OUT("%s.o:", file->name().c_str());
         }
@@ -307,17 +346,22 @@ void mfile::output_clean_up() {
 
     OUT(".PHONY: clean\n");
     OUT("clean:\n");
-    OUT("\trm -f");
 
+    // OUT: rm -f "$(bin1)" $(obj1)
+    OUT("\trm -f");
+    // if only one executable, hide the index number
+    int idx = m_executable.size() == 1 ? -1 : 1;
     if (m_flags & FLAG_B) {
-        for (unsigned int i = 0; i < m_executable.size(); ++i) {
-            OUT(" \"$(_exe%u)\" $(_objs_bd%u)", i + 1, i + 1);
+        for (size_t i = 0; i < m_executable.size(); ++i) {
+            OUT(" \"$(%s)\" $(%s)", m_cfg.make_bin(idx).c_str(),
+                m_cfg.make_obj_bd(idx).c_str());
         }
         OUT("\n");
-        OUT("\trm -fd \"$(_BD)\"\n");
+        OUT("\trm -fd \"$(%s)\"\n", m_cfg.k_bd.c_str());
     } else {
-        for (unsigned int i = 0; i < m_executable.size(); ++i) {
-            OUT(" \"$(_exe%u)\" $(_objs%u)", i + 1, i + 1);
+        for (size_t i = 0; i < m_executable.size(); ++i) {
+            OUT(" \"$(%s)\" $(%s)", m_cfg.make_bin(idx).c_str(),
+                m_cfg.make_obj(idx).c_str());
         }
         OUT("\n");
     }

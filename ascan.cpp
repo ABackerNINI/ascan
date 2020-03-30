@@ -52,13 +52,13 @@ static const as_option g_options[] = {
      "Set debug level: \n\t\t\t- 0: ERROR\n\t\t\t- "
      "1: WARNING\n\t\t\t- 2: INFO\n\t\t\t- 3: DEBUG"},
     {OT_CC, NULL, "cc", "CC",
-     "Set c compiler, default: '" CONFIG_DEFAULT_CC "'"},
+     "Set c compiler, default: '" CONFIG_DEFAULT_V_CC "'"},
     {OT_CXX, NULL, "cxx", "CXX",
-     "Set c++ compiler, default: '" CONFIG_DEFAULT_CXX "'"},
+     "Set c++ compiler, default: '" CONFIG_DEFAULT_V_CXX "'"},
     {OT_CFLAGS, NULL, "cflags", "CFLAGS",
-     "Set c compile flags, default: '" CONFIG_DEFAULT_CFLAG "'"},
+     "Set c compile flags, default: '" CONFIG_DEFAULT_V_CFLAG "'"},
     {OT_CXXFLAGS, NULL, "cxxflags", "CXXFLAGS",
-     "Set c++ compile flags, default: '" CONFIG_DEFAULT_CXXFLAG "'"},
+     "Set c++ compile flags, default: '" CONFIG_DEFAULT_V_CXXFLAG "'"},
 };
 
 #define OPTS_SIZE (sizeof(g_options) / sizeof(as_option))
@@ -143,10 +143,11 @@ static int find_similar_opt(const char *opt) {
 /*==========================================================================*/
 
 ascan::ascan(int argc, char **argv) {
-    m_cfg.cc = CONFIG_DEFAULT_CC;
-    m_cfg.cxx = CONFIG_DEFAULT_CXX;
-    m_cfg.cflag = CONFIG_DEFAULT_CFLAG;
-    m_cfg.cxxflag = CONFIG_DEFAULT_CXXFLAG;
+    // m_cfg.v_cc = CONFIG_DEFAULT_V_CC;
+    // m_cfg.v_cxx = CONFIG_DEFAULT_V_CXX;
+    // m_cfg.v_cflag = CONFIG_DEFAULT_V_CFLAG;
+    // m_cfg.v_cxxflag = CONFIG_DEFAULT_V_CXXFLAG;
+    // m_cfg.v_bd = CONFIG_DEFAULT_V_BD;
 
     // m_flag_a = false;
     // m_flag_b = false;
@@ -275,16 +276,16 @@ bool ascan::parse_cmd_args(int argc, char **argv) {
                 }
                 break;
             case OT_CC:
-                m_cfg.cc = string(optarg);
+                m_cfg.v_cc = string(optarg);
                 break;
             case OT_CXX:
-                m_cfg.cxx = string(optarg);
+                m_cfg.v_cxx = string(optarg);
                 break;
             case OT_CFLAGS:
-                m_cfg.cflag = string(optarg);
+                m_cfg.v_cflag = string(optarg);
                 break;
             case OT_CXXFLAGS:
-                m_cfg.cxxflag = string(optarg);
+                m_cfg.v_cxxflag = string(optarg);
                 break;
             default:
                 // find the option in case missing argument

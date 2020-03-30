@@ -1,5 +1,6 @@
 #include <string.h>
 #include <iostream>
+#include <cassert>
 #include "config.h"
 #include "parser.h"
 
@@ -14,6 +15,42 @@ enum CONFIG_TYPE {
     CT_ERROR_TAG_MISSING_RIGHT_BRACKET,
     CT_ERROR_KV
 };
+
+Config::Config()
+    : k_cc(CONFIG_DEFAULT_K_CC),
+      k_cxx(CONFIG_DEFAULT_K_CXX),
+      k_cflags(CONFIG_DEFAULT_K_CFLAGS),
+      k_cxxflags(CONFIG_DEFAULT_K_CXXFLAGS),
+      k_bd(CONFIG_DEFAULT_K_BD),
+      k_bin(CONFIG_DEFAULT_K_BIN),
+      k_obj(CONFIG_DEFAULT_K_OBJ),
+      k_obj_bd(CONFIG_DEFAULT_K_OBJ_BD),
+      v_cc(CONFIG_DEFAULT_V_CC),
+      v_cxx(CONFIG_DEFAULT_V_CXX),
+      v_cflag(CONFIG_DEFAULT_V_CFLAG),
+      v_cxxflag(CONFIG_DEFAULT_V_CXXFLAG),
+      v_bd(CONFIG_DEFAULT_V_BD) {}
+
+string Config::make(const string &s, int i) const {
+    char tmp[BUFSIZ];
+    if (i == -1) {
+        // do not show %d
+        string k_bin2 = s;
+        auto it = k_bin2.find("%d");
+        assert(it != k_bin2.npos);
+        k_bin2.erase(it, 2);
+        sprintf(tmp, k_bin2.c_str(), i);
+    } else {
+        sprintf(tmp, s.c_str(), i);
+    }
+    return string(tmp);
+}
+
+string Config::make_bin(int i) const { return make(k_bin, i); }
+
+string Config::make_obj(int i) const { return make(k_obj, i); }
+
+string Config::make_obj_bd(int i) const { return make(k_obj_bd, i); }
 
 // skip ' ' and '\t'
 static char *skip_blank(char *s) {
@@ -124,13 +161,13 @@ int read_config(const char *filename, Config *cfg) {
                 v[v_len] = '\0';
                 if (state == CS_COMPILER) {
                     if (strcmp(k, "cc") == 0) {
-                        cfg->cc = v;
+                        cfg->v_cc = v;
                     } else if (strcmp(k, "cxx") == 0) {
-                        cfg->cxx = v;
+                        cfg->v_cxx = v;
                     } else if (strcmp(k, "cflag") == 0) {
-                        cfg->cflag = v;
+                        cfg->v_cflag = v;
                     } else if (strcmp(k, "cxxflag") == 0) {
-                        cfg->cxxflag = v;
+                        cfg->v_cxxflag = v;
                     } else {
                         fprintf(
                             stderr,
