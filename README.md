@@ -26,6 +26,7 @@ chmod +x install.sh
 
 1. Develop to work with multi-directory projects.
 2. Support files with other extension, such as `.hpp`.
+3. Support files that contain spaces.
 
 ## LICENSE
 
