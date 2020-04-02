@@ -188,7 +188,6 @@ void mfile::output_build_executable() {
     for (auto &exec : m_executable) {
         // OUT: bin1 = ascan
         OUT("%s = %s\n", m_cfg.make_bin(i).c_str(), exec->name().c_str());
-
         ++i;
     }
     OUT("\n");
@@ -199,6 +198,7 @@ void mfile::output_build_executable() {
     i = m_executable.size() == 1 ? -1 : 1;
     for (auto exec = m_executable.begin(); exec != m_executable.end(); ++exec) {
         OUT(" $(%s)", m_cfg.make_bin(i).c_str());
+        ++i;
     }
     OUT("\n\n");
 
@@ -355,6 +355,7 @@ void mfile::output_clean_up() {
         for (size_t i = 0; i < m_executable.size(); ++i) {
             OUT(" \"$(%s)\" $(%s)", m_cfg.make_bin(idx).c_str(),
                 m_cfg.make_obj_bd(idx).c_str());
+            ++idx;
         }
         OUT("\n");
         OUT("\trm -fd \"$(%s)\"\n", m_cfg.k_bd.c_str());
@@ -362,6 +363,7 @@ void mfile::output_clean_up() {
         for (size_t i = 0; i < m_executable.size(); ++i) {
             OUT(" \"$(%s)\" $(%s)", m_cfg.make_bin(idx).c_str(),
                 m_cfg.make_obj(idx).c_str());
+            ++idx;
         }
         OUT("\n");
     }
