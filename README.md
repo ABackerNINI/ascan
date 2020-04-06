@@ -1,3 +1,5 @@
+[![](https://img.shields.io/github/license/ABackerNINI/ascan)](https://github.com/ABackerNINI/ascan/blob/master/LICENSE)
+
 # Auto-Scan
 
 Auto scan c/c++ project and create simple makefile.
