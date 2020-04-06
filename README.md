@@ -1,4 +1,4 @@
-[![](https://img.shields.io/github/license/ABackerNINI/ascan)](https://github.com/ABackerNINI/ascan/blob/master/LICENSE)
+[![GitHub](https://img.shields.io/github/license/ABackerNINI/ascan?style=for-the-badge)](https://github.com/ABackerNINI/ascan/blob/master/LICENSE)
 
 # Auto-Scan
 
