@@ -47,6 +47,9 @@ mfile::mfile(const string &makefile, vector<cfile> &cfiles, Config &cfg,
     : m_makefile(makefile), m_cfiles(cfiles), m_cfg(cfg), m_flags(flags) {}
 
 int mfile::output() {
+#if DISABLE_WRITE == 1
+    printf("disable_write enabled\n");
+#else
     m_fout = fopen(m_makefile.c_str(), "w");
     if (m_fout == NULL) {
         print_error("Can't open file \"%s\", @%s line %d\n", m_makefile.c_str(),
@@ -63,8 +66,8 @@ int mfile::output() {
     } else {
         output_part();
     }
-
     fclose(m_fout);
+#endif
 
     return EXIT_SUCCESS;
 }

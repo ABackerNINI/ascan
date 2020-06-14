@@ -1,7 +1,7 @@
 # Build details
 
 CXX = g++
-CXXFLAGS = -W -Wall -g
+CXXFLAGS = -W -Wall -g -DDEBUG=1 -DDISABLE_WRITE=1
 BD = ./build
 
 # Compile to objects

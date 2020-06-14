@@ -25,6 +25,50 @@ enum OPT_TYPE {
     OT_CXXFLAGS,        // --cxxflags
 };
 
+static void print_opt_type(enum OPT_TYPE type) {
+    const char *str;
+    switch (type) {
+        case OT_ALL_SECS:
+            str = "a";
+            break;
+        case OT_BUILD:
+            str = "b";
+            break;
+        case OT_FORCE:
+            str = "f";
+            break;
+        case OT_G:
+            str = "g";
+            break;
+        case OT_HELP:
+            str = "h";
+            break;
+        case OT_VER:
+            str = "v";
+            break;
+        case OT_DEBUG:
+            str = "debug";
+            break;
+        case OT_CC:
+            str = "cc";
+            break;
+        case OT_CXX:
+            str = "cxx";
+            break;
+        case OT_CFLAGS:
+            str = "cflags";
+            break;
+        case OT_CXXFLAGS:
+            str = "cxxflags";
+            break;
+
+        default:
+            str = "unknown";
+            break;
+    }
+    printf("%s", str);
+}
+
 struct as_option {
     enum OPT_TYPE type;
     const char *short_opt;
@@ -204,7 +248,7 @@ bool ascan::parse_cmd_args(int argc, char **argv) {
 
     int los = 0;  // long options size
     for (int i = 0, n = OPTS_SIZE; i < n; ++i) {
-        if (g_options[los].long_opt) {
+        if (g_options[i].long_opt) {
             long_opts[los].name = g_options[i].long_opt;
             long_opts[los].has_arg =
                 g_options[i].arg ? required_argument : no_argument;
@@ -225,7 +269,10 @@ bool ascan::parse_cmd_args(int argc, char **argv) {
     while ((opt = getopt_long(argc, argv, g_short_opts, long_opts,
                               &long_ind)) != -1) {
 #if (DEBUG)
-        printf("opt = %d\t\t", opt);
+        // printf("opt = %d\t\t", opt);
+        printf("opt = ");
+        print_opt_type((OPT_TYPE)opt);
+        printf("\t\t");
         printf("optarg = %s\t\t", optarg);
         printf("optind = %d\t\t", optind);
         printf("argv[optind] = %s\t\t", argv[optind]);
