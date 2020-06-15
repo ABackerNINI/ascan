@@ -20,7 +20,7 @@ using std::vector;
 #define CONFIG_DEFAULT_K_BD "BD"
 #define CONFIG_DEFAULT_K_BIN "bin%d"
 #define CONFIG_DEFAULT_K_OBJ "obj%d"
-#define CONFIG_DEFAULT_K_OBJ_BD "obj%d_bd"
+#define CONFIG_DEFAULT_K_OBJ_BD "obj%dbd"
 
 #define CONFIG_DEFAULT_V_CC "gcc"
 #define CONFIG_DEFAULT_V_CXX "g++"

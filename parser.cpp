@@ -1,8 +1,8 @@
+#include "parser.h"
+
 #include <cassert>
 #include <string.h>
 #include <iostream>
-
-#include "parser.h"
 
 enum PARSER_STATE {
     STA_INIT,

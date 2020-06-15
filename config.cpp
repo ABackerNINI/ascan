@@ -1,7 +1,9 @@
+#include "config.h"
+
 #include <string.h>
 #include <iostream>
 #include <cassert>
-#include "config.h"
+
 #include "parser.h"
 
 enum CONFIG_STATE { CS_COMPILER, CS_EXECUTABLE, CS_IGNORE, CS_UNKNOWN };

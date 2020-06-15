@@ -1,3 +1,5 @@
+#include "ascan.h"
+
 #include <string.h>
 #include <unistd.h>
 #include <getopt.h>
@@ -5,107 +7,10 @@
 #include <cassert>
 #include <iostream>
 
-#include "ascan.h"
 #include "mfile.h"
 #include "common.h"
 
 using std::min;
-
-enum OPT_TYPE {
-    OT_ALL_SECS = 'a',  // -a
-    OT_BUILD = 'b',     // -b
-    OT_FORCE = 'f',     // -f
-    OT_G = 'g',         // -g
-    OT_HELP = 'h',      // -h,--help
-    OT_VER = 'v',       // -v,--ver
-    OT_DEBUG = 200,     // --debug
-    OT_CC,              // --cc
-    OT_CXX,             // --cxx
-    OT_CFLAGS,          // --cflags
-    OT_CXXFLAGS,        // --cxxflags
-};
-
-static void print_opt_type(enum OPT_TYPE type) {
-    const char *str;
-    switch (type) {
-        case OT_ALL_SECS:
-            str = "a";
-            break;
-        case OT_BUILD:
-            str = "b";
-            break;
-        case OT_FORCE:
-            str = "f";
-            break;
-        case OT_G:
-            str = "g";
-            break;
-        case OT_HELP:
-            str = "h";
-            break;
-        case OT_VER:
-            str = "v";
-            break;
-        case OT_DEBUG:
-            str = "debug";
-            break;
-        case OT_CC:
-            str = "cc";
-            break;
-        case OT_CXX:
-            str = "cxx";
-            break;
-        case OT_CFLAGS:
-            str = "cflags";
-            break;
-        case OT_CXXFLAGS:
-            str = "cxxflags";
-            break;
-
-        default:
-            str = "unknown";
-            break;
-    }
-    printf("%s", str);
-}
-
-struct as_option {
-    enum OPT_TYPE type;
-    const char *short_opt;
-    const char *long_opt;
-    const char *arg;
-    const char *description;
-};
-
-enum HELP_TYPE { HT_ALL = -1, HT_VER = -2 };
-
-static const char g_short_opts[] = "abfghv";
-
-static const as_option g_options[] = {
-    {OT_ALL_SECS, "a", "all", NULL,
-     "Overwrite all sections, ascan will only overwrite the "
-     "'Dependencies' section on default"},
-    {OT_BUILD, "b", "build", NULL,
-     "Put binaries to 'build' subdirectory, Option \"-b\" is not implemented "
-     "yet!"},
-    {OT_FORCE, "f", "force", NULL, "Force overwrite"},
-    {OT_G, "g", NULL, NULL, "add '-g' flag to cflags or cxxflags"},
-    {OT_HELP, "h", "help", NULL, "Print help information"},
-    {OT_VER, "v", "ver", NULL, "Print ascan version"},
-    {OT_DEBUG, NULL, "debug", "DEBUG_LEVEL",
-     "Set debug level: \n\t\t\t- 0: ERROR\n\t\t\t- "
-     "1: WARNING\n\t\t\t- 2: INFO\n\t\t\t- 3: DEBUG"},
-    {OT_CC, NULL, "cc", "CC",
-     "Set c compiler, default: '" CONFIG_DEFAULT_V_CC "'"},
-    {OT_CXX, NULL, "cxx", "CXX",
-     "Set c++ compiler, default: '" CONFIG_DEFAULT_V_CXX "'"},
-    {OT_CFLAGS, NULL, "cflags", "CFLAGS",
-     "Set c compile flags, default: '" CONFIG_DEFAULT_V_CFLAG "'"},
-    {OT_CXXFLAGS, NULL, "cxxflags", "CXXFLAGS",
-     "Set c++ compile flags, default: '" CONFIG_DEFAULT_V_CXXFLAG "'"},
-};
-
-#define OPTS_SIZE (sizeof(g_options) / sizeof(as_option))
 
 #define PRINT_TITLE(title) printf(_CLR_BEGIN(CC_BOLD) "%s\n" _CLR_END, title)
 #define PRINT_FLAG(short_opt, long_opt, arg)                            \
@@ -125,84 +30,16 @@ static const as_option g_options[] = {
 #define PRINT_DESC(desc) printf("\t\t%s.\n\n", desc)
 #define PRINT(msg) printf("\t%s\n\n", msg)
 
-static int find_opt(enum OPT_TYPE type) {
-    for (int i = 0, n = OPTS_SIZE; i < n; ++i) {
-        if (g_options[i].type == type) {
-            return i;
-        }
-    }
-    return -1;
-}
-
-static int find_similar_opt(const char *opt) {
-    print_debug("%s\n", opt);
-    size_t len1 = 0;
-    while (*opt == '-') {
-        ++opt;
-    }
-
-    const char *opt1 = opt;
-    while (isalpha(*opt1)) {
-        ++len1;
-        ++opt1;
-    }
-
-    if (len1 == 0) {
-        return -1;
-    }
-
-    size_t min_dis = INT32_MAX;
-    int min_ind = -1;
-    for (int i = 0, n = OPTS_SIZE; i < n; ++i) {
-        size_t dis1, dis2, dis, len2;
-        if (g_options[i].short_opt) {
-            len2 = strlen(g_options[i].short_opt);
-            dis1 = edit_distance(opt, len1, g_options[i].short_opt, len2);
-            print_debug("'%.*s' '%s' edit_distance: %d\n", (int)len1, opt,
-                        g_options[i].short_opt, (int)dis1);
-            if (dis1 >= len1 || dis1 >= len2) {
-                dis1 = INT32_MAX;
-            }
-        }
-
-        if (g_options[i].long_opt) {
-            len2 = strlen(g_options[i].long_opt);
-            dis2 = edit_distance(opt, len1, g_options[i].long_opt, len2);
-            print_debug("'%.*s' '%s' edit_distance: %d\n", (int)len1, opt,
-                        g_options[i].long_opt, (int)dis2);
-            if (dis2 >= len1 || dis2 >= len2) {
-                dis2 = INT32_MAX;
-            }
-        }
-
-        dis = min(dis1, dis2);
-        if (dis < min_dis) {
-            min_dis = dis;
-            min_ind = i;
-        }
-    }
-    return min_ind;
-}
-
 /*==========================================================================*/
 
 ascan::ascan(int argc, char **argv) {
-    // m_cfg.v_cc = CONFIG_DEFAULT_V_CC;
-    // m_cfg.v_cxx = CONFIG_DEFAULT_V_CXX;
-    // m_cfg.v_cflag = CONFIG_DEFAULT_V_CFLAG;
-    // m_cfg.v_cxxflag = CONFIG_DEFAULT_V_CXXFLAG;
-    // m_cfg.v_bd = CONFIG_DEFAULT_V_BD;
-
-    // m_flag_a = false;
-    // m_flag_b = false;
-    // m_flag_f = false;
     m_flags = 0;
 
     m_proceed = parse_cmd_args(argc, argv);
 
-    char dir[BUFSIZ];
-    getcwd(dir, BUFSIZ);
-    m_cwd = string(dir);
+    // char dir[BUFSIZ];
+    // getcwd(dir, BUFSIZ);
+    // m_cwd = string(dir);
 }
 
 int ascan::start() {
@@ -213,7 +50,7 @@ int ascan::start() {
     if (!test_makefile()) {
         return EXIT_SUCCESS;
     }
-    m_cfiles = recursion_scan_dir_c_cxx_files(m_cwd);
+    m_cfiles = recursion_scan_dir_c_cxx_files(".");
 
     match_c_cxx_includes();
     associate_header();
@@ -234,44 +71,21 @@ bool ascan::parse_cmd_args(int argc, char **argv) {
     // -cflag "": set c flags, default: -W -Wall -lm
     // -cxxflag "" set c++ flags, default: -W -Wall
 
-    static struct option long_opts[15]; /*= {
-        {"all", no_argument, NULL, OT_ALL_SECS},
-        {"build", no_argument, NULL, OT_BUILD},
-        {"force", no_argument, NULL, OT_FORCE},
-        {"help", no_argument, NULL, OT_HELP},
-        {"d", required_argument, NULL, OT_HELP},
-        {"cc", required_argument, NULL, OT_CC},
-        {"cxx", required_argument, NULL, OT_CXX},
-        {"cflag", required_argument, NULL, OT_CFLAGS},
-        {"cxxflag", required_argument, NULL, OT_CXXFLAGS},
-        {NULL, 0, NULL, 0}};*/
-
-    int los = 0;  // long options size
-    for (int i = 0, n = OPTS_SIZE; i < n; ++i) {
-        if (g_options[i].long_opt) {
-            long_opts[los].name = g_options[i].long_opt;
-            long_opts[los].has_arg =
-                g_options[i].arg ? required_argument : no_argument;
-            long_opts[los].flag = NULL;
-            long_opts[los].val = g_options[i].type;
-            ++los;
-        }
-    }
-    long_opts[los] = {NULL, 0, NULL, 0};
-    print_debug("long options size: %d\n", los);
-    assert(los < 15);
+    const char *short_opts = m_options.get_short_opts();
+    const struct option *long_opts = m_options.get_long_opts();
 
     opterr = 0;  // do NOT print error message
 
     int opt, long_ind;
-    int help = 0, err = 0, last_optind = -1;  // last unrecognized argument
-    int opt_idx;
-    while ((opt = getopt_long(argc, argv, g_short_opts, long_opts,
-                              &long_ind)) != -1) {
+    enum HELP_TYPE help = HT_NONE;
+    int err = 0, last_optind = -1;  // last unrecognized argument
+    const options::as_option *option;
+    while ((opt = getopt_long(argc, argv, short_opts, long_opts, &long_ind)) !=
+           -1) {
 #if (DEBUG)
         // printf("opt = %d\t\t", opt);
         printf("opt = ");
-        print_opt_type((OPT_TYPE)opt);
+        m_options.print_opt_type((options::OPT_TYPE)opt);
         printf("\t\t");
         printf("optarg = %s\t\t", optarg);
         printf("optind = %d\t\t", optind);
@@ -280,33 +94,25 @@ bool ascan::parse_cmd_args(int argc, char **argv) {
 #endif
 
         switch (opt) {
-            case OT_ALL_SECS:
-                // m_flag_a = true;
-                m_flags |= FLAG_A;
+            case options::OT_ALL_SECS:
+                m_flags |= OPTION_A;
                 break;
-            case OT_BUILD:
-                // m_flag_b = true;
-                m_flags |= FLAG_B;
+            case options::OT_BUILD:
+                m_flags |= OPTION_B;
                 break;
-            case OT_FORCE:
-                // m_flag_f = true;
-                m_flags |= FLAG_F;
+            case options::OT_FORCE:
+                m_flags |= OPTION_F;
                 break;
-            case OT_G:
-                // m_flag_g = true;
-                m_flags |= FLAG_G;
+            case options::OT_G:
+                m_flags |= OPTION_G;
                 break;
-            case OT_HELP:
-                help = 1;
-                opt_idx = HT_ALL;
+            case options::OT_HELP:
+                help = HT_ALL;
                 goto END;
-                // break;
-            case OT_VER:
-                help = 2;
-                opt_idx = HT_VER;
+            case options::OT_VER:
+                help = HT_VER;
                 goto END;
-                // break;
-            case OT_DEBUG:
+            case options::OT_DEBUG:
                 if (!all_nums(optarg)) {
                     ++err;
                 }
@@ -317,38 +123,37 @@ bool ascan::parse_cmd_args(int argc, char **argv) {
                 if (err || debug_level < ADL_ERROR || debug_level > ADL_DEBUG) {
                     print_error("wrong debug level value.\n");
                     ++err;
-                    help = 3;
-                    opt_idx = find_opt(OT_DEBUG);
+                    help = HT_SPECIFIC;
+                    option = m_options.find_opt(options::OT_DEBUG);
                     goto END;
                 }
                 break;
-            case OT_CC:
+            case options::OT_CC:
                 m_cfg.v_cc = string(optarg);
                 break;
-            case OT_CXX:
+            case options::OT_CXX:
                 m_cfg.v_cxx = string(optarg);
                 break;
-            case OT_CFLAGS:
+            case options::OT_CFLAGS:
                 m_cfg.v_cflag = string(optarg);
                 break;
-            case OT_CXXFLAGS:
+            case options::OT_CXXFLAGS:
                 m_cfg.v_cxxflag = string(optarg);
                 break;
             default:
-                // find the option in case missing argument
-                opt_idx = find_opt(OPT_TYPE(optopt));
-                if (opt_idx != -1) {
-                    if ((optarg && !g_options[opt_idx].arg) ||
-                        (!optarg && g_options[opt_idx].arg)) {
+                // find the option in case of missing argument
+                option = m_options.find_opt(options::OPT_TYPE(optopt));
+                if (option) {
+                    if ((optarg && !option->arg) || (!optarg && option->arg)) {
                         if (optarg) {
-                            // control will never reach here
+                            // control should never reach here
                             print_error("unexpected option argument, '%s'.\n",
                                         optarg);
                         } else {
                             print_error("missing option argument, '%s'.\n",
-                                        g_options[opt_idx].arg);
+                                        option->arg);
                         }
-                        help = 10;
+                        help = HT_ALL;
                         break;
                     }
                 }
@@ -357,11 +162,11 @@ bool ascan::parse_cmd_args(int argc, char **argv) {
                                 argv[optind - 1]);
 
                     // find similar option
-                    opt_idx = find_similar_opt(argv[optind - 1]);
-                    if (opt_idx != -1) {
+                    option = m_options.find_similar_opt(argv[optind - 1]);
+                    if (option) {
                         printf("\tDo you mean \"");
-                        const char *short_opt = g_options[opt_idx].short_opt;
-                        const char *long_opt = g_options[opt_idx].long_opt;
+                        const char *short_opt = option->short_opt;
+                        const char *long_opt = option->long_opt;
                         if (short_opt && long_opt) {
                             printf(_CLR_BEGIN(
                                        CC_BOLD) "-%s" _CLR_END
@@ -376,7 +181,7 @@ bool ascan::parse_cmd_args(int argc, char **argv) {
                                    long_opt);
                         }
                         printf("\"?\n\n");
-                        help = 4;
+                        help = HT_SPECIFIC;
                     } else {
                         printf(
                             "Type 'ascan --help' to see useful "
@@ -391,24 +196,27 @@ bool ascan::parse_cmd_args(int argc, char **argv) {
         last_optind = optind;
     }
 
+    // TODO add option: -o output-file
+
 END:
-    if (help) {
-        print_help(opt_idx);
+    if (help != HT_NONE) {
+        print_help(help, option);
     }
 
     return help == 0 && err == 0;
 }
 
-void ascan::print_help(int ind) const {
+void ascan::print_help(enum HELP_TYPE help,
+                       const options::as_option *option) const {
     static const char *desc =
         "Ascan will scan the c/c++ project and create simple makefile.\n\n"
-        "\tAscan is suitable for c/c++ projects are:\n"
+        "\tAscan is suitable for c/c++ projects that are:\n"
         "\t\t1. Simple structured that all source codes are in one "
         "directory.\n"
         "\t\t2. Source codes are `.h` or `.c` or `.cpp` or `.cc`.\n"
         "\t`cd` to the project directory and run `ascan`.";
 
-    if (ind == HT_ALL) {
+    if (help == HT_ALL) {
         PRINT_TITLE("NAME");
         PRINT("ascan - auto scan");
 
@@ -421,10 +229,12 @@ void ascan::print_help(int ind) const {
             "Mandatory arguments to long options are mandatory for short "
             "options too.");
 
-        for (int i = 0, n = OPTS_SIZE; i < n; ++i) {
-            PRINT_FLAG(g_options[i].short_opt, g_options[i].long_opt,
-                       g_options[i].arg);
-            PRINT_DESC(g_options[i].description);
+        size_t n;
+        const options::as_option *options = m_options.get_as_opts(&n);
+        for (unsigned int i = 0; i < n; ++i) {
+            PRINT_FLAG(options[i].short_opt, options[i].long_opt,
+                       options[i].arg);
+            PRINT_DESC(options[i].description);
         }
 
         PRINT_TITLE("AUTHOR");
@@ -437,27 +247,23 @@ void ascan::print_help(int ind) const {
         PRINT(
             "License GPLv3+: GNU GPL version 3 or later "
             "<http://gnu.org/licenses/gpl.html>.");
-        PRINT(
-            "This is free software: you are free to change and redistribute "
-            "it.  There is NO WARRANTY, to the extent permitted by law.");
 
         // PRINT_TITLE("SEE ALSO");
-    } else if (ind == HT_VER) {
+    } else if (help == HT_VER) {
         printf("ascan version: " AS_VERSION "\n");
-    } else {
+    } else if (help == HT_SPECIFIC) {
         PRINT_TITLE("OPTION");
         PRINT(
             "Mandatory arguments to long options are mandatory for short "
             "options too.");
-        PRINT_FLAG(g_options[ind].short_opt, g_options[ind].long_opt,
-                   g_options[ind].arg);
-        PRINT_DESC(g_options[ind].description);
+        PRINT_FLAG(option->short_opt, option->long_opt, option->arg);
+        PRINT_DESC(option->description);
     }
 }
 
 bool ascan::test_makefile() {
-    string makefile1 = m_cwd + "/Makefile";
-    string makefile2 = m_cwd + "/makefile";
+    string makefile1 = "Makefile";
+    string makefile2 = "makefile";
 
     int exist = 0;
     if (is_exist(makefile1)) {
@@ -471,11 +277,9 @@ bool ascan::test_makefile() {
         m_makefile = makefile1;
     }
 
-    if (!(m_flags & FLAG_F) && exist) {
-        printf(
-            "There is already one %s in \"%s\", "
-            "overwrite it? [y/N] ",
-            (exist == 1 ? "Makefile" : "makefile"), m_cwd.c_str());
+    if (!(m_flags & OPTION_F) && exist) {
+        printf("There is already one %s, overwrite it? [y/N] ",
+               (exist == 1 ? "Makefile" : "makefile"));
 
         char cmd[BUFSIZ];
         if (fgets(cmd, BUFSIZ, stdin)) {
@@ -488,8 +292,7 @@ bool ascan::test_makefile() {
     }
 
     if (!exist) {
-        // m_flag_a = true;
-        m_flags |= FLAG_A;
+        m_flags |= OPTION_A;
     }
 
     return true;

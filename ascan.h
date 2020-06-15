@@ -6,9 +6,10 @@
 #include <vector>
 #include <string>
 #include <iostream>
+
 #include "cfile.h"
 #include "config.h"
-#include "flags.h"
+#include "options.h"
 
 using std::string;
 using std::vector;
@@ -24,17 +25,7 @@ class ascan {
     int start();
 
    private:
-    // enum HELP_CMD_TYPE {
-    //     HCT_ALL,
-    //     HCT_ALL_SECS,  // -a
-    //     HCT_BUILD,     // -b
-    //     HCT_FORCE,     // -f
-    //     HCT_DEBUG,     // --d
-    //     HCT_CC,        // --cc
-    //     HCT_CXX,       // --cxx
-    //     HCT_CFLAGS,    // --cflags
-    //     HCT_CXXFLAGS   // --cxxflags
-    // };
+    enum HELP_TYPE { HT_NONE, HT_ALL, HT_VER, HT_SPECIFIC };
 
     // Parse the command arguments.
     //
@@ -43,7 +34,8 @@ class ascan {
     // an error occurred.
     // -- false: otherwise.
     bool parse_cmd_args(int argc, char **argv);
-    void print_help(int ind) const;
+    void print_help(enum HELP_TYPE help,
+                    const options::as_option *option) const;
 
     // Check if there is one makefile, prompt overwrite when -f is not set.
     //
@@ -56,16 +48,13 @@ class ascan {
     void associate_header();
 
    private:
-    bool m_proceed;  // whether need to proceed makefile
-    // bool m_flag_a;           // flag -a: overwrite all sections
-    // bool m_flag_b;           // flag -b: put binaries to 'build' subdirectory
-    // bool m_flag_f;           // flag -f: force overwrite
-    // bool m_flag_g;           // flag -g: add '-g' flag to cflags or cxxflags
-    uint32_t m_flags;        // contains all flags
+    bool m_proceed;          // whether need to proceed makefile
+    uint32_t m_flags;        // contains all options
     Config m_cfg;            // config
-    string m_cwd;            // current working dir
+    // string m_cwd;            // current working dir
     string m_makefile;       // filename of makefile
     vector<cfile> m_cfiles;  // cfiles
+    options m_options;
 };
 
 int main(int argc, char **argv);

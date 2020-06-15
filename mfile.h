@@ -9,7 +9,6 @@
 
 #include "cfile.h"
 #include "config.h"
-#include "flags.h"
 
 using std::string;
 using std::vector;

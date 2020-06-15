@@ -1,7 +1,7 @@
 # Build details
 
 CXX = g++
-CXXFLAGS = -W -Wall -g -DDEBUG=1 -DDISABLE_WRITE=1
+CXXFLAGS = -W -Wall -g -DDEBUG=1 -DDISABLE_WRITE=0
 BD = ./build
 
 # Compile to objects
@@ -25,24 +25,25 @@ rebuild: clean all
 
 # Executable 1
 
-obj = ascan.o mfile.o common.o parser.o cfile.o config.o
-obj_bd = $(obj:%=$(BD)/%)
+obj = ascan.o mfile.o options.o parser.o config.o common.o cfile.o
+objbd = $(obj:%=$(BD)/%)
 
-$(bin): prepare $(obj_bd)
-	$(CXX) -o $(bin) $(obj_bd) $(CXXFLAGS)
+$(bin): prepare $(objbd)
+	$(CXX) -o $(bin) $(objbd) $(CXXFLAGS)
 
 # Dependencies
 
-$(BD)/mfile.o: mfile.h cfile.h config.h flags.h common.h
-$(BD)/common.o: common.h
+$(BD)/ascan.o: ascan.h cfile.h config.h options.h mfile.h common.h
+$(BD)/mfile.o: mfile.h cfile.h config.h common.h options.h
+$(BD)/options.o: options.h config.h common.h
 $(BD)/parser.o: parser.h
-$(BD)/cfile.o: common.h cfile.h parser.h
 $(BD)/config.o: config.h parser.h
-$(BD)/ascan.o: ascan.h cfile.h config.h flags.h mfile.h common.h
+$(BD)/common.o: common.h
+$(BD)/cfile.o: common.h cfile.h parser.h
 
 # Clean up
 
 .PHONY: clean
 clean:
-	rm -f "$(bin)" $(obj_bd)
+	rm -f "$(bin)" $(objbd)
 	rm -fd "$(BD)"

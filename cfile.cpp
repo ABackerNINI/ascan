@@ -1,3 +1,5 @@
+#include "cfile.h"
+
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <unistd.h>
@@ -7,9 +9,9 @@
 #include <stdio.h>
 #include <fcntl.h>
 #include <stdlib.h>
+#include <cassert>
 
 #include "common.h"
-#include "cfile.h"
 #include "parser.h"
 
 /*==========================================================================*/
@@ -112,9 +114,8 @@ bool cfile::visited() const { return m_visited; }
 
 /*==========================================================================*/
 
-static bool recursion_scan_dir_c_cxx_files_helper(const char *dir,
-                                                  vector<cfile> &vec,
-                                                  string &path) {
+static bool recursion_scan_dir_c_cxx_files_helper(char *dir,
+                                                  vector<cfile> &vec) {
     DIR *p_dir = NULL;
     struct dirent *p_entry = NULL;
     struct stat statbuf;
@@ -126,22 +127,21 @@ static bool recursion_scan_dir_c_cxx_files_helper(const char *dir,
         return false;
     }
 
-    chdir(dir);
+    size_t len = strlen(dir);
+    dir[len] = '/';
 
-    path = path + dir + "/";
-    // std::cout << path << std::endl;
     while (NULL != (p_entry = readdir(p_dir))) {
+        if (len + strlen(p_entry->d_name) + 1 <= FILENAME_MAX) {
+            strcpy(dir + len + 1, p_entry->d_name);
+        } else {
+            assert(false);
+        }
+
         lstat(p_entry->d_name, &statbuf);
 
         if (S_IFDIR & statbuf.st_mode) {
             // if (strcmp(".", p_entry->d_name) != 0 &&
             //     strcmp("..", p_entry->d_name) != 0) {
-            //     if (!recursion_scan_dir_c_cxx_files_helper(p_entry->d_name,
-            //     vec,
-            //                                                path)) {
-            //         ret = false;
-            //         goto END;
-            //     }
             // }
         } else {
             const char *ext = get_ext(p_entry->d_name);
@@ -149,15 +149,13 @@ static bool recursion_scan_dir_c_cxx_files_helper(const char *dir,
                         !strcmp(ext, ".cpp") ||
                         !strcmp(ext, ".cc") /*|| !strcmp(ext, ".hpp")*/)) {
                 vec.emplace_back(
-                    path + p_entry->d_name,
+                    std::string(dir),
                     string(p_entry->d_name).substr(0, ext - p_entry->d_name));
             }
         }
     }
 
     // END:
-    path.resize(path.size() - strlen(dir) - 1);
-    chdir("..");
     closedir(p_dir);
 
     return ret;
@@ -166,15 +164,9 @@ static bool recursion_scan_dir_c_cxx_files_helper(const char *dir,
 vector<cfile> recursion_scan_dir_c_cxx_files(const char *dir) {
     vector<cfile> vec;
 
-    char *cur_path = getcwd(NULL, 0);
-
-    string path;
-    path.reserve(128);
-    recursion_scan_dir_c_cxx_files_helper(dir, vec, path);
-
-    chdir(cur_path);
-
-    free(cur_path);
+    char path[FILENAME_MAX];
+    strcpy(path, dir);
+    recursion_scan_dir_c_cxx_files_helper(path, vec);
 
     return vec;
 }

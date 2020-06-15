@@ -1,6 +1,9 @@
-#include <cassert>
 #include "mfile.h"
+
+#include <cassert>
+
 #include "common.h"
+#include "options.h"
 
 #define OUT(...) fprintf(m_fout, __VA_ARGS__)
 #define SEC(sec) g_sections[sec]
@@ -57,7 +60,7 @@ int mfile::output() {
         return EXIT_FAILURE;
     }
 
-    if (m_flags & FLAG_A) {
+    if (m_flags & OPTION_A) {
         output_header_comments();
         output_build_details_and_compile_to_objects();
         output_build_executable();
@@ -113,7 +116,7 @@ void mfile::output_build_details_and_compile_to_objects() {
 
     OUT_SEC(SEC_BUILD_DETAILS);
 
-    const char *flag_g = (m_flags & FLAG_G) ? " -g" : "";
+    const char *flag_g = (m_flags & OPTION_G) ? " -g" : "";
 
     if (h_c) {
         OUT("%s = %s\n", m_cfg.k_cc.c_str(), m_cfg.v_cc.c_str());
@@ -129,7 +132,7 @@ void mfile::output_build_details_and_compile_to_objects() {
         OUT("%s = %s%s\n", m_cfg.k_cxxflags.c_str(), m_cfg.v_cxxflag.c_str(),
             flag_g);
     }
-    if (m_flags & FLAG_B) {
+    if (m_flags & OPTION_B) {
         OUT("%s = %s\n", m_cfg.k_bd.c_str(), m_cfg.v_bd.c_str());
     }
     OUT("\n");
@@ -137,7 +140,7 @@ void mfile::output_build_details_and_compile_to_objects() {
     OUT_SEC(SEC_COMPILE_TO_OBJECTS);
 
     if (h_c) {
-        if (m_flags & FLAG_B) {
+        if (m_flags & OPTION_B) {
             OUT("$(%s)/", m_cfg.k_bd.c_str());
         }
         OUT("%%.o: %%.c\n");
@@ -145,7 +148,7 @@ void mfile::output_build_details_and_compile_to_objects() {
             m_cfg.k_cflags.c_str());
     }
     if (h_cpp) {
-        if (m_flags & FLAG_B) {
+        if (m_flags & OPTION_B) {
             OUT("$(%s)/", m_cfg.k_bd.c_str());
         }
         OUT("%%.o: %%.cpp\n");
@@ -153,7 +156,7 @@ void mfile::output_build_details_and_compile_to_objects() {
             m_cfg.k_cxxflags.c_str());
     }
     if (h_cc) {
-        if (m_flags & FLAG_B) {
+        if (m_flags & OPTION_B) {
             OUT("$(%s)/", m_cfg.k_bd.c_str());
         }
         OUT("%%.o: %%.cc\n");
@@ -206,7 +209,7 @@ void mfile::output_build_executable() {
     OUT("\n\n");
 
     // Print prepare
-    if (m_flags & FLAG_B) {
+    if (m_flags & OPTION_B) {
         OUT(".PHONY: prepare\n");
         OUT("prepare:\n");
         OUT("\t$(if $(wildcard $(%s)),,mkdir -p $(%s))\n\n", m_cfg.k_bd.c_str(),
@@ -238,14 +241,14 @@ void mfile::output_build_executable() {
         }
         OUT("\n");
 
-        if (m_flags & FLAG_B) {
+        if (m_flags & OPTION_B) {
             // OUT: obj1_bd = $(obj1:%=$(BD)/%)
             OUT("%s = $(%s:%%=$(%s)/%%)\n", m_cfg.make_obj_bd(i).c_str(),
                 m_cfg.make_obj(i).c_str(), m_cfg.k_bd.c_str());
         }
         OUT("\n");
 
-        if (m_flags & FLAG_B) {
+        if (m_flags & OPTION_B) {
             // OUT: $(bin1): prepare $(obj1_bd)
             OUT("$(%s): prepare $(%s)\n", m_cfg.make_bin(i).c_str(),
                 m_cfg.make_obj_bd(i).c_str());
@@ -256,7 +259,7 @@ void mfile::output_build_executable() {
         //! CXXFLAGS may contain dynamic libs such as -lm, this should be
         //! put behind the objects which use them.
         if (exec->is_c_source()) {
-            if (m_flags & FLAG_B) {
+            if (m_flags & OPTION_B) {
                 // OUT: $(CC) -o $(bin1) $(obj1_bd) $(CXXFLAGS)
                 OUT("\t$(%s) -o $(%s) $(%s) $(%s)\n", m_cfg.k_cc.c_str(),
                     m_cfg.make_bin(i).c_str(), m_cfg.make_obj_bd(i).c_str(),
@@ -268,7 +271,7 @@ void mfile::output_build_executable() {
                     m_cfg.k_cflags.c_str());
             }
         } else if (exec->is_cxx_source()) {
-            if (m_flags & FLAG_B) {
+            if (m_flags & OPTION_B) {
                 // OUT: $(CXX) -o $(bin1) $(obj1_bd) $(CXXFLAGS)
                 OUT("\t$(%s) -o $(%s) $(%s) $(%s)\n", m_cfg.k_cxx.c_str(),
                     m_cfg.make_bin(i).c_str(), m_cfg.make_obj_bd(i).c_str(),
@@ -306,7 +309,7 @@ void mfile::output_dependencies_helper(FILE *m_fout, vector<cfile> &files,
     if (file->includes().size() > 0) {
         // .c/.cpp/.cc depends on all headers it includes, recursively
 
-        if (m_flags & FLAG_B) {
+        if (m_flags & OPTION_B) {
             OUT("$(%s)/%s.o:", m_cfg.k_bd.c_str(), file->name().c_str());
         } else {
             OUT("%s.o:", file->name().c_str());
@@ -354,7 +357,7 @@ void mfile::output_clean_up() {
     OUT("\trm -f");
     // if only one executable, hide the index number
     int idx = m_executable.size() == 1 ? -1 : 1;
-    if (m_flags & FLAG_B) {
+    if (m_flags & OPTION_B) {
         for (size_t i = 0; i < m_executable.size(); ++i) {
             OUT(" \"$(%s)\" $(%s)", m_cfg.make_bin(idx).c_str(),
                 m_cfg.make_obj_bd(idx).c_str());

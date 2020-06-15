@@ -1,7 +1,8 @@
+#include "common.h"
+
 #include <unistd.h>
 #include <string.h>
 #include <algorithm>
-#include "common.h"
 
 int debug_level = ADL_DEBUG;  // ADL_ERROR;
 
@@ -47,7 +48,7 @@ bool all_nums(const char *s) {
 #define min(a, b) ((a < b) ? a : b)
 
 size_t edit_distance(const char *s1, size_t len1, const char *s2, size_t len2) {
-#define DP(i, j) dp[(i)*len2 + (j)]
+#define DP(i, j) dp[(i) * (len2 + 1) + (j)]
     // dp should be longer than dp[(len1+1)*(len2+1)]
     size_t *dp = new size_t[(len1 + 1) * (len2 + 1)];
     for (size_t i = 0; i <= len1; ++i) {
