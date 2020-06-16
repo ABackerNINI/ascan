@@ -4,8 +4,6 @@
 #include <string.h>
 #include <algorithm>
 
-int debug_level = ADL_DEBUG;  // ADL_ERROR;
-
 const char *get_ext(const char *filename, size_t length) {
     if (length == 0) {
         length = strlen(filename);

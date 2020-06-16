@@ -51,7 +51,7 @@ mfile::mfile(const string &makefile, vector<cfile> &cfiles, Config &cfg,
 
 int mfile::output() {
 #if DISABLE_WRITE == 1
-    printf("disable_write enabled\n");
+    print_warning("DISABLE_WRITE enabled\n");
 #else
     m_fout = fopen(m_makefile.c_str(), "w");
     if (m_fout == NULL) {

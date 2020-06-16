@@ -46,7 +46,7 @@ class options {
     const as_option *find_opt(enum OPT_TYPE type) const;
     const as_option *find_similar_opt(const char *opt) const;
 
-    void print_opt_type(enum OPT_TYPE type);
+    const char *opt_type_to_str(enum OPT_TYPE type) const;
 
    private:
     struct option *make_long_opts() const;

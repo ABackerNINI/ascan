@@ -33,13 +33,13 @@ $(bin): prepare $(objbd)
 
 # Dependencies
 
-$(BD)/ascan.o: ascan.h cfile.h config.h options.h mfile.h common.h
-$(BD)/mfile.o: mfile.h cfile.h config.h common.h options.h
-$(BD)/options.o: options.h config.h common.h
-$(BD)/parser.o: parser.h
+$(BD)/ascan.o: ascan.h cfile.h config.h options.h mfile.h dbg_print.h common.h
+$(BD)/mfile.o: mfile.h cfile.h config.h dbg_print.h common.h options.h
+$(BD)/options.o: options.h config.h common.h dbg_print.h
+$(BD)/parser.o: parser.h dbg_print.h
 $(BD)/config.o: config.h parser.h
 $(BD)/common.o: common.h
-$(BD)/cfile.o: common.h cfile.h parser.h
+$(BD)/cfile.o: cfile.h common.h parser.h dbg_print.h
 
 # Clean up
 

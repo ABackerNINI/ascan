@@ -9,25 +9,31 @@
 
 #include "mfile.h"
 #include "common.h"
+#include "dbg_print.h"
 
 using std::min;
 
-#define PRINT_TITLE(title) printf(_CLR_BEGIN(CC_BOLD) "%s\n" _CLR_END, title)
-#define PRINT_FLAG(short_opt, long_opt, arg)                            \
-    if (short_opt && long_opt) {                                        \
-        printf("\t" _CLR_BEGIN(CC_BOLD) "-%s" _CLR_END ", " _CLR_BEGIN( \
-                   CC_BOLD) "--%s" _CLR_END,                            \
-               short_opt, long_opt);                                    \
-    } else if (short_opt) {                                             \
-        printf("\t" _CLR_BEGIN(CC_BOLD) "-%s" _CLR_END, short_opt);     \
-    } else {                                                            \
-        printf("\t" _CLR_BEGIN(CC_BOLD) "--%s" _CLR_END, long_opt);     \
-    }                                                                   \
-    if (arg) {                                                          \
-        printf("=" _CLR_BEGIN(CC_UNDERLINE) "%s" _CLR_END, arg);        \
-    }                                                                   \
+int debug_level = DBG_LVL_DEBUG;  // DBG_LVL_ERROR;
+
+#define PRINT_TITLE(title) printf(CC_BEGIN(CC_BRIGHT) "%s" CC_END "\n", title)
+
+#define PRINT_OPTION(short_opt, long_opt, arg)                                \
+    if (short_opt && long_opt) {                                              \
+        printf(                                                               \
+            "\t" CC(CC_BRIGHT, "-%s") ", " CC_BEGIN(CC_BRIGHT) "--%s" CC_END, \
+            short_opt, long_opt);                                             \
+    } else if (short_opt) {                                                   \
+        printf("\t" CC_BEGIN(CC_BRIGHT) "-%s" CC_END, short_opt);             \
+    } else {                                                                  \
+        printf("\t" CC_BEGIN(CC_BRIGHT) "--%s" CC_END, long_opt);             \
+    }                                                                         \
+    if (arg) {                                                                \
+        printf("=" CC_BEGIN(CC_UNDERSCORE) "%s" CC_END, arg);                 \
+    }                                                                         \
     printf("\n");
+
 #define PRINT_DESC(desc) printf("\t\t%s.\n\n", desc)
+
 #define PRINT(msg) printf("\t%s\n\n", msg)
 
 /*==========================================================================*/
@@ -84,13 +90,13 @@ bool ascan::parse_cmd_args(int argc, char **argv) {
            -1) {
 #if (DEBUG)
         // printf("opt = %d\t\t", opt);
-        printf("opt = ");
-        m_options.print_opt_type((options::OPT_TYPE)opt);
-        printf("\t\t");
-        printf("optarg = %s\t\t", optarg);
-        printf("optind = %d\t\t", optind);
-        printf("argv[optind] = %s\t\t", argv[optind]);
-        printf("long_index = %d\n", long_ind);
+        print_debug_ex("opt = ");
+        print_debug_ex("%s", m_options.opt_type_to_str((options::OPT_TYPE)opt));
+        print_debug_ex("\t\t");
+        print_debug_ex("optarg = %s\t\t", optarg);
+        print_debug_ex("optind = %d\t\t", optind);
+        print_debug_ex("argv[optind] = %s\t\t", argv[optind]);
+        print_debug_ex("long_index = %d\n", long_ind);
 #endif
 
         switch (opt) {
@@ -120,7 +126,8 @@ bool ascan::parse_cmd_args(int argc, char **argv) {
                     debug_level = atoi(optarg);
                     print_debug("debug_level: %d\n", debug_level);
                 }
-                if (err || debug_level < ADL_ERROR || debug_level > ADL_DEBUG) {
+                if (err || debug_level < DBG_LVL_ERROR ||
+                    debug_level > DBG_LVL_DEBUG) {
                     print_error("wrong debug level value.\n");
                     ++err;
                     help = HT_SPECIFIC;
@@ -168,17 +175,14 @@ bool ascan::parse_cmd_args(int argc, char **argv) {
                         const char *short_opt = option->short_opt;
                         const char *long_opt = option->long_opt;
                         if (short_opt && long_opt) {
-                            printf(_CLR_BEGIN(
-                                       CC_BOLD) "-%s" _CLR_END
-                                                ", " _CLR_BEGIN(
-                                                    CC_BOLD) "--%s" _CLR_END,
-                                   short_opt, long_opt);
+                            printf(
+                                CC_BEGIN(CC_BRIGHT) "-%s" CC_END ", " CC_BEGIN(
+                                    CC_BRIGHT) "--%s" CC_END,
+                                short_opt, long_opt);
                         } else if (short_opt) {
-                            printf(_CLR_BEGIN(CC_BOLD) "-%s" _CLR_END,
-                                   short_opt);
+                            printf(CC_BEGIN(CC_BRIGHT) "-%s" CC_END, short_opt);
                         } else {
-                            printf(_CLR_BEGIN(CC_BOLD) "--%s" _CLR_END,
-                                   long_opt);
+                            printf(CC_BEGIN(CC_BRIGHT) "--%s" CC_END, long_opt);
                         }
                         printf("\"?\n\n");
                         help = HT_SPECIFIC;
@@ -232,8 +236,8 @@ void ascan::print_help(enum HELP_TYPE help,
         size_t n;
         const options::as_option *options = m_options.get_as_opts(&n);
         for (unsigned int i = 0; i < n; ++i) {
-            PRINT_FLAG(options[i].short_opt, options[i].long_opt,
-                       options[i].arg);
+            PRINT_OPTION(options[i].short_opt, options[i].long_opt,
+                         options[i].arg);
             PRINT_DESC(options[i].description);
         }
 
@@ -256,7 +260,7 @@ void ascan::print_help(enum HELP_TYPE help,
         PRINT(
             "Mandatory arguments to long options are mandatory for short "
             "options too.");
-        PRINT_FLAG(option->short_opt, option->long_opt, option->arg);
+        PRINT_OPTION(option->short_opt, option->long_opt, option->arg);
         PRINT_DESC(option->description);
     }
 }

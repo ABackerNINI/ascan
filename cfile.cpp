@@ -13,6 +13,7 @@
 
 #include "common.h"
 #include "parser.h"
+#include "dbg_print.h"
 
 /*==========================================================================*/
 
@@ -74,8 +75,8 @@ void cfile::associate_header(vector<cfile> &files) {
             file->m_filename == m_filename.substr(0, len) + ".h") {
             m_associate = &(*file);
             file->m_associate = this;
-            printf("associated: %s <-> %s\n", m_filename.c_str(),
-                   file->m_filename.c_str());
+            print_info("associated: %s <-> %s\n", m_filename.c_str(),
+                       file->m_filename.c_str());
             break;
         }
     }

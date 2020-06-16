@@ -3,6 +3,7 @@
 #include <string.h>
 
 #include "common.h"
+#include "dbg_print.h"
 
 const char options::s_short_opts[] = "abfghv";
 
@@ -113,7 +114,7 @@ const options::as_option *options::find_similar_opt(const char *opt) const {
     return min_ind == -1 ? NULL : &s_as_opts[min_ind];
 }
 
-void options::print_opt_type(enum OPT_TYPE type) {
+const char *options::opt_type_to_str(enum OPT_TYPE type) const {
     const char *str;
     switch (type) {
         case OT_ALL_SECS:
@@ -154,5 +155,5 @@ void options::print_opt_type(enum OPT_TYPE type) {
             str = "unknown";
             break;
     }
-    printf("%s", str);
+    return str;
 }

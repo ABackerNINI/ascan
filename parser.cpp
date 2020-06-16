@@ -4,6 +4,8 @@
 #include <string.h>
 #include <iostream>
 
+#include "dbg_print.h"
+
 enum PARSER_STATE {
     STA_INIT,
     STA_IDENTIFIER,
@@ -109,7 +111,7 @@ vector<string> scan_includes_and_main_func(const char *filename,
                 break;
             case IMS_INCLUDE:
                 if (type == TYPE_STRING) {
-                    printf("\t|%s|\n", buff);
+                    print_info_ex("\t|%s|\n", buff);
                     includes.push_back(make_path(filename, buff));
                 }
                 state = IMS_INIT;
