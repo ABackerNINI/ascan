@@ -6,7 +6,7 @@ Auto scan c/c++ project and create simple makefile.
 
 ## Usage
 
-Ascan is suitable for c/c++ projects are:
+Ascan is suitable for c/c++ projects that are:
 
 1. Simple structured that all source codes are in one directory.
 2. Source codes are `.h` or `.c` or `.cpp` or `.cc`.
