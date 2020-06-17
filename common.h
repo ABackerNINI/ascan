@@ -9,7 +9,7 @@
 using std::string;
 using std::vector;
 
-#define AS_VERSION "0.1.0"
+#define AS_VERSION "0.1.0 alpha"
 #define AS_URL "git@github.com:ABackerNINI/ascan.git"
 
 // Get file extention.
