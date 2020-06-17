@@ -12,13 +12,13 @@ const options::as_option options::s_as_opts[] = {
      "Overwrite all sections, ascan will only overwrite the "
      "'Dependencies' section on default"},
     {OT_BUILD, 'b', "build", NULL, true,
-     "Put binaries to 'build' subdirectory, Option \"-b\" is not implemented "
+     "Put binaries to 'build' subdirectory, Option '-b' is not implemented "
      "yet!"},
     {OT_FORCE, 'f', "force", NULL, true, "Force overwrite"},
     {OT_G, 'g', NULL, NULL, true, "add '-g' flag to cflags or cxxflags"},
     {OT_HELP, 'h', "help", NULL, true, "Print help information"},
     {OT_OUTPUT, 'o', "output", "OUTPUT_FILE", false,
-     "Output to the specified file rather than Makefile"},
+     "Output to the specified file rather than 'Makefile'"},
     {OT_VER, 'v', "ver", NULL, true, "Print ascan version"},
     {OT_DEBUG, '\0', "debug", "DEBUG_LEVEL", false,
      "Set debug level: \n\t\t\t- 0: ERROR\n\t\t\t- "
