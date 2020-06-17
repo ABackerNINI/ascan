@@ -90,13 +90,13 @@ bool ascan::parse_cmd_args(int argc, char **argv) {
            -1) {
 #if (DEBUG)
         // printf("opt = %d\t\t", opt);
-        print_debug_ex("opt = ");
+        print_debug_ex("\topt = ");
         print_debug_ex("%s", m_options.opt_type_to_str((options::OPT_TYPE)opt));
-        print_debug_ex("\t\t");
-        print_debug_ex("optarg = %s\t\t", optarg);
-        print_debug_ex("optind = %d\t\t", optind);
-        print_debug_ex("argv[optind] = %s\t\t", argv[optind]);
-        print_debug_ex("long_index = %d\n", long_ind);
+        print_debug_ex("\t");
+        print_debug_ex("optarg = %s\t", optarg);
+        print_debug_ex("optind = %d\t\n", optind);
+        // print_debug_ex("argv[optind] = %s\t\n", argv[optind]);
+        // print_debug_ex("long_index = %d\n", long_ind);
 #endif
 
         switch (opt) {
@@ -160,47 +160,53 @@ bool ascan::parse_cmd_args(int argc, char **argv) {
                             print_error("missing option argument, '%s'.\n",
                                         option->arg);
                         }
-                        help = HT_ALL;
-                        break;
-                    }
-                }
-                if (last_optind != optind && argv[optind - 1]) {
-                    print_error("unrecognized option: '%s'\n",
-                                argv[optind - 1]);
-
-                    // find similar option
-                    option = m_options.find_similar_opt(argv[optind - 1]);
-                    if (option) {
-                        printf("\tDo you mean \"");
-                        const char *short_opt = option->short_opt;
-                        const char *long_opt = option->long_opt;
-                        if (short_opt && long_opt) {
-                            printf(
-                                CC_BEGIN(CC_BRIGHT) "-%s" CC_END ", " CC_BEGIN(
-                                    CC_BRIGHT) "--%s" CC_END,
-                                short_opt, long_opt);
-                        } else if (short_opt) {
-                            printf(CC_BEGIN(CC_BRIGHT) "-%s" CC_END, short_opt);
-                        } else {
-                            printf(CC_BEGIN(CC_BRIGHT) "--%s" CC_END, long_opt);
-                        }
-                        printf("\"?\n\n");
                         help = HT_SPECIFIC;
+                    }
+                } else {
+                    // if (last_optind != optind && argv[optind - 1]) {
+                    if (optopt != '\0') {
+                        print_error("unrecognized option: '%c'\n", optopt);
                     } else {
-                        printf(
-                            "Type 'ascan --help' to see useful "
-                            "informations.\n");
+                        // find similar option
+                        option = m_options.find_similar_opt(argv[optind - 1]);
+                        if (option) {
+                            printf("\tDo you mean \"");
+                            const char *short_opt = option->short_opt;
+                            const char *long_opt = option->long_opt;
+                            if (short_opt && long_opt) {
+                                printf(
+                                    CC_BEGIN(
+                                        CC_BRIGHT) "-%s" CC_END
+                                                   ", " CC_BEGIN(
+                                                       CC_BRIGHT) "--%s" CC_END,
+                                    short_opt, long_opt);
+                            } else if (short_opt) {
+                                printf(CC_BEGIN(CC_BRIGHT) "-%s" CC_END,
+                                       short_opt);
+                            } else {
+                                printf(CC_BEGIN(CC_BRIGHT) "--%s" CC_END,
+                                       long_opt);
+                            }
+                            printf("\"?\n\n");
+                            help = HT_SPECIFIC;
+                        } else {
+                            printf(
+                                "Type 'ascan --help' to see useful "
+                                "informations.\n");
+                        }
                     }
 
                     ++err;
                     goto END;
                 }
+                // }
                 break;
         }
         last_optind = optind;
     }
 
     // TODO add option: -o output-file
+    // TODO add ascan [options] [main files]
 
 END:
     if (help != HT_NONE) {
