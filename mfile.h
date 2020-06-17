@@ -16,7 +16,7 @@ using std::vector;
 
 class mfile {
    public:
-    mfile(const string &makefile, vector<cfile> &cfiles, Config &cfg,
+    mfile(vector<cfile> &cfiles, Config &cfg,
           uint32_t flags);
     int output();
 
@@ -31,7 +31,6 @@ class mfile {
     void output_part();
 
    private:
-    string m_makefile;
     vector<cfile> &m_cfiles;
     Config &m_cfg;
     // bool m_flag_a;

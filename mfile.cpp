@@ -45,18 +45,16 @@ static void print_all_headers(FILE *m_fout, vector<cfile> &files, cfile *file);
 
 /*==========================================================================*/
 
-mfile::mfile(const string &makefile, vector<cfile> &cfiles, Config &cfg,
-             uint32_t flags)
-    : m_makefile(makefile), m_cfiles(cfiles), m_cfg(cfg), m_flags(flags) {}
+mfile::mfile(vector<cfile> &cfiles, Config &cfg, uint32_t flags)
+    : m_cfiles(cfiles), m_cfg(cfg), m_flags(flags) {}
 
 int mfile::output() {
 #if DISABLE_WRITE == 1
     print_warning("DISABLE_WRITE enabled\n");
 #else
-    m_fout = fopen(m_makefile.c_str(), "w");
+    m_fout = fopen(m_cfg.output.c_str(), "w");
     if (m_fout == NULL) {
-        print_error("Can't open file \"%s\", @%s line %d\n", m_makefile.c_str(),
-                    __func__, __LINE__);
+        print_error("Can't open file \"%s\"\n", m_cfg.output.c_str());
         return EXIT_FAILURE;
     }
 

@@ -20,10 +20,10 @@ int debug_level = DBG_LVL_DEBUG;  // DBG_LVL_ERROR;
 #define PRINT_OPTION(short_opt, long_opt, arg)                                \
     if (short_opt && long_opt) {                                              \
         printf(                                                               \
-            "\t" CC(CC_BRIGHT, "-%s") ", " CC_BEGIN(CC_BRIGHT) "--%s" CC_END, \
+            "\t" CC(CC_BRIGHT, "-%c") ", " CC_BEGIN(CC_BRIGHT) "--%s" CC_END, \
             short_opt, long_opt);                                             \
     } else if (short_opt) {                                                   \
-        printf("\t" CC_BEGIN(CC_BRIGHT) "-%s" CC_END, short_opt);             \
+        printf("\t" CC_BEGIN(CC_BRIGHT) "-%c" CC_END, short_opt);             \
     } else {                                                                  \
         printf("\t" CC_BEGIN(CC_BRIGHT) "--%s" CC_END, long_opt);             \
     }                                                                         \
@@ -61,7 +61,7 @@ int ascan::start() {
     match_c_cxx_includes();
     associate_header();
 
-    mfile mf(m_makefile, m_cfiles, m_cfg, m_flags);
+    mfile mf(m_cfiles, m_cfg, m_flags);
 
     return mf.output();
 }
@@ -83,16 +83,17 @@ bool ascan::parse_cmd_args(int argc, char **argv) {
     opterr = 0;  // do NOT print error message
 
     int opt, long_ind;
+    int err = 0;
     enum HELP_TYPE help = HT_NONE;
-    int err = 0, last_optind = -1;  // last unrecognized argument
     const options::as_option *option;
     while ((opt = getopt_long(argc, argv, short_opts, long_opts, &long_ind)) !=
            -1) {
 #if (DEBUG)
         // printf("opt = %d\t\t", opt);
         print_debug_ex("\topt = ");
-        print_debug_ex("%s", m_options.opt_type_to_str((options::OPT_TYPE)opt));
-        print_debug_ex("\t");
+        print_debug_ex("%s\t",
+                       m_options.opt_type_to_str((options::OPT_TYPE)opt));
+        // print_debug_ex("optopt = %c\t", optopt);
         print_debug_ex("optarg = %s\t", optarg);
         print_debug_ex("optind = %d\t\n", optind);
         // print_debug_ex("argv[optind] = %s\t\n", argv[optind]);
@@ -115,6 +116,10 @@ bool ascan::parse_cmd_args(int argc, char **argv) {
             case options::OT_HELP:
                 help = HT_ALL;
                 goto END;
+            case options::OT_OUTPUT:
+                m_flags |= OPTION_O;
+                m_cfg.output = string(optarg);
+                break;
             case options::OT_VER:
                 help = HT_VER;
                 goto END;
@@ -163,7 +168,6 @@ bool ascan::parse_cmd_args(int argc, char **argv) {
                         help = HT_SPECIFIC;
                     }
                 } else {
-                    // if (last_optind != optind && argv[optind - 1]) {
                     if (optopt != '\0') {
                         print_error("unrecognized option: '%c'\n", optopt);
                     } else {
@@ -171,17 +175,17 @@ bool ascan::parse_cmd_args(int argc, char **argv) {
                         option = m_options.find_similar_opt(argv[optind - 1]);
                         if (option) {
                             printf("\tDo you mean \"");
-                            const char *short_opt = option->short_opt;
+                            char short_opt = option->short_opt;
                             const char *long_opt = option->long_opt;
                             if (short_opt && long_opt) {
                                 printf(
                                     CC_BEGIN(
-                                        CC_BRIGHT) "-%s" CC_END
+                                        CC_BRIGHT) "-%c" CC_END
                                                    ", " CC_BEGIN(
                                                        CC_BRIGHT) "--%s" CC_END,
                                     short_opt, long_opt);
                             } else if (short_opt) {
-                                printf(CC_BEGIN(CC_BRIGHT) "-%s" CC_END,
+                                printf(CC_BEGIN(CC_BRIGHT) "-%c" CC_END,
                                        short_opt);
                             } else {
                                 printf(CC_BEGIN(CC_BRIGHT) "--%s" CC_END,
@@ -199,10 +203,8 @@ bool ascan::parse_cmd_args(int argc, char **argv) {
                     ++err;
                     goto END;
                 }
-                // }
                 break;
         }
-        last_optind = optind;
     }
 
     // TODO add option: -o output-file
@@ -272,19 +274,22 @@ void ascan::print_help(enum HELP_TYPE help,
 }
 
 bool ascan::test_makefile() {
-    string makefile1 = "Makefile";
-    string makefile2 = "makefile";
-
     int exist = 0;
-    if (is_exist(makefile1)) {
-        m_makefile = makefile1;
-        exist = 1;
-    } else if (is_exist(makefile2)) {
-        m_makefile = makefile2;
-        exist = 2;
+    if (m_flags | OPTION_O) {
+        if (is_exist(m_cfg.output)) {
+            exist = 3;
+        }
     } else {
-        // default makefile name
-        m_makefile = makefile1;
+        string makefile1 = "Makefile";
+        string makefile2 = "makefile";
+
+        if (is_exist(makefile1)) {
+            m_cfg.output = makefile1;
+            exist = 1;
+        } else if (is_exist(makefile2)) {
+            m_cfg.output = makefile2;
+            exist = 2;
+        }
     }
 
     if (!(m_flags & OPTION_F) && exist) {

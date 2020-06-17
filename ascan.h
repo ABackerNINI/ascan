@@ -48,11 +48,10 @@ class ascan {
     void associate_header();
 
    private:
-    bool m_proceed;          // whether need to proceed makefile
-    uint32_t m_flags;        // contains all options
-    Config m_cfg;            // config
+    bool m_proceed;    // whether need to proceed makefile
+    uint32_t m_flags;  // contains all options
+    Config m_cfg;      // config
     // string m_cwd;            // current working dir
-    string m_makefile;       // filename of makefile
     vector<cfile> m_cfiles;  // cfiles
     options m_options;
 };

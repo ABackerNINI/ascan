@@ -19,7 +19,8 @@ enum CONFIG_TYPE {
 };
 
 Config::Config()
-    : k_cc(CONFIG_DEFAULT_K_CC),
+    : output(CONFIG_DEFAULT_OUTPUT),
+      k_cc(CONFIG_DEFAULT_K_CC),
       k_cxx(CONFIG_DEFAULT_K_CXX),
       k_cflags(CONFIG_DEFAULT_K_CFLAGS),
       k_cxxflags(CONFIG_DEFAULT_K_CXXFLAGS),

@@ -13,6 +13,8 @@ using std::vector;
 
 #define CONFIG_FILENAME "ascan.conf"
 
+#define CONFIG_DEFAULT_OUTPUT "Makefile"
+
 #define CONFIG_DEFAULT_K_CC "CC"
 #define CONFIG_DEFAULT_K_CXX "CXX"
 #define CONFIG_DEFAULT_K_CFLAGS "CFLAGS"
@@ -30,6 +32,8 @@ using std::vector;
 
 class Config {
    public:
+    string output;
+
     string k_cc;
     string k_cxx;
     string k_cflags;

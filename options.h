@@ -13,6 +13,7 @@
 #define OPTION_F 0x4   // option -f: force overwrite
 #define OPTION_G 0x8   // option -g: add '-g' flag to cflags or cxxflags
 #define OPTION_C 0x10  // option -c: add header comments
+#define OPTION_O 0x20  // option -o: output
 
 class options {
    public:
@@ -22,6 +23,7 @@ class options {
         OT_FORCE = 'f',     // -f
         OT_G = 'g',         // -g
         OT_HELP = 'h',      // -h,--help
+        OT_OUTPUT = 'o',    // -o,--output
         OT_VER = 'v',       // -v,--ver
         OT_DEBUG = 200,     // --debug
         OT_CC,              // --cc
@@ -32,9 +34,10 @@ class options {
 
     struct as_option {
         enum OPT_TYPE type;
-        const char *short_opt;
+        char short_opt;
         const char *long_opt;
         const char *arg;
+        bool optional;
         const char *description;
     };
 
@@ -48,14 +51,18 @@ class options {
 
     const char *opt_type_to_str(enum OPT_TYPE type) const;
 
+    ~options();
+
    private:
+    char *make_short_opts() const;
     struct option *make_long_opts() const;
 
    private:
-    struct option *long_opts;
+    char *m_short_opts;
+    struct option *m_long_opts;
 
    private:
-    static const char s_short_opts[];
+    // static const char s_short_opts[];
     static const as_option s_as_opts[];
     static const size_t s_as_opt_size;
 };
