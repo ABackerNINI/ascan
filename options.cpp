@@ -152,7 +152,7 @@ const char *options::opt_type_to_str(enum OPT_TYPE type) const {
             break;
 
         default:
-            str = "unknown";
+            str = "?";
             break;
     }
     return str;
