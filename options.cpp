@@ -140,49 +140,50 @@ const options::as_option *options::find_similar_opt(const char *opt) const {
     return min_ind == -1 ? NULL : &s_as_opts[min_ind];
 }
 
-const char *options::opt_type_to_str(enum OPT_TYPE type) const {
-    const char *str;
-    switch (type) {
-        case OT_ALL_SECS:
-            str = "a";
-            break;
-        case OT_BUILD:
-            str = "b";
-            break;
-        case OT_FORCE:
-            str = "f";
-            break;
-        case OT_G:
-            str = "g";
-            break;
-        case OT_HELP:
-            str = "h";
-            break;
-        case OT_VER:
-            str = "v";
-            break;
-        case OT_DEBUG:
-            str = "debug";
-            break;
-        case OT_CC:
-            str = "cc";
-            break;
-        case OT_CXX:
-            str = "cxx";
-            break;
-        case OT_CFLAGS:
-            str = "cflags";
-            break;
-        case OT_CXXFLAGS:
-            str = "cxxflags";
-            break;
+// const char *options::opt_type_to_str(enum OPT_TYPE type) const {
+//     const char *str;
 
-        default:
-            str = "?";
-            break;
-    }
-    return str;
-}
+//     switch (type) {
+//         case OT_ALL_SECS:
+//             str = "a";
+//             break;
+//         case OT_BUILD:
+//             str = "b";
+//             break;
+//         case OT_FORCE:
+//             str = "f";
+//             break;
+//         case OT_G:
+//             str = "g";
+//             break;
+//         case OT_HELP:
+//             str = "h";
+//             break;
+//         case OT_VER:
+//             str = "v";
+//             break;
+//         case OT_DEBUG:
+//             str = "debug";
+//             break;
+//         case OT_CC:
+//             str = "cc";
+//             break;
+//         case OT_CXX:
+//             str = "cxx";
+//             break;
+//         case OT_CFLAGS:
+//             str = "cflags";
+//             break;
+//         case OT_CXXFLAGS:
+//             str = "cxxflags";
+//             break;
+
+//         default:
+//             str = "?";
+//             break;
+//     }
+//     return str;
+// }
 
 options::~options() {
     delete[] m_short_opts;

@@ -91,9 +91,17 @@ bool ascan::parse_cmd_args(int argc, char **argv) {
 #if (DEBUG)
         // printf("opt = %d\t\t", opt);
         print_debug_ex("\topt = ");
-        print_debug_ex("%s\t",
-                       m_options.opt_type_to_str((options::OPT_TYPE)opt));
-        // print_debug_ex("optopt = %c\t", optopt);
+        option = m_options.find_opt((options::OPT_TYPE)opt);
+        if (option) {
+            if (option->short_opt) {
+                print_debug_ex("%c\t", option->short_opt);
+            } else if (option->short_opt) {
+                print_debug_ex("%s\t", option->long_opt);
+            }
+        } else {
+            print_debug_ex("?\t");
+        }
+        print_debug_ex("optopt = %c\t", optopt ? optopt : ' ');
         print_debug_ex("optarg = %s\t", optarg);
         print_debug_ex("optind = %d\t\n", optind);
         // print_debug_ex("argv[optind] = %s\t\n", argv[optind]);
@@ -207,7 +215,6 @@ bool ascan::parse_cmd_args(int argc, char **argv) {
         }
     }
 
-    // TODO add option: -o output-file
     // TODO add ascan [options] [main files]
 
 END:
