@@ -3,7 +3,7 @@
 #ifndef _DEBUG_PRINT_H_
 #define _DEBUG_PRINT_H_
 
-#define ENABLE_DEBUG_LEVEL 1
+#define ENABLE_RUNTIME_DEBUG_LEVEL 1
 #define ENABLE_DEBUG_PRINT 1
 
 // TODO: console color redirection to file
@@ -33,9 +33,15 @@
 
 /*===========================================================================*/
 
-#if (ENABLE_DEBUG_LEVEL)
+#if (ENABLE_RUNTIME_DEBUG_LEVEL)
 
-enum DEBUG_LEVEL {
+#ifndef DEBUG_LEVEL
+// Debug level during compiling, level greater than this will not be compiled
+// into code
+#define DEBUG_LEVEL 5
+#endif
+
+enum RUNTIME_DEBUG_LEVEL {
     DBG_LVL_ERROR = 0,
     DBG_LVL_WARNING = 1,
     DBG_LVL_INFO = 2,
@@ -92,6 +98,8 @@ extern int debug_level;  // --d=0: debug level
 #define CC3(clr1, clr2, clr3, str) \
     CC_BEGIN(clr1) CC_BEGIN(clr2) CC_BEGIN(clr3) str CC_END
 
+/*---------------------------------------------------------------------------*/
+
 #define _PRINT_FUNC(clr, lvl, ...)                             \
     {                                                          \
         if (debug_level >= DBG_LVL_##lvl) {                    \
@@ -108,27 +116,6 @@ extern int debug_level;  // --d=0: debug level
             _DEBUG_PRINT(__VA_ARGS__);                                 \
         }                                                              \
     }
-
-/* Print error msg. */
-#define print_error(...) _PRINT_FUNC2(CC_FG_RED, CC_BRIGHT, ERROR, __VA_ARGS__)
-
-/* Print warning msg. */
-#define print_warning(...) _PRINT_FUNC(CC_FG_YELLOW, WARNING, __VA_ARGS__)
-
-/* Print info msg. */
-#define print_info(...) _PRINT_FUNC(CC_FG_GREEN, INFO, __VA_ARGS__)
-
-/* Print debug msg. */
-#define print_debug(...) _PRINT_FUNC(CC_FG_GREEN, DEBUG, __VA_ARGS__)
-
-/* Print msgdump msg. */
-#define print_msgdump(...) _PRINT_FUNC(CC_FG_GREEN, MSGDUMP, __VA_ARGS__)
-
-/* Print excessive msg. */
-#define print_excessive(...) _PRINT_FUNC(CC_FG_GREEN, EXCESSIVE, __VA_ARGS__)
-
-/*---------------------------------------------------------------------------*/
-
 #define _PRINT_FUNC_EX(lvl, ...)            \
     {                                       \
         if (debug_level >= DBG_LVL_##lvl) { \
@@ -136,26 +123,83 @@ extern int debug_level;  // --d=0: debug level
             _DEBUG_PRINT(__VA_ARGS__);      \
         }                                   \
     }
+#define _STMT_FUNC(...) __VA_ARGS__
 
+/*---------------------------------------------------------------------------*/
+
+#if DEBUG_LEVEL >= 0
+/* Print error msg. */
+#define print_error(...) _PRINT_FUNC2(CC_FG_RED, CC_BRIGHT, ERROR, __VA_ARGS__)
 /* Print extended error msg. */
 #define print_error_ex(...) _PRINT_FUNC_EX(ERROR, __VA_ARGS__)
+#define stmt_error(...) _STMT_FUNC(__VA_ARGS__)
+#else
+#define print_error(...)
+#define print_error_ex(...)
+#define stmt_error(...)
+#endif
 
+#if DEBUG_LEVEL >= 1
+/* Print warning msg. */
+#define print_warning(...) _PRINT_FUNC(CC_FG_YELLOW, WARNING, __VA_ARGS__)
 /* Print extended warning msg. */
 #define print_warning_ex(...) _PRINT_FUNC_EX(WARNING, __VA_ARGS__)
+#define stmt_warning(...) _STMT_FUNC(__VA_ARGS__)
+#else
+#define print_warning(...)
+#define print_warning_ex(...)
+#define stmt_warning(...)
+#endif
 
+#if DEBUG_LEVEL >= 2
+/* Print info msg. */
+#define print_info(...) _PRINT_FUNC(CC_FG_GREEN, INFO, __VA_ARGS__)
 /* Print extended info msg. */
 #define print_info_ex(...) _PRINT_FUNC_EX(INFO, __VA_ARGS__)
+#define stmt_info(...) _STMT_FUNC(__VA_ARGS__)
+#else
+#define print_info(...)
+#define print_info_ex(...)
+#define stmt_info(...)
+#endif
 
+#if DEBUG_LEVEL >= 3
+/* Print debug msg. */
+#define print_debug(...) _PRINT_FUNC(CC_FG_GREEN, DEBUG, __VA_ARGS__)
 /* Print extended debug msg. */
 #define print_debug_ex(...) _PRINT_FUNC_EX(DEBUG, __VA_ARGS__)
+#define stmt_debug(...) _STMT_FUNC(__VA_ARGS__)
+#else
+#define print_debug(...)
+#define print_debug_ex(...)
+#define stmt_debug(...)
+#endif
 
+#if DEBUG_LEVEL >= 4
+/* Print msgdump msg. */
+#define print_msgdump(...) _PRINT_FUNC(CC_FG_GREEN, MSGDUMP, __VA_ARGS__)
 /* Print extended msgdump msg. */
 #define print_msgdump_ex(...) _PRINT_FUNC_EX(MSGDUMP, __VA_ARGS__)
+#define stmt_msgdump(...) _STMT_FUNC(__VA_ARGS__)
+#else
+#define print_msgdump(...)
+#define print_msgdump_ex(...)
+#define stmt_msgdump(...)
+#endif
 
+#if DEBUG_LEVEL >= 5
+/* Print excessive msg. */
+#define print_excessive(...) _PRINT_FUNC(CC_FG_GREEN, EXCESSIVE, __VA_ARGS__)
 /* Print extended excessive msg. */
 #define print_excessive_ex(...) _PRINT_FUNC_EX(EXCESSIVE, __VA_ARGS__)
+#define stmt_excessive(...) _STMT_FUNC(__VA_ARGS__)
+#else
+#define print_excessive(...)
+#define print_excessive_ex(...)
+#define stmt_excessive(...)
+#endif
 
-#endif  // ENABLE_DEBUG_LEVEL
+#endif  // ENABLE_RUNTIME_DEBUG_LEVEL
 
 /*===========================================================================*/
 
@@ -166,10 +210,12 @@ extern int debug_level;  // --d=0: debug level
 #define dbg_print(...)     \
     _PRINT_FILE_FUNC_LINE; \
     printf(__VA_ARGS__);
+#define dbg_stmt(...) __VA_ARGS__
 
 #else  // DEBUG
 
 #define dbg_print(...)
+#define dbg_stmt(...)
 
 #endif  // DEBUG
 
