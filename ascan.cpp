@@ -129,21 +129,28 @@ int ascan::parse_cmd_args(int argc, char **argv) {
         goto ERROR_DEBUG_LEVEL;
     }
 
-    print_debug("parseing arguments\n");
+    print_debug("parsing arguments\n");
     while ((opt = getopt_long(argc, argv, short_opts, long_opts, &long_ind)) !=
            -1) {
         print_debug_ex("\topt = ");
         stmt_debug(
-            option = m_options.find_opt((options::OPT_TYPE)opt); if (option) {
+            int col = -8; option = m_options.find_opt((options::OPT_TYPE)opt);
+            if (option) {
                 if (option->short_opt) {
-                    print_debug_ex("%c\t", option->short_opt);
+                    print_debug_ex("%*c\t", col, option->short_opt);
                 } else if (option->long_opt) {
-                    print_debug_ex("%s\t", option->long_opt);
+                    print_debug_ex("%*s\t", col, option->long_opt);
                 }
-            } else { print_debug_ex("?\t"); });
+            } else { print_debug_ex("%*c\t", col, '?'); });
+
         print_debug_ex("optopt = %c\t", optopt ? optopt : ' ');
-        print_debug_ex("optarg = %s\t", optarg);
-        print_debug_ex("optind = %d\t\n", optind);
+
+        stmt_debug(
+            if (optarg) { print_debug_ex("optarg = |%s|\t\n", optarg); } else {
+                print_debug_ex("optarg = %s\t\n", optarg);
+            });
+
+        // print_debug_ex("optind = %d\t\n", optind);
         // print_debug_ex("argv[optind] = %s\t\n", argv[optind]);
         // print_debug_ex("long_index = %d\n", long_ind);
 
