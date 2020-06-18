@@ -30,10 +30,11 @@ class ascan {
     // Parse the command arguments.
     //
     // Return:
-    // -- true: if one of the argument '--help', '-v', '--ver' is presented or
+    // -- > 0: an error occurred.
+    // -- < 0: if one of the argument '--help', '-v', '--ver' is presented or
     // an error occurred.
-    // -- false: otherwise.
-    bool parse_cmd_args(int argc, char **argv);
+    // -- 0: otherwise.
+    int parse_cmd_args(int argc, char **argv);
     void print_help(enum HELP_TYPE help,
                     const options::as_option *option) const;
 
@@ -48,7 +49,7 @@ class ascan {
     void associate_header();
 
    private:
-    bool m_proceed;    // whether need to proceed makefile
+    int m_error;       // whether there is an error during parsing args
     uint32_t m_flags;  // contains all options
     Config m_cfg;      // config
     // string m_cwd;            // current working dir

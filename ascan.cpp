@@ -13,7 +13,7 @@
 
 using std::min;
 
-int debug_level = DBG_LVL_DEBUG;  // DBG_LVL_ERROR;
+int debug_level = DBG_LVL_DEBUG;
 
 #define PRINT_TITLE(title) printf(CC_BEGIN(CC_BRIGHT) "%s" CC_END "\n", title)
 
@@ -41,7 +41,7 @@ int debug_level = DBG_LVL_DEBUG;  // DBG_LVL_ERROR;
 ascan::ascan(int argc, char **argv) {
     m_flags = 0;
 
-    m_proceed = parse_cmd_args(argc, argv);
+    m_error = parse_cmd_args(argc, argv);
 
     // char dir[BUFSIZ];
     // getcwd(dir, BUFSIZ);
@@ -49,8 +49,10 @@ ascan::ascan(int argc, char **argv) {
 }
 
 int ascan::start() {
-    if (!m_proceed) {
+    if (m_error > 0) {
         return EXIT_FAILURE;
+    } else if (m_error < 0) {
+        return EXIT_SUCCESS;
     }
 
     if (!test_makefile()) {
@@ -68,7 +70,41 @@ int ascan::start() {
 
 /*==========================================================================*/
 
-bool ascan::parse_cmd_args(int argc, char **argv) {
+int check_debug_level(const char *s) {
+    int num;
+    if (!all_nums(s)) {
+        print_error("debug level must be a number.\n");
+        return -1;
+    }
+    num = atoi(s);
+    if (!(DBG_LVL_ERROR <= num && num <= DBG_LVL_EXCESSIVE)) {
+        print_error("wrong debug level value.\n");
+        return -2;
+    }
+    debug_level = num;
+
+    return num;
+}
+
+int pre_parse_debug_level(int argc, char **argv) {
+    int num = debug_level;
+    for (int i = 0; i < argc; ++i) {
+        if (strncmp(argv[i], "--debug", 7) == 0) {
+            if (argv[i][7] == '=') {
+                num = check_debug_level(argv[i] + 8);
+            } else if (i + 1 < argc) {
+                num = check_debug_level(argv[i + 1]);
+            }
+            if (num >= 0) {
+                print_debug("pre_parse_debug_level %d\n", debug_level);
+            }
+            break;
+        }
+    }
+    return num;
+}
+
+int ascan::parse_cmd_args(int argc, char **argv) {
     // -a: all sections
     // -b: build
     // -f: force overwrite
@@ -86,27 +122,30 @@ bool ascan::parse_cmd_args(int argc, char **argv) {
     int err = 0;
     enum HELP_TYPE help = HT_NONE;
     const options::as_option *option;
+
+    //* We need to use print_msgdump() or print_debug() before --debug
+    //* option has been parsed! or we just parse it here.
+    if (pre_parse_debug_level(argc, argv) < 0) {
+        goto ERROR_DEBUG_LEVEL;
+    }
+
+    print_debug("parseing arguments\n");
     while ((opt = getopt_long(argc, argv, short_opts, long_opts, &long_ind)) !=
            -1) {
-#if (DEBUG)
-        // printf("opt = %d\t\t", opt);
         print_debug_ex("\topt = ");
-        option = m_options.find_opt((options::OPT_TYPE)opt);
-        if (option) {
-            if (option->short_opt) {
-                print_debug_ex("%c\t", option->short_opt);
-            } else if (option->short_opt) {
-                print_debug_ex("%s\t", option->long_opt);
-            }
-        } else {
-            print_debug_ex("?\t");
-        }
+        stmt_debug(
+            option = m_options.find_opt((options::OPT_TYPE)opt); if (option) {
+                if (option->short_opt) {
+                    print_debug_ex("%c\t", option->short_opt);
+                } else if (option->long_opt) {
+                    print_debug_ex("%s\t", option->long_opt);
+                }
+            } else { print_debug_ex("?\t"); });
         print_debug_ex("optopt = %c\t", optopt ? optopt : ' ');
         print_debug_ex("optarg = %s\t", optarg);
         print_debug_ex("optind = %d\t\n", optind);
         // print_debug_ex("argv[optind] = %s\t\n", argv[optind]);
         // print_debug_ex("long_index = %d\n", long_ind);
-#endif
 
         switch (opt) {
             case options::OT_ALL_SECS:
@@ -132,20 +171,8 @@ bool ascan::parse_cmd_args(int argc, char **argv) {
                 help = HT_VER;
                 goto END;
             case options::OT_DEBUG:
-                if (!all_nums(optarg)) {
-                    ++err;
-                }
-                if (err == 0) {
-                    debug_level = atoi(optarg);
-                    print_debug("debug_level: %d\n", debug_level);
-                }
-                if (err || debug_level < DBG_LVL_ERROR ||
-                    debug_level > DBG_LVL_DEBUG) {
-                    print_error("wrong debug level value.\n");
-                    ++err;
-                    help = HT_SPECIFIC;
-                    option = m_options.find_opt(options::OT_DEBUG);
-                    goto END;
+                if (check_debug_level(optarg) < 0) {
+                    goto ERROR_DEBUG_LEVEL;
                 }
                 break;
             case options::OT_CC:
@@ -222,7 +249,14 @@ END:
         print_help(help, option);
     }
 
-    return help == 0 && err == 0;
+    return err == 0 ? -help : err;
+
+ERROR_DEBUG_LEVEL:
+    ++err;
+    help = HT_SPECIFIC;
+    option = m_options.find_opt(options::OT_DEBUG);
+
+    goto END;
 }
 
 void ascan::print_help(enum HELP_TYPE help,

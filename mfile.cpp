@@ -51,6 +51,8 @@ mfile::mfile(vector<cfile> &cfiles, Config &cfg, uint32_t flags)
 int mfile::output() {
 #if DISABLE_WRITE == 1
     print_warning("DISABLE_WRITE enabled\n");
+    
+    return EXIT_FAILURE;
 #else
     m_fout = fopen(m_cfg.output.c_str(), "w");
     if (m_fout == NULL) {
@@ -68,9 +70,9 @@ int mfile::output() {
         output_part();
     }
     fclose(m_fout);
-#endif
 
     return EXIT_SUCCESS;
+#endif
 }
 
 /*==========================================================================*/

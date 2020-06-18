@@ -22,7 +22,8 @@ const options::as_option options::s_as_opts[] = {
     {OT_VER, 'v', "ver", NULL, true, "Print ascan version"},
     {OT_DEBUG, '\0', "debug", "DEBUG_LEVEL", false,
      "Set debug level: \n\t\t\t- 0: ERROR\n\t\t\t- "
-     "1: WARNING\n\t\t\t- 2: INFO\n\t\t\t- 3: DEBUG"},
+     "1: WARNING\n\t\t\t- 2: INFO\n\t\t\t- 3: DEBUG\n\t\t\t- 4: "
+     "MSGDUMP\n\t\t\t- 5: EXCESSIVE"},
     {OT_CC, '\0', "cc", "CC", false,
      "Set c compiler, default: '" CONFIG_DEFAULT_V_CC "'"},
     {OT_CXX, '\0', "cxx", "CXX", false,
@@ -67,7 +68,7 @@ char *options::make_short_opts() const {
         }
     }
     short_opts[los] = '\0';
-    print_debug("short options size: %d |%s|\n", size, short_opts);
+    print_msgdump("short options size: %d |%s|\n", size, short_opts);
 
     return short_opts;
 }
@@ -86,7 +87,7 @@ struct option *options::make_long_opts() const {
         }
     }
     long_opts[los] = {NULL, 0, NULL, 0};
-    print_debug("long options size: %d\n", los);
+    print_msgdump("long options size: %d\n", los);
 
     return long_opts;
 }
@@ -101,7 +102,7 @@ const options::as_option *options::find_opt(enum OPT_TYPE type) const {
 }
 
 const options::as_option *options::find_similar_opt(const char *opt) const {
-    print_debug("%s\n", opt);
+    print_debug("find_similar_opt:|%s|\n", opt);
     size_t len1 = 0;
     while (*opt == '-') {
         ++opt;
@@ -125,8 +126,8 @@ const options::as_option *options::find_similar_opt(const char *opt) const {
         if (s_as_opts[i].long_opt) {
             len2 = strlen(s_as_opts[i].long_opt);
             dis = edit_distance(opt, len1, s_as_opts[i].long_opt, len2);
-            print_debug("'%.*s' '%s' edit_distance: %d\n", (int)len1, opt,
-                        s_as_opts[i].long_opt, (int)dis);
+            print_debug_ex("\t'%.*s' '%s' edit_distance: %d\n", (int)len1, opt,
+                           s_as_opts[i].long_opt, (int)dis);
             if (dis > len1 / 2 || dis > len2 / 2) {
                 dis = INT32_MAX;
             }
