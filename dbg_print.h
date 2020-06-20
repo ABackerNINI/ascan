@@ -3,14 +3,29 @@
 #ifndef _DEBUG_PRINT_H_
 #define _DEBUG_PRINT_H_
 
-#define ENABLE_RUNTIME_DEBUG_LEVEL 1
+enum DBG_LEVEL {
+    DBG_LVL_ERROR = 0,
+    DBG_LVL_WARNING = 1,
+    DBG_LVL_INFO = 2,
+    DBG_LVL_DEBUG = 3,
+    DBG_LVL_MSGDUMP = 4,
+    DBG_LVL_EXCESSIVE = 5
+};
+
+#ifndef DEBUG_LEVEL
+// Debug level during compiling, level greater than this will not be compiled
+// into code.
+#define DEBUG_LEVEL 5
+#endif
+
+#define ENABLE_RUNTIME_DEBUG_LEVEL 0
 #define ENABLE_DEBUG_PRINT 1
 
 // TODO: console color redirection to file
 
-/* Print file&func&line info when call print_'dbg' functions */
+/* Print file&func&line info when call print_'dbg' functions. */
 #define PRINT_FILE_FUNC_LINE 0
-/* Force print file&func&line info when call print_'dbg'_ex functions */
+/* Force print file&func&line info when call print_'dbg'_ex functions. */
 #define FORCE_PRINT_FILE_FUNC_LINE 0
 
 /*===========================================================================*/
@@ -33,24 +48,8 @@
 
 /*===========================================================================*/
 
-#if (ENABLE_RUNTIME_DEBUG_LEVEL)
-
-#ifndef DEBUG_LEVEL
-// Debug level during compiling, level greater than this will not be compiled
-// into code
-#define DEBUG_LEVEL 5
-#endif
-
-enum RUNTIME_DEBUG_LEVEL {
-    DBG_LVL_ERROR = 0,
-    DBG_LVL_WARNING = 1,
-    DBG_LVL_INFO = 2,
-    DBG_LVL_DEBUG = 3,
-    DBG_LVL_MSGDUMP = 4,
-    DBG_LVL_EXCESSIVE = 5,
-};
-
-extern int debug_level;  // --d=0: debug level
+#ifndef _LINUX_CONSOLE_COLOR_
+#define _LINUX_CONSOLE_COLOR_
 
 /* Console color definations */
 
@@ -98,6 +97,14 @@ extern int debug_level;  // --d=0: debug level
 #define CC3(clr1, clr2, clr3, str) \
     CC_BEGIN(clr1) CC_BEGIN(clr2) CC_BEGIN(clr3) str CC_END
 
+#endif  // _LINUX_CONSOLE_COLOR_
+
+/*===========================================================================*/
+
+#if (ENABLE_RUNTIME_DEBUG_LEVEL)
+
+extern int debug_level;  // Runtime debug level, you should define it yourself.
+
 /*---------------------------------------------------------------------------*/
 
 #define _PRINT_FUNC(clr, lvl, ...)                             \
@@ -123,6 +130,29 @@ extern int debug_level;  // --d=0: debug level
             _DEBUG_PRINT(__VA_ARGS__);      \
         }                                   \
     }
+
+#else  // ENABLE_RUNTIME_DEBUG_LEVEL
+
+#define _PRINT_FUNC(clr, lvl, ...)                         \
+    {                                                      \
+        _PRINT_FILE_FUNC_LINE;                             \
+        _DEBUG_PRINT("[" CC_BEGIN(clr) #lvl CC_END "]: "); \
+        _DEBUG_PRINT(__VA_ARGS__);                         \
+    }
+#define _PRINT_FUNC2(clr1, clr2, lvl, ...)                         \
+    {                                                              \
+        _PRINT_FILE_FUNC_LINE;                                     \
+        _DEBUG_PRINT("[" CC_BEGIN2(clr1, clr2) #lvl CC_END "]: "); \
+        _DEBUG_PRINT(__VA_ARGS__);                                 \
+    }
+#define _PRINT_FUNC_EX(lvl, ...)     \
+    {                                \
+        _FORCE_PRINT_FILE_FUNC_LINE; \
+        _DEBUG_PRINT(__VA_ARGS__);   \
+    }
+
+#endif  // ENABLE_RUNTIME_DEBUG_LEVEL
+
 #define _STMT_FUNC(...) __VA_ARGS__
 
 /*---------------------------------------------------------------------------*/
@@ -198,8 +228,6 @@ extern int debug_level;  // --d=0: debug level
 #define print_excessive_ex(...)
 #define stmt_excessive(...)
 #endif
-
-#endif  // ENABLE_RUNTIME_DEBUG_LEVEL
 
 /*===========================================================================*/
 
