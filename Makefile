@@ -7,43 +7,41 @@ BD = ./build
 # Compile to objects
 
 $(BD)/%.o: %.cpp
+	-$(if $(wildcard $(BD)),,mkdir -p $(BD))
 	$(CXX) -c -o $@ $< $(CXXFLAGS)
 
 # Build Executable
 
 bin = ascan
 
-.PHONY: all
 all: $(bin)
 
-.PHONY: prepare
-prepare:
-	$(if $(wildcard $(BD)),,mkdir -p $(BD))
-
-.PHONY: rebuild
 rebuild: clean all
 
 # Executable 1
 
-obj = ascan.o mfile.o options.o parser.o config.o common.o cfile.o
+obj = ascan.o options.o parser.o cfile.o mfile.o common.o config.o
 objbd = $(obj:%=$(BD)/%)
 
-$(bin): prepare $(objbd)
+$(bin): $(objbd)
 	$(CXX) -o $(bin) $(objbd) $(CXXFLAGS)
 
 # Dependencies
 
-$(BD)/ascan.o: ascan.h cfile.h config.h options.h mfile.h dbg_print.h common.h
-$(BD)/mfile.o: mfile.h cfile.h config.h dbg_print.h common.h options.h
 $(BD)/options.o: options.h config.h common.h dbg_print.h
 $(BD)/parser.o: parser.h dbg_print.h
-$(BD)/config.o: config.h parser.h
-$(BD)/common.o: common.h
+$(BD)/ascan.o: ascan.h cfile.h config.h options.h mfile.h dbg_print.h common.h
 $(BD)/cfile.o: cfile.h common.h parser.h dbg_print.h
+$(BD)/mfile.o: mfile.h cfile.h config.h dbg_print.h common.h options.h
+$(BD)/common.o: common.h
+$(BD)/config.o: config.h parser.h
 
 # Clean up
 
-.PHONY: clean
 clean:
 	rm -f "$(bin)" $(objbd)
 	rm -fd "$(BD)"
+
+# PHONY
+
+.PHONY: all rebuild clean

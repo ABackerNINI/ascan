@@ -22,7 +22,8 @@ enum SECTIONS {
     SEC_BUILD_EXECUTABLE,
     SEC_EXECUTABLE,
     SEC_DEPENDENCIES,
-    SEC_CLEAN_UP
+    SEC_CLEAN_UP,
+    SEC_PHONY
 };
 
 static const char *g_sections[] = {
@@ -37,7 +38,8 @@ static const char *g_sections[] = {
     "# Build Executable",
     "# Executable %d",
     "# Dependencies",
-    "# Clean up"};
+    "# Clean up",
+    "# PHONY"};
 
 // static bool contain_flag_g(const char *c_cxx_flags);
 static void find_all_headers(vector<cfile> &files, cfile *file);
@@ -51,7 +53,7 @@ mfile::mfile(vector<cfile> &cfiles, Config &cfg, uint32_t flags)
 int mfile::output() {
 #if DISABLE_WRITE == 1
     print_warning("DISABLE_WRITE enabled\n");
-    
+
     return EXIT_FAILURE;
 #else
     m_fout = fopen(m_cfg.output.c_str(), "w");
@@ -66,6 +68,7 @@ int mfile::output() {
         output_build_executable();
         output_dependencies();
         output_clean_up();
+        output_phony();
     } else {
         output_part();
     }
@@ -140,26 +143,29 @@ void mfile::output_build_details_and_compile_to_objects() {
     OUT_SEC(SEC_COMPILE_TO_OBJECTS);
 
     if (h_c) {
-        if (m_flags & OPTION_B) {
-            OUT("$(%s)/", m_cfg.k_bd.c_str());
-        }
+        _output_build_path_if_option_b();
         OUT("%%.o: %%.c\n");
+
+        _output_mk_build_if_option_b();
+
         OUT("\t$(%s) -c -o $@ $< $(%s)\n\n", m_cfg.k_cc.c_str(),
             m_cfg.k_cflags.c_str());
     }
     if (h_cpp) {
-        if (m_flags & OPTION_B) {
-            OUT("$(%s)/", m_cfg.k_bd.c_str());
-        }
+        _output_build_path_if_option_b();
         OUT("%%.o: %%.cpp\n");
+
+        _output_mk_build_if_option_b();
+
         OUT("\t$(%s) -c -o $@ $< $(%s)\n\n", m_cfg.k_cxx.c_str(),
             m_cfg.k_cxxflags.c_str());
     }
     if (h_cc) {
-        if (m_flags & OPTION_B) {
-            OUT("$(%s)/", m_cfg.k_bd.c_str());
-        }
+        _output_build_path_if_option_b();
         OUT("%%.o: %%.cc\n");
+
+        _output_mk_build_if_option_b();
+
         OUT("\t$(%s) -c -o $@ $< $(%s)\n\n", m_cfg.k_cxx.c_str(),
             m_cfg.k_cxxflags.c_str());
     }
@@ -199,7 +205,6 @@ void mfile::output_build_executable() {
     OUT("\n");
 
     // Print all
-    OUT(".PHONY: all\n");
     OUT("all:");
     i = m_executable.size() == 1 ? -1 : 1;
     for (auto exec = m_executable.begin(); exec != m_executable.end(); ++exec) {
@@ -208,16 +213,8 @@ void mfile::output_build_executable() {
     }
     OUT("\n\n");
 
-    // Print prepare
-    if (m_flags & OPTION_B) {
-        OUT(".PHONY: prepare\n");
-        OUT("prepare:\n");
-        OUT("\t$(if $(wildcard $(%s)),,mkdir -p $(%s))\n\n", m_cfg.k_bd.c_str(),
-            m_cfg.k_bd.c_str());
-    }
-
     // Print rebuild
-    OUT(".PHONY: rebuild\nrebuild: clean all\n\n");
+    OUT("rebuild: clean all\n\n");
 
     // Print executable
     // if only one executable, hide the index number
@@ -249,8 +246,7 @@ void mfile::output_build_executable() {
         OUT("\n");
 
         if (m_flags & OPTION_B) {
-            // OUT: $(bin1): prepare $(obj1_bd)
-            OUT("$(%s): prepare $(%s)\n", m_cfg.make_bin(i).c_str(),
+            OUT("$(%s): $(%s)\n", m_cfg.make_bin(i).c_str(),
                 m_cfg.make_obj_bd(i).c_str());
         } else {
             // OUT: $(bin1): $(obj1)
@@ -309,11 +305,9 @@ void mfile::output_dependencies_helper(FILE *m_fout, vector<cfile> &files,
     if (file->includes().size() > 0) {
         // .c/.cpp/.cc depends on all headers it includes, recursively
 
-        if (m_flags & OPTION_B) {
-            OUT("$(%s)/%s.o:", m_cfg.k_bd.c_str(), file->name().c_str());
-        } else {
-            OUT("%s.o:", file->name().c_str());
-        }
+        _output_build_path_if_option_b();
+        OUT("%s.o:", file->name().c_str());
+
         print_all_headers(m_fout, files, file);
         OUT("\n");
 
@@ -350,7 +344,6 @@ void mfile::output_dependencies() {
 void mfile::output_clean_up() {
     OUT_SEC(SEC_CLEAN_UP);
 
-    OUT(".PHONY: clean\n");
     OUT("clean:\n");
 
     // OUT: rm -f "$(bin1)" $(obj1)
@@ -373,12 +366,36 @@ void mfile::output_clean_up() {
         }
         OUT("\n");
     }
+    OUT("\n");
 }
+
+void mfile::output_phony() {
+    OUT_SEC(SEC_PHONY);
+
+    OUT(".PHONY: all rebuild clean\n");
+}
+
+/*==========================================================================*/
 
 void mfile::output_part() {
     char buff[BUFSIZ];
 
     while (fgets(buff, BUFSIZ, m_fout)) {
+    }
+}
+
+/*==========================================================================*/
+
+void mfile::_output_build_path_if_option_b() {
+    if (m_flags & OPTION_B) {
+        OUT("$(%s)/", m_cfg.k_bd.c_str());
+    }
+}
+
+void mfile::_output_mk_build_if_option_b() {
+    if (m_flags & OPTION_B) {
+        OUT("\t-$(if $(wildcard $(%s)),,mkdir -p $(%s))\n", m_cfg.k_bd.c_str(),
+            m_cfg.k_bd.c_str());
     }
 }
 

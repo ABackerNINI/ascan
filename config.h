@@ -32,7 +32,12 @@ using std::vector;
 
 class Config {
    public:
+    // User specified output file name.
     string output;
+    // User specified start files. Dependencies will be generated start from
+    // them. If not specified, ascan will scan c/c++ source files in the current
+    // directory that contains main functions and start from them.
+    vector<string> start_files;
 
     string k_cc;
     string k_cxx;
@@ -50,7 +55,7 @@ class Config {
     string v_bd;
 
     map<string, string> executable;
-    vector<string> ignores;
+    vector<string> ignores;  // TODO add ignores?
 
     Config();
 

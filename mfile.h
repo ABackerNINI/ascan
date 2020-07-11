@@ -16,8 +16,7 @@ using std::vector;
 
 class mfile {
    public:
-    mfile(vector<cfile> &cfiles, Config &cfg,
-          uint32_t flags);
+    mfile(vector<cfile> &cfiles, Config &cfg, uint32_t flags);
     int output();
 
    private:
@@ -28,7 +27,12 @@ class mfile {
                                     cfile *file);
     void output_dependencies();
     void output_clean_up();
+    void output_phony();
+
     void output_part();
+
+    void _output_build_path_if_option_b();
+    void _output_mk_build_if_option_b();
 
    private:
     vector<cfile> &m_cfiles;
