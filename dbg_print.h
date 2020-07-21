@@ -240,10 +240,18 @@ extern int debug_level;  // Runtime debug level, you should define it yourself.
     printf(__VA_ARGS__);
 #define dbg_stmt(...) __VA_ARGS__
 
+#include <assert.h>
+#define dbg_require(...) assert(__VA_ARGS__)
+#define dbg_assert(...) assert(__VA_ARGS__)
+#define dbg_ensure(...) assert(__VA_ARGS__)
+
 #else  // DEBUG
 
 #define dbg_print(...)
 #define dbg_stmt(...)
+#define dbg_require(...)
+#define dbg_assert(...)
+#define dbg_ensure(...)
 
 #endif  // DEBUG
 
