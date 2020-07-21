@@ -10,6 +10,7 @@ Ascan is suitable for c/c++ projects that are:
 
 1. Simple structured that all source codes are in one directory.
 2. Source codes are `.h` or `.c` or `.cpp` or `.cc`.
+3. No spaces in the source-file names.
 
 `cd` to the project directory and run `ascan`.
 
@@ -26,9 +27,9 @@ chmod +x install.sh
 
 ## Future Work
 
-1. Develop to work with multi-directory projects.
+1. Support multi-directory projects.
 2. Support files with other extension, such as `.hpp`.
-3. Support files that contain spaces.
+3. Support files that contain spaces in their names.
 
 ## LICENSE
 
