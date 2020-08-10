@@ -18,8 +18,23 @@ enum DBG_LEVEL {
 #define DEBUG_LEVEL 5
 #endif
 
-#define ENABLE_RUNTIME_DEBUG_LEVEL 0
+#ifndef DEBUG_LEVEL
+// Debug level during compiling, level greater than this will not be compiled
+// into code.
+#define DEBUG_LEVEL 5
+#endif
+
+#ifndef ENABLE_RUNTIME_DEBUG_LEVEL
+#define ENABLE_RUNTIME_DEBUG_LEVEL 1
+#endif
+
+#ifndef ENABLE_DEBUG_PRINT
 #define ENABLE_DEBUG_PRINT 1
+#endif
+
+#ifndef ENABLE_COLOR_PRINT
+#define ENABLE_COLOR_PRINT 1
+#endif
 
 // TODO: console color redirection to file
 
@@ -50,6 +65,8 @@ enum DBG_LEVEL {
 
 #ifndef _LINUX_CONSOLE_COLOR_
 #define _LINUX_CONSOLE_COLOR_
+
+#if (ENABLE_COLOR_PRINT)
 
 /* Console color definations */
 
@@ -96,6 +113,19 @@ enum DBG_LEVEL {
 #define CC2(clr1, clr2, str) CC_BEGIN(clr1) CC_BEGIN(clr2) str CC_END
 #define CC3(clr1, clr2, clr3, str) \
     CC_BEGIN(clr1) CC_BEGIN(clr2) CC_BEGIN(clr3) str CC_END
+
+#else  // ENABLE_COLOR_PRINT
+
+#define CC_BEGIN(clr)
+#define CC_BEGIN2(clr1, clr2)
+#define CC_BEGIN3(clr1, clr2, clr3)
+#define CC_END
+
+#define CC(clr, str) str
+#define CC2(clr1, clr2, str) str
+#define CC3(clr1, clr2, clr3, str) str
+
+#endif  // ENABLE_COLOR_PRINT
 
 #endif  // _LINUX_CONSOLE_COLOR_
 
