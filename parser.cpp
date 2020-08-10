@@ -395,6 +395,8 @@ vector<string> scan_includes_and_main_func_v2(const char *filename,
         // int main(int argc,char **argv)
         // int main(int argc,char *argv[])
 
+        (void)syntax_main;
+
         if (type == TYPE_EOF) break;
 
         syntax.seq.emplace_back(type, buff);
