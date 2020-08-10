@@ -121,7 +121,7 @@ const options::as_option *options::find_similar_opt(const char *opt) const {
     size_t min_dis = INT32_MAX;
     int min_ind = -1;
     for (int i = 0, n = s_as_opt_size; i < n; ++i) {
-        size_t dis, len2;
+        size_t dis = INT32_MAX, len2;
 
         if (s_as_opts[i].long_opt) {
             len2 = strlen(s_as_opts[i].long_opt);
