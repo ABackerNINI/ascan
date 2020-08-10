@@ -4,7 +4,7 @@
 #include <string.h>
 #include <iostream>
 
-#include "dbg_print.h"
+#include "debug.h"
 
 enum PARSER_STATE {
     STA_INIT,

@@ -28,11 +28,11 @@ $(bin): $(objbd)
 
 # Dependencies
 
-$(BD)/options.o: options.h config.h common.h dbg_print.h
-$(BD)/parser.o: parser.h dbg_print.h
-$(BD)/ascan.o: ascan.h cfile.h config.h options.h mfile.h dbg_print.h common.h
-$(BD)/cfile.o: cfile.h common.h parser.h dbg_print.h
-$(BD)/mfile.o: mfile.h cfile.h config.h dbg_print.h common.h options.h
+$(BD)/options.o: options.h config.h common.h debug.h
+$(BD)/parser.o: parser.h debug.h
+$(BD)/ascan.o: ascan.h cfile.h config.h options.h mfile.h debug.h common.h
+$(BD)/cfile.o: cfile.h common.h parser.h debug.h
+$(BD)/mfile.o: mfile.h cfile.h config.h debug.h common.h options.h
 $(BD)/common.o: common.h
 $(BD)/config.o: config.h parser.h
 

@@ -9,7 +9,7 @@
 
 #include "mfile.h"
 #include "common.h"
-#include "dbg_print.h"
+#include "debug.h"
 
 using std::min;
 

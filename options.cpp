@@ -3,7 +3,7 @@
 #include <string.h>
 
 #include "common.h"
-#include "dbg_print.h"
+#include "debug.h"
 
 // const char options::s_short_opts[] = "abfgho:v";
 

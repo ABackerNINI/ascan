@@ -9,7 +9,7 @@
 
 #include "cfile.h"
 #include "config.h"
-#include "dbg_print.h"
+#include "debug.h"
 
 using std::string;
 using std::vector;

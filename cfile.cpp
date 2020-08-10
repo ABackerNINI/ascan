@@ -13,7 +13,7 @@
 
 #include "common.h"
 #include "parser.h"
-#include "dbg_print.h"
+#include "debug.h"
 
 /*==========================================================================*/
 
