@@ -232,9 +232,11 @@ extern int debug_level;
         }                                   \
     }
 
-#define _STMT_FUNC(lvl, ...)            \
-    if (debug_level >= DBG_LVL_##lvl) { \
-        __VA_ARGS__                     \
+#define _STMT_FUNC(lvl, ...)                \
+    {                                       \
+        if (debug_level >= DBG_LVL_##lvl) { \
+            __VA_ARGS__                     \
+        }                                   \
     }
 
 #else /* ENABLE_RUNTIME_DEBUG_LEVEL */
