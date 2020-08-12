@@ -112,29 +112,6 @@ enum DBG_LEVEL {
 #define CC2(clr1, clr2, str) CC_BEGIN2(clr1, clr2) str CC_END
 #define CC3(clr1, clr2, clr3, str) CC_BEGIN3(clr1, clr2, clr3) str CC_END
 
-#include <stdio.h>  /* fprintf, fileno */
-#include <unistd.h> /* isatty */
-
-#define _CC_FPRINTF(_begin_clr_, fp, ...) \
-    if (isatty(fileno(fp))) {             \
-        fprintf(fp, _begin_clr_);         \
-        fprintf(fp, __VA_ARGS__);         \
-        fprintf(fp, CC_END);              \
-    } else {                              \
-        fprintf(fp, __VA_ARGS__);         \
-    }
-
-#define CC_FPRINTF(clr, fp, ...) _CC_FPRINTF(CC_BEGIN(clr), fp, __VA_ARGS__)
-#define CC_FPRINTF2(clr1, clr2, fp, ...) \
-    _CC_FPRINTF(CC_BEGIN2(clr1, clr2), fp, __VA_ARGS__)
-#define CC_FPRINTF3(clr1, clr2, clr3, fp, ...) \
-    _CC_FPRINTF(CC_BEGIN3(clr1, clr2, clr3), fp, __VA_ARGS__)
-
-#define CC_PRINTF(clr, ...) CC_FPRINTF(clr, stdout, __VA_ARGS__)
-#define CC_PRINTF2(clr1, clr2, ...) CC_FPRINTF2(clr1, clr2, stdout, __VA_ARGS__)
-#define CC_PRINTF3(clr1, clr2, clr3, ...) \
-    CC_FPRINTF3(clr1, clr2, clr3, stdout, __VA_ARGS__)
-
 #else /* ENABLE_COLOR_PRINT */
 
 #define CC_BEGIN(clr)
