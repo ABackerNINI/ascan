@@ -22,12 +22,13 @@ enum DBG_LEVEL {
 
 #ifndef ENABLE_RUNTIME_DEBUG_LEVEL
 /* Debug level during runtime.
+ *
  * You should define 'int debug_level' in your .c/.cpp source file and set
  * 'debug_level' to DBG_LVL_'XXX', macros print_'xxx', print_'xxx'_ex and
  * stmt_'xxx' will be executed only if debug_level is not less than the
  * corresponding value.
  *
- * E.g. if you set debug_level to DBG_LVL_INFO, print_error/warning/info will be
+ * E.g. If you set debug_level to DBG_LVL_INFO, print_error/warning/info will be
  * executed but print_debug/msgdump/excessive will not.
  */
 #define ENABLE_RUNTIME_DEBUG_LEVEL 1
@@ -100,6 +101,7 @@ enum DBG_LEVEL {
 /* Console color control */
 
 #define _CC_EXPAND(clr) #clr /* expand the macro or will compile error */
+
 #define CC_BEGIN(clr) "\033[" _CC_EXPAND(clr) "m"
 #define CC_BEGIN2(clr1, clr2) "\033[" _CC_EXPAND(clr1) ";" _CC_EXPAND(clr2) "m"
 #define CC_BEGIN3(clr1, clr2, clr3) \
@@ -109,6 +111,29 @@ enum DBG_LEVEL {
 #define CC(clr, str) CC_BEGIN(clr) str CC_END
 #define CC2(clr1, clr2, str) CC_BEGIN2(clr1, clr2) str CC_END
 #define CC3(clr1, clr2, clr3, str) CC_BEGIN3(clr1, clr2, clr3) str CC_END
+
+#include <stdio.h>  /* fprintf, fileno */
+#include <unistd.h> /* isatty */
+
+#define _CC_FPRINTF(_begin_clr_, fp, ...) \
+    if (isatty(fileno(fp))) {             \
+        fprintf(fp, _begin_clr_);         \
+        fprintf(fp, __VA_ARGS__);         \
+        fprintf(fp, CC_END);              \
+    } else {                              \
+        fprintf(fp, __VA_ARGS__);         \
+    }
+
+#define CC_FPRINTF(clr, fp, ...) _CC_FPRINTF(CC_BEGIN(clr), fp, __VA_ARGS__)
+#define CC_FPRINTF2(clr1, clr2, fp, ...) \
+    _CC_FPRINTF(CC_BEGIN2(clr1, clr2), fp, __VA_ARGS__)
+#define CC_FPRINTF3(clr1, clr2, clr3, fp, ...) \
+    _CC_FPRINTF(CC_BEGIN3(clr1, clr2, clr3), fp, __VA_ARGS__)
+
+#define CC_PRINTF(clr, ...) CC_FPRINTF(clr, stdout, __VA_ARGS__)
+#define CC_PRINTF2(clr1, clr2, ...) CC_FPRINTF2(clr1, clr2, stdout, __VA_ARGS__)
+#define CC_PRINTF3(clr1, clr2, clr3, ...) \
+    CC_FPRINTF3(clr1, clr2, clr3, stdout, __VA_ARGS__)
 
 #else /* ENABLE_COLOR_PRINT */
 
@@ -151,6 +176,8 @@ enum DBG_LEVEL {
 extern int debug_level;
 
 /*---------------------------------------------------------------------------*/
+
+#include <stdio.h> /* fprintf */
 
 #define _DEBUG_PRINT(...) fprintf(DBG_OUT, __VA_ARGS__)
 #define _PRINT_FILE_FUNC_LINE0 \
@@ -415,7 +442,7 @@ extern int debug_level;
     printf(__VA_ARGS__);
 #define dbg_stmt(...) __VA_ARGS__
 
-#include <assert.h>
+#include <assert.h> /* assert */
 #define dbg_require(...) assert(__VA_ARGS__)
 #define dbg_assert(...) assert(__VA_ARGS__)
 #define dbg_ensure(...) assert(__VA_ARGS__)
