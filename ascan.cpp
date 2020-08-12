@@ -15,21 +15,38 @@ using std::min;
 
 int debug_level = DBG_LVL_DEBUG;
 
-#define PRINT_TITLE(title) printf(CC_BEGIN(CC_BRIGHT) "%s" CC_END "\n", title)
+#define PRINT_TITLE(title)                       \
+    if (isatty(STDOUT_FILENO)) {                 \
+        printf(CC(CC_BRIGHT, "%s") "\n", title); \
+    } else {                                     \
+        printf("%s\n", title);                   \
+    }
 
-#define PRINT_OPTION(short_opt, long_opt, arg)                                \
-    if (short_opt && long_opt) {                                              \
-        printf(                                                               \
-            "\t" CC(CC_BRIGHT, "-%c") ", " CC_BEGIN(CC_BRIGHT) "--%s" CC_END, \
-            short_opt, long_opt);                                             \
-    } else if (short_opt) {                                                   \
-        printf("\t" CC_BEGIN(CC_BRIGHT) "-%c" CC_END, short_opt);             \
-    } else {                                                                  \
-        printf("\t" CC_BEGIN(CC_BRIGHT) "--%s" CC_END, long_opt);             \
-    }                                                                         \
-    if (arg) {                                                                \
-        printf("=" CC_BEGIN(CC_UNDERSCORE) "%s" CC_END, arg);                 \
-    }                                                                         \
+#define PRINT_OPTION(short_opt, long_opt, arg)                           \
+    if (isatty(STDOUT_FILENO)) {                                         \
+        if (short_opt && long_opt) {                                     \
+            printf("\t" CC(CC_BRIGHT, "-%c") ", " CC(CC_BRIGHT, "--%s"), \
+                   short_opt, long_opt);                                 \
+        } else if (short_opt) {                                          \
+            printf("\t" CC(CC_BRIGHT, "-%c"), short_opt);                \
+        } else {                                                         \
+            printf("\t" CC(CC_BRIGHT, "--%s"), long_opt);                \
+        }                                                                \
+        if (arg) {                                                       \
+            printf("=" CC(CC_UNDERSCORE, "%s"), arg);                    \
+        }                                                                \
+    } else {                                                             \
+        if (short_opt && long_opt) {                                     \
+            printf("\t-%c, --%s", short_opt, long_opt);                  \
+        } else if (short_opt) {                                          \
+            printf("\t-%c", short_opt);                                  \
+        } else {                                                         \
+            printf("\t--%s", long_opt);                                  \
+        }                                                                \
+        if (arg) {                                                       \
+            printf("=%s", arg);                                          \
+        }                                                                \
+    }                                                                    \
     printf("\n");
 
 #define PRINT_DESC(desc) printf("\t\t%s.\n\n", desc)
