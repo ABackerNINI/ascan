@@ -23,10 +23,10 @@ enum DBG_LEVEL {
 #ifndef ENABLE_RUNTIME_DEBUG_LEVEL
 /* Debug level during runtime.
  *
- * You should define 'int debug_level' in your .c/.cpp source file and set
- * 'debug_level' to DBG_LVL_'XXX', macros print_'xxx', print_'xxx'_ex and
- * stmt_'xxx' will be executed only if debug_level is not less than the
- * corresponding value.
+ * You should declare global variable 'int debug_level;' in your .c/.cpp source
+ * file and set 'debug_level' to DBG_LVL_'XXX', macros print_'xxx',
+ * print_'xxx'_ex and stmt_'xxx' will be executed only if debug_level is not
+ * less than the corresponding value.
  *
  * E.g. If you set debug_level to DBG_LVL_INFO, print_error/warning/info will be
  * executed but print_debug/msgdump/excessive will not.
@@ -149,7 +149,7 @@ enum DBG_LEVEL {
 
 #if (ENABLE_RUNTIME_DEBUG_LEVEL)
 
-/* Runtime debug level, you should define it yourself. */
+/* Runtime debug level, you should declare it yourself. */
 extern int debug_level;
 
 /*---------------------------------------------------------------------------*/
@@ -157,17 +157,17 @@ extern int debug_level;
 #include <stdio.h> /* fprintf */
 
 #define _DEBUG_PRINT(...) fprintf(DBG_OUT, __VA_ARGS__)
-#define _PRINT_FILE_FUNC_LINE0 \
+#define __PRINT_FILE_FUNC_LINE \
     _DEBUG_PRINT("@file:%s, func:%s, line:%d\n", __FILE__, __func__, __LINE__);
 
 #if (PRINT_FILE_FUNC_LINE)
-#define _PRINT_FILE_FUNC_LINE _PRINT_FILE_FUNC_LINE0
+#define _PRINT_FILE_FUNC_LINE __PRINT_FILE_FUNC_LINE
 #else
 #define _PRINT_FILE_FUNC_LINE
 #endif
 
 #if (PRINT_FILE_FUNC_LINE_EX)
-#define _PRINT_FILE_FUNC_LINE_EX _PRINT_FILE_FUNC_LINE0
+#define _PRINT_FILE_FUNC_LINE_EX __PRINT_FILE_FUNC_LINE
 #else
 #define _PRINT_FILE_FUNC_LINE_EX
 #endif
@@ -178,65 +178,37 @@ extern int debug_level;
 
 #include <unistd.h> /* isatty */
 
-#define _PRINT_FUNC(clr, lvl, ...)                                 \
-    {                                                              \
-        if (debug_level >= DBG_LVL_##lvl) {                        \
-            _PRINT_FILE_FUNC_LINE;                                 \
-            if (isatty(DBG_OUT_FILENO)) {                          \
-                _DEBUG_PRINT("[" CC_BEGIN(clr) #lvl CC_END "]: "); \
-            } else {                                               \
-                _DEBUG_PRINT("[" #lvl "]: ");                      \
-            }                                                      \
-            _DEBUG_PRINT(__VA_ARGS__);                             \
-        }                                                          \
-    }
-#define _PRINT_FUNC2(clr1, clr2, lvl, ...)                                 \
-    {                                                                      \
-        if (debug_level >= DBG_LVL_##lvl) {                                \
-            _PRINT_FILE_FUNC_LINE;                                         \
-            if (isatty(DBG_OUT_FILENO)) {                                  \
-                _DEBUG_PRINT("[" CC_BEGIN2(clr1, clr2) #lvl CC_END "]: "); \
-            } else {                                                       \
-                _DEBUG_PRINT("[" #lvl "]: ");                              \
-            }                                                              \
-            _DEBUG_PRINT(__VA_ARGS__);                                     \
-        }                                                                  \
+#define __PRINT_FUNC(_begin_clr_, dbg_lvl, lvl_str, ...)        \
+    if (debug_level >= dbg_lvl) {                               \
+        _PRINT_FILE_FUNC_LINE;                                  \
+        if (isatty(DBG_OUT_FILENO)) {                           \
+            _DEBUG_PRINT("[" _begin_clr_ lvl_str CC_END "]: "); \
+        } else {                                                \
+            _DEBUG_PRINT("[" lvl_str "]: ");                    \
+        }                                                       \
+        _DEBUG_PRINT(__VA_ARGS__);                              \
     }
 
 #else /* ENABLE_COLOR_PRINT: do not need to check isatty */
 
-#define _PRINT_FUNC(clr, lvl, ...)          \
-    {                                       \
-        if (debug_level >= DBG_LVL_##lvl) { \
-            _PRINT_FILE_FUNC_LINE;          \
-            _DEBUG_PRINT("[" #lvl "]: ");   \
-            _DEBUG_PRINT(__VA_ARGS__);      \
-        }                                   \
-    }
-#define _PRINT_FUNC2(clr1, clr2, lvl, ...)  \
-    {                                       \
-        if (debug_level >= DBG_LVL_##lvl) { \
-            _PRINT_FILE_FUNC_LINE;          \
-            _DEBUG_PRINT("[" #lvl "]: ");   \
-            _DEBUG_PRINT(__VA_ARGS__);      \
-        }                                   \
+#define __PRINT_FUNC(_begin_clr_, dbg_lvl, lvl_str, ...) \
+    if (debug_level >= dbg_lvl) {                        \
+        _PRINT_FILE_FUNC_LINE;                           \
+        _DEBUG_PRINT("[" lvl_str "]: ");                 \
+        _DEBUG_PRINT(__VA_ARGS__);                       \
     }
 
 #endif /* ENABLE_COLOR_PRINT */
 
-#define _PRINT_FUNC_EX(lvl, ...)            \
-    {                                       \
-        if (debug_level >= DBG_LVL_##lvl) { \
-            _PRINT_FILE_FUNC_LINE_EX;       \
-            _DEBUG_PRINT(__VA_ARGS__);      \
-        }                                   \
+#define _PRINT_FUNC_EX(lvl, ...)        \
+    if (debug_level >= DBG_LVL_##lvl) { \
+        _PRINT_FILE_FUNC_LINE_EX;       \
+        _DEBUG_PRINT(__VA_ARGS__);      \
     }
 
-#define _STMT_FUNC(lvl, ...)                \
-    {                                       \
-        if (debug_level >= DBG_LVL_##lvl) { \
-            __VA_ARGS__                     \
-        }                                   \
+#define _STMT_FUNC(lvl, ...)            \
+    if (debug_level >= DBG_LVL_##lvl) { \
+        __VA_ARGS__                     \
     }
 
 #else /* ENABLE_RUNTIME_DEBUG_LEVEL */
@@ -245,70 +217,67 @@ extern int debug_level;
 
 #include <unistd.h> /* isatty */
 
-#define _PRINT_FUNC(clr, lvl, ...)                             \
-    {                                                          \
-        _PRINT_FILE_FUNC_LINE;                                 \
-        if (isatty(DBG_OUT_FILENO)) {                          \
-            _DEBUG_PRINT("[" CC_BEGIN(clr) #lvl CC_END "]: "); \
-        } else {                                               \
-            _DEBUG_PRINT("[" #lvl "]: ");                      \
-        }                                                      \
-        _DEBUG_PRINT(__VA_ARGS__);                             \
-    }
-#define _PRINT_FUNC2(clr1, clr2, lvl, ...)                             \
-    {                                                                  \
-        _PRINT_FILE_FUNC_LINE;                                         \
-        if (isatty(DBG_OUT_FILENO)) {                                  \
-            _DEBUG_PRINT("[" CC_BEGIN2(clr1, clr2) #lvl CC_END "]: "); \
-        } else {                                                       \
-            _DEBUG_PRINT("[" #lvl "]: ");                              \
-        }                                                              \
-        _DEBUG_PRINT(__VA_ARGS__);                                     \
-    }
+#define __PRINT_FUNC(_begin_clr_, dbg_lvl, lvl_str, ...)        \
+    do {                                                        \
+        _PRINT_FILE_FUNC_LINE;                                  \
+        if (isatty(DBG_OUT_FILENO)) {                           \
+            _DEBUG_PRINT("[" _begin_clr_ lvl_str CC_END "]: "); \
+        } else {                                                \
+            _DEBUG_PRINT("[" lvl_str "]: ");                    \
+        }                                                       \
+        _DEBUG_PRINT(__VA_ARGS__);                              \
+    } while (0)
 
 #else /* ENABLE_COLOR_PRINT: do not need to check isatty */
 
-#define _PRINT_FUNC(clr, lvl, ...)    \
-    {                                 \
-        _PRINT_FILE_FUNC_LINE;        \
-        _DEBUG_PRINT("[" #lvl "]: "); \
-        _DEBUG_PRINT(__VA_ARGS__);    \
-    }
-#define _PRINT_FUNC2(clr1, clr2, lvl, ...) \
-    {                                      \
-        _PRINT_FILE_FUNC_LINE;             \
-        _DEBUG_PRINT("[" #lvl "]: ");      \
-        _DEBUG_PRINT(__VA_ARGS__);         \
-    }
+#define __PRINT_FUNC(_begin_clr_, dbg_lvl, lvl_str, ...) \
+    do {                                                 \
+        _PRINT_FILE_FUNC_LINE;                           \
+        _DEBUG_PRINT("[" lvl_str "]: ");                 \
+        _DEBUG_PRINT(__VA_ARGS__);                       \
+    } while (0)
 
 #endif /* ENABLE_COLOR_PRINT */
 
 #define _PRINT_FUNC_EX(lvl, ...)   \
-    {                              \
+    do {                           \
         _PRINT_FILE_FUNC_LINE_EX;  \
         _DEBUG_PRINT(__VA_ARGS__); \
-    }
+    } while (0)
 
 #define _STMT_FUNC(lvl, ...) \
-    { __VA_ARGS__ }
+    do {                     \
+        __VA_ARGS__          \
+    } while (0)
 
 #endif /* ENABLE_RUNTIME_DEBUG_LEVEL */
 
+#define _PRINT_FUNC(clr, lvl, ...) \
+    __PRINT_FUNC(CC_BEGIN(clr), DBG_LVL_##lvl, #lvl, __VA_ARGS__)
+#define _PRINT_FUNC2(clr1, clr2, lvl, ...) \
+    __PRINT_FUNC(CC_BEGIN2(clr1, clr2), DBG_LVL_##lvl, #lvl, __VA_ARGS__)
+
 /*---------------------------------------------------------------------------*/
 
-/* Macros print_'xxx' and stmt_'xxx' are enabled if DEBUG_LEVEL >=
- * the corresponding value, with runtime debug check if
- * ENABLE_RUNTIME_DEBUG_LEVEL is enabled.*/
+/* Macros print_'xxx', print_'xxx'_ex, and stmt_'xxx' are enabled if
+ * DEBUG_LEVEL >= the corresponding value, with runtime debug level check if
+ * ENABLE_RUNTIME_DEBUG_LEVEL is enabled.
+ *
+ * Macros stmt_'xxx'_raw do not have runtime debug level check. They are for
+ * some old compilers do not support "Mixed Declarations and Code".
+ * */
 
 /*---------------------------------------------------------------------------*/
 
-#if (DEBUG_LEVEL >= DBG_LVL_ERROR)
+#if (DEBUG_LEVEL >= 0)
 /* Print error msg. */
 #define print_error(...) _PRINT_FUNC2(CC_FG_RED, CC_BRIGHT, ERROR, __VA_ARGS__)
 /* Print extended error msg. */
 #define print_error_ex(...) _PRINT_FUNC_EX(ERROR, __VA_ARGS__)
 /* Statements for error. */
 #define stmt_error(...) _STMT_FUNC(ERROR, __VA_ARGS__)
+/* Raw statements for error, no rt check. */
+#define stmt_error_raw(...) __VA_ARGS__
 #else
 /* Not enabled. */
 #define print_error(...)
@@ -316,17 +285,21 @@ extern int debug_level;
 #define print_error_ex(...)
 /* Not enabled. */
 #define stmt_error(...)
+/* Not enabled. */
+#define stmt_error_raw(...)
 #endif
 
 /*---------------------------------------------------------------------------*/
 
-#if (DEBUG_LEVEL >= DBG_LVL_WARNING)
+#if (DEBUG_LEVEL >= 1)
 /* Print warning msg. */
 #define print_warning(...) _PRINT_FUNC(CC_FG_YELLOW, WARNING, __VA_ARGS__)
 /* Print extended warning msg. */
 #define print_warning_ex(...) _PRINT_FUNC_EX(WARNING, __VA_ARGS__)
 /* Statements for warning. */
 #define stmt_warning(...) _STMT_FUNC(WARNING, __VA_ARGS__)
+/* Raw statements for warning, no rt check. */
+#define stmt_warning_raw(...) __VA_ARGS__
 #else
 /* Not enabled. */
 #define print_warning(...)
@@ -334,17 +307,21 @@ extern int debug_level;
 #define print_warning_ex(...)
 /* Not enabled. */
 #define stmt_warning(...)
+/* Not enabled. */
+#define stmt_warning_raw(...)
 #endif
 
 /*---------------------------------------------------------------------------*/
 
-#if (DEBUG_LEVEL >= DBG_LVL_INFO)
+#if (DEBUG_LEVEL >= 2)
 /* Print info msg. */
 #define print_info(...) _PRINT_FUNC(CC_FG_GREEN, INFO, __VA_ARGS__)
 /* Print extended info msg. */
 #define print_info_ex(...) _PRINT_FUNC_EX(INFO, __VA_ARGS__)
 /* Statements for info. */
 #define stmt_info(...) _STMT_FUNC(INFO, __VA_ARGS__)
+/* Raw statements for info, no rt check. */
+#define stmt_info_raw(...) __VA_ARGS__
 #else
 /* Not enabled. */
 #define print_info(...)
@@ -352,17 +329,21 @@ extern int debug_level;
 #define print_info_ex(...)
 /* Not enabled. */
 #define stmt_info(...)
+/* Not enabled. */
+#define stmt_info_raw(...)
 #endif
 
 /*---------------------------------------------------------------------------*/
 
-#if (DEBUG_LEVEL >= DBG_LVL_DEBUG)
+#if (DEBUG_LEVEL >= 3)
 /* Print debug msg. */
 #define print_debug(...) _PRINT_FUNC(CC_FG_GREEN, DEBUG, __VA_ARGS__)
 /* Print extended debug msg. */
 #define print_debug_ex(...) _PRINT_FUNC_EX(DEBUG, __VA_ARGS__)
 /* Statements for debug. */
 #define stmt_debug(...) _STMT_FUNC(DEBUG, __VA_ARGS__)
+/* Raw statements for debug, no rt check. */
+#define stmt_debug_raw(...) __VA_ARGS__
 #else
 /* Not enabled. */
 #define print_debug(...)
@@ -370,17 +351,21 @@ extern int debug_level;
 #define print_debug_ex(...)
 /* Not enabled. */
 #define stmt_debug(...)
+/* Not enabled. */
+#define stmt_debug_raw(...)
 #endif
 
 /*---------------------------------------------------------------------------*/
 
-#if (DEBUG_LEVEL >= DBG_LVL_MSGDUMP)
+#if (DEBUG_LEVEL >= 4)
 /* Print msgdump msg. */
 #define print_msgdump(...) _PRINT_FUNC(CC_FG_GREEN, MSGDUMP, __VA_ARGS__)
 /* Print extended msgdump msg. */
 #define print_msgdump_ex(...) _PRINT_FUNC_EX(MSGDUMP, __VA_ARGS__)
 /* Statements for msgdump. */
 #define stmt_msgdump(...) _STMT_FUNC(MSGDUMP, __VA_ARGS__)
+/* Raw statements for msgdump, no rt check. */
+#define stmt_msgdump_raw(...) __VA_ARGS__
 #else
 /* Not enabled. */
 #define print_msgdump(...)
@@ -388,17 +373,21 @@ extern int debug_level;
 #define print_msgdump_ex(...)
 /* Not enabled. */
 #define stmt_msgdump(...)
+/* Not enabled. */
+#define stmt_msgdump_raw(...)
 #endif
 
 /*---------------------------------------------------------------------------*/
 
-#if (DEBUG_LEVEL >= DBG_LVL_EXCESSIVE)
+#if (DEBUG_LEVEL >= 5)
 /* Print excessive msg. */
 #define print_excessive(...) _PRINT_FUNC(CC_FG_GREEN, EXCESSIVE, __VA_ARGS__)
 /* Print extended excessive msg. */
 #define print_excessive_ex(...) _PRINT_FUNC_EX(EXCESSIVE, __VA_ARGS__)
 /* Statements for excessive. */
 #define stmt_excessive(...) _STMT_FUNC(EXCESSIVE, __VA_ARGS__)
+/* Raw statements for excessive, no rt check. */
+#define stmt_excessive_raw(...) __VA_ARGS__
 #else
 /* Not enabled. */
 #define print_excessive(...)
@@ -406,6 +395,8 @@ extern int debug_level;
 #define print_excessive_ex(...)
 /* Not enabled. */
 #define stmt_excessive(...)
+/* Not enabled. */
+#define stmt_excessive_raw(...)
 #endif
 
 /*===========================================================================*/
@@ -416,12 +407,16 @@ extern int debug_level;
 
 /* Macros dbg_'xxx' are enabled if DEBUG is defined. */
 
-#define dbg_print(...)     \
-    _PRINT_FILE_FUNC_LINE; \
-    printf(__VA_ARGS__);
-#define dbg_stmt(...) __VA_ARGS__
+#include <stdio.h> /* printf */
+
+#define dbg_print(...) printf(__VA_ARGS__)
+#define dbg_stmt(...) \
+    do {              \
+        __VA_ARGS__   \
+    } while (0)
 
 #include <assert.h> /* assert */
+
 #define dbg_require(...) assert(__VA_ARGS__)
 #define dbg_assert(...) assert(__VA_ARGS__)
 #define dbg_ensure(...) assert(__VA_ARGS__)
