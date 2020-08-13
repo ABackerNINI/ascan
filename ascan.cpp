@@ -268,7 +268,7 @@ int ascan::parse_cmd_args(int argc, char **argv) {
 
     // TODO add ascan [options] [main files]
     print_debug("Start file:\n");
-    stmt_debug(if (optind == argc){print_debug_ex("\tnot specified\n")});
+    stmt_debug(if (optind == argc) { print_debug_ex("\tnot specified\n"); });
     for (int i = optind; i < argc; ++i) {
         m_cfg.start_files.push_back(argv[i]);
         print_debug_ex("\t|%s|\n", argv[i]);
