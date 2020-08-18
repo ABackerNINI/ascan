@@ -56,7 +56,6 @@ enum DBG_LEVEL {
 
 #ifndef DBG_OUT
 #define DBG_OUT stderr
-#define DBG_OUT_FILENO fileno(DBG_OUT)
 #endif
 
 /*===========================================================================*/
@@ -181,7 +180,7 @@ extern int debug_level;
 #define __PRINT_FUNC(_begin_clr_, dbg_lvl, lvl_str, ...)        \
     if (debug_level >= dbg_lvl) {                               \
         _PRINT_FILE_FUNC_LINE;                                  \
-        if (isatty(DBG_OUT_FILENO)) {                           \
+        if (isatty(fileno(DBG_OUT))) {                          \
             _DEBUG_PRINT("[" _begin_clr_ lvl_str CC_END "]: "); \
         } else {                                                \
             _DEBUG_PRINT("[" lvl_str "]: ");                    \
@@ -220,7 +219,7 @@ extern int debug_level;
 #define __PRINT_FUNC(_begin_clr_, dbg_lvl, lvl_str, ...)        \
     do {                                                        \
         _PRINT_FILE_FUNC_LINE;                                  \
-        if (isatty(DBG_OUT_FILENO)) {                           \
+        if (isatty(fileno(DBG_OUT))) {                          \
             _DEBUG_PRINT("[" _begin_clr_ lvl_str CC_END "]: "); \
         } else {                                                \
             _DEBUG_PRINT("[" lvl_str "]: ");                    \
