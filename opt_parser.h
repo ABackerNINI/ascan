@@ -17,7 +17,7 @@ struct opt {
     const char *long_opt;
     enum ARG_TYPE type;
 
-    int show;
+    int count;
     const char *arg;
 
     // TODO: add more
@@ -36,7 +36,9 @@ class opt_parser {
    private:
     void make_short_opt(const opt *opts, int n);
     void make_long_opt(const opt *opts, int n);
-    opt**make_ref(opt *opts, int n, int max_val) const;
+    opt **make_ref(opt *opts, int n, int max_val) const;
+    void handle_missing_arg_opt();
+    void handle_unrecognized_opt();
 
    private:
     char *short_opts;

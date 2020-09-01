@@ -12,7 +12,7 @@ opt::opt()
     : short_opt('\0'),
       long_opt(NULL),
       type(NO_ARGUMENT),
-      show(0),
+      count(0),
       arg(NULL),
       arg_name(NULL),
       description(NULL) {}
@@ -110,14 +110,16 @@ int opt_parser::parse(opt *opts, int n, int argc, char *const *argv) {
         if (opt == '?') {
             // '?' is returned if there are unrecognized/missing-arguments
             // options. Unrecognized options is set to optopt.
-
+            // Note: don't need to concern about no-argument options having
+            // arguments.
+                
         } else {
             assert(opt <= n + VAL_SHIFT && opts_ref[opt]);
 
             if (opts_ref[opt]->type != NO_ARGUMENT) {
                 opts_ref[opt]->arg = optarg;
             }
-            ++opts_ref[opt]->show;
+            ++opts_ref[opt]->count;
         }
     }
 
