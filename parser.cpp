@@ -397,7 +397,7 @@ vector<string> scan_includes_and_main_func_v2(const char *filename,
 
         (void)syntax_main;
 
-        if (type == TYPE_EOF) break;
+        // if (type == TYPE_EOF) break;
 
         syntax.seq.emplace_back(type, buff);
     }
@@ -408,7 +408,7 @@ vector<string> scan_includes_and_main_func_v2(const char *filename,
 }
 
 enum PARSER_TOKEN_TYPE next_token(FILE *fp, char *buff, size_t buff_size) {
-    static char c = '\0';
+    static int c = '\0';
     enum PARSER_STATE state = STA_INIT;
     PARSER_TOKEN_TYPE type = TYPE_EOF;
 
