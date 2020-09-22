@@ -346,7 +346,7 @@ void ascan::print_help(enum HELP_TYPE help,
 
 bool ascan::test_makefile() {
     int exist = 0;
-    if (m_flags | OPTION_O) {
+    if (m_flags & OPTION_O) {
         if (is_exist(m_cfg.output)) {
             exist = 3;
         }
