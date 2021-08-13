@@ -11,6 +11,8 @@
 #include "debug.h"
 #include "mfile.h"
 
+using namespace std;
+
 int debug_level = DBG_LVL_DEBUG;
 
 #define PRINT_TITLE(title)                                                     \

@@ -1,10 +1,12 @@
 #include "config.h"
 
-#include <string.h>
-#include <iostream>
 #include <cassert>
+#include <iostream>
+#include <string.h>
 
 #include "parser.h"
+
+using namespace std;
 
 enum CONFIG_STATE { CS_COMPILER, CS_EXECUTABLE, CS_IGNORE, CS_UNKNOWN };
 
@@ -19,20 +21,13 @@ enum CONFIG_TYPE {
 };
 
 Config::Config()
-    : output(CONFIG_DEFAULT_OUTPUT),
-      k_cc(CONFIG_DEFAULT_K_CC),
-      k_cxx(CONFIG_DEFAULT_K_CXX),
-      k_cflags(CONFIG_DEFAULT_K_CFLAGS),
-      k_cxxflags(CONFIG_DEFAULT_K_CXXFLAGS),
-      k_bd(CONFIG_DEFAULT_K_BD),
-      k_bin(CONFIG_DEFAULT_K_BIN),
-      k_obj(CONFIG_DEFAULT_K_OBJ),
-      k_obj_bd(CONFIG_DEFAULT_K_OBJ_BD),
-      v_cc(CONFIG_DEFAULT_V_CC),
-      v_cxx(CONFIG_DEFAULT_V_CXX),
-      v_cflag(CONFIG_DEFAULT_V_CFLAG),
-      v_cxxflag(CONFIG_DEFAULT_V_CXXFLAG),
-      v_bd(CONFIG_DEFAULT_V_BD) {}
+    : output(CONFIG_DEFAULT_OUTPUT), k_cc(CONFIG_DEFAULT_K_CC),
+      k_cxx(CONFIG_DEFAULT_K_CXX), k_cflags(CONFIG_DEFAULT_K_CFLAGS),
+      k_cxxflags(CONFIG_DEFAULT_K_CXXFLAGS), k_bd(CONFIG_DEFAULT_K_BD),
+      k_bin(CONFIG_DEFAULT_K_BIN), k_obj(CONFIG_DEFAULT_K_OBJ),
+      k_obj_bd(CONFIG_DEFAULT_K_OBJ_BD), v_cc(CONFIG_DEFAULT_V_CC),
+      v_cxx(CONFIG_DEFAULT_V_CXX), v_cflag(CONFIG_DEFAULT_V_CFLAG),
+      v_cxxflag(CONFIG_DEFAULT_V_CXXFLAG), v_bd(CONFIG_DEFAULT_V_BD) {}
 
 string Config::make(const string &s, int i) const {
     char tmp[BUFSIZ];
@@ -103,7 +98,7 @@ CONFIG_TYPE parse_kv(char *s, char **k, int *k_len, char **v, int *v_len) {
     if (*s == '=') {
         s = skip_blank(s + 1);
         *v = s;
-        char *p;  // last non-space character
+        char *p; // last non-space character
         while (*s) {
             if (!isspace(*s)) {
                 p = s;

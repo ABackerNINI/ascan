@@ -1,15 +1,9 @@
-#pragma once
-
 #ifndef _AUTO_SCAN_CONFIG_H_
 #define _AUTO_SCAN_CONFIG_H_
 
 #include <map>
-#include <vector>
 #include <string>
-
-using std::map;
-using std::string;
-using std::vector;
+#include <vector>
 
 #define CONFIG_FILENAME "ascan.conf"
 
@@ -31,42 +25,42 @@ using std::vector;
 #define CONFIG_DEFAULT_V_BD "./build"
 
 class Config {
-   public:
+  public:
     // User specified output file name.
-    string output;
+    std::string output;
     // User specified start files. Dependencies will be generated start from
     // them. If not specified, ascan will scan c/c++ source files in the current
     // directory that contains main functions and start from them.
-    vector<string> start_files;
+    std::vector<std::string> start_files;
 
-    string k_cc;
-    string k_cxx;
-    string k_cflags;
-    string k_cxxflags;
-    string k_bd;
-    string k_bin;
-    string k_obj;
-    string k_obj_bd;
+    std::string k_cc;
+    std::string k_cxx;
+    std::string k_cflags;
+    std::string k_cxxflags;
+    std::string k_bd;
+    std::string k_bin;
+    std::string k_obj;
+    std::string k_obj_bd;
 
-    string v_cc;
-    string v_cxx;
-    string v_cflag;
-    string v_cxxflag;
-    string v_bd;
+    std::string v_cc;
+    std::string v_cxx;
+    std::string v_cflag;
+    std::string v_cxxflag;
+    std::string v_bd;
 
-    map<string, string> executable;
-    vector<string> ignores;  // TODO add ignores?
+    std::map<std::string, std::string> executable;
+    std::vector<std::string> ignores; // TODO add ignores?
 
     Config();
 
-    string make_bin(int i) const;
-    string make_obj(int i) const;
-    string make_obj_bd(int i) const;
+    std::string make_bin(int i) const;
+    std::string make_obj(int i) const;
+    std::string make_obj_bd(int i) const;
 
-   private:
-    string make(const string &s, int i) const;
+  private:
+    std::string make(const std::string &s, int i) const;
 };
 
 int read_config(const char *filename, Config *cfg);
 
-#endif  //_AUTO_SCAN_CONFIG_H_
+#endif //_AUTO_SCAN_CONFIG_H_

@@ -1,5 +1,5 @@
-#include <cstring>
 #include <cassert>
+#include <cstring>
 
 #include "opt_parser.h"
 
@@ -9,13 +9,8 @@
 #define VAL_SHIFT 150
 
 opt::opt()
-    : short_opt('\0'),
-      long_opt(NULL),
-      type(NO_ARGUMENT),
-      count(0),
-      arg(NULL),
-      arg_name(NULL),
-      description(NULL) {}
+    : short_opt('\0'), long_opt(NULL), type(NO_ARGUMENT), count(0), arg(NULL),
+      arg_name(NULL), description(NULL) {}
 
 static int make_options(struct opt *&options) {
     const int n = 12;
@@ -101,7 +96,7 @@ int opt_parser::parse(opt *opts, int n, int argc, char *const *argv) {
 
     opt **opts_ref = make_ref(opts, n, n + VAL_SHIFT);
 
-    opterr = 0;  // do NOT print error message
+    opterr = 0; // do NOT print error message
 
     int opt, long_ind;
 
@@ -112,7 +107,7 @@ int opt_parser::parse(opt *opts, int n, int argc, char *const *argv) {
             // options. Unrecognized options is set to optopt.
             // Note: don't need to concern about no-argument options having
             // arguments.
-                
+
         } else {
             assert(opt <= n + VAL_SHIFT && opts_ref[opt]);
 

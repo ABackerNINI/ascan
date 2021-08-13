@@ -1,19 +1,21 @@
 #include "cfile.h"
 
-#include <sys/types.h>
-#include <sys/stat.h>
-#include <unistd.h>
-#include <dirent.h>
-#include <iostream>
-#include <string.h>
-#include <stdio.h>
-#include <fcntl.h>
-#include <stdlib.h>
 #include <cassert>
+#include <dirent.h>
+#include <fcntl.h>
+#include <iostream>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <sys/stat.h>
+#include <sys/types.h>
+#include <unistd.h>
 
 #include "common.h"
-#include "parser.h"
 #include "debug.h"
+#include "parser.h"
+
+using namespace std;
 
 /*==========================================================================*/
 

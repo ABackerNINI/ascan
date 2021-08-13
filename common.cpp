@@ -1,8 +1,10 @@
 #include "common.h"
 
-#include <unistd.h>
-#include <string.h>
 #include <algorithm>
+#include <string.h>
+#include <unistd.h>
+
+using namespace std;
 
 const char *get_ext(const char *filename, size_t length) {
     if (length == 0) {

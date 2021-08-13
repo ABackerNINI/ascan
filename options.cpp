@@ -20,6 +20,8 @@ const options::as_option options::s_as_opts[] = {
     {OT_OUTPUT, 'o', "output", "OUTPUT_FILE", false,
      "Output to the specified file rather than 'Makefile'"},
     {OT_VER, 'v', "ver", NULL, true, "Print ascan version"},
+    {OT_GITIGNORE, 'i', "gitignore", NULL, true,
+     "Add objects and executables to gitignore"},
     {OT_DEBUG, '\0', "debug", "DEBUG_LEVEL", false,
      "Set debug level: \n\t\t\t- 0: ERROR\n\t\t\t- "
      "1: WARNING\n\t\t\t- 2: INFO\n\t\t\t- 3: DEBUG\n\t\t\t- 4: "
@@ -54,7 +56,7 @@ const options::as_option *options::get_as_opts(size_t *size) const {
 
 char *options::make_short_opts() const {
     char *short_opts = new char[s_as_opt_size * 3 + 1];
-    int los = 0, size = 0;  // long options size
+    int los = 0, size = 0; // long options size
     for (int i = 0, n = s_as_opt_size; i < n; ++i) {
         if (s_as_opts[i].short_opt != '\0') {
             short_opts[los++] = s_as_opts[i].short_opt;
@@ -75,7 +77,7 @@ char *options::make_short_opts() const {
 
 struct option *options::make_long_opts() const {
     struct option *long_opts = new option[s_as_opt_size + 1];
-    int los = 0;  // long options size
+    int los = 0; // long options size
     for (int i = 0, n = s_as_opt_size; i < n; ++i) {
         if (s_as_opts[i].long_opt) {
             long_opts[los].name = s_as_opts[i].long_opt;

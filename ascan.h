@@ -1,21 +1,16 @@
-#pragma once
-
 #ifndef _AUTO_SCAN_ASCAN_H_
 #define _AUTO_SCAN_ASCAN_H_
 
-#include <vector>
-#include <string>
 #include <iostream>
+#include <string>
+#include <vector>
 
 #include "cfile.h"
 #include "config.h"
 #include "options.h"
 
-using std::string;
-using std::vector;
-
 class ascan {
-   public:
+  public:
     ascan(int argc, char **argv);
     // Start to proceed auto-scan.
     //
@@ -24,7 +19,7 @@ class ascan {
     // -- EXIT_FAILURE: otherwise.
     int start();
 
-   private:
+  private:
     enum HELP_TYPE { HT_NONE, HT_ALL, HT_VER, HT_SPECIFIC };
 
     // Parse the command arguments.
@@ -48,15 +43,15 @@ class ascan {
     void match_c_cxx_includes();
     void associate_header();
 
-   private:
-    int m_error;       // whether there is an error during parsing args
-    uint32_t m_flags;  // contains all options
-    Config m_cfg;      // config
+  private:
+    int m_error;      // whether there is an error during parsing args
+    uint32_t m_flags; // contains all options
+    Config m_cfg;     // config
     // string m_cwd;            // current working dir
-    vector<cfile> m_cfiles;  // cfiles
+    std::vector<cfile> m_cfiles; // cfiles
     options m_options;
 };
 
 int main(int argc, char **argv);
 
-#endif  //_AUTO_SCAN_ASCAN_H_
+#endif //_AUTO_SCAN_ASCAN_H_

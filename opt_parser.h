@@ -1,5 +1,3 @@
-#pragma once
-
 /* This is a template not a library, so you have to modify it to meet your
  * requirements.
  *
@@ -28,21 +26,21 @@ struct opt {
 };
 
 class opt_parser {
-   public:
+  public:
     opt_parser();
     ~opt_parser();
     int parse(opt *opts, int n, int argc, char *const *argv);
 
-   private:
+  private:
     void make_short_opt(const opt *opts, int n);
     void make_long_opt(const opt *opts, int n);
     opt **make_ref(opt *opts, int n, int max_val) const;
     void handle_missing_arg_opt();
     void handle_unrecognized_opt();
 
-   private:
+  private:
     char *short_opts;
     struct option *long_opts;
 };
 
-#endif  //_OPTIONS_PARSER_H_
+#endif //_OPTIONS_PARSER_H_
