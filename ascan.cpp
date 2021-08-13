@@ -1,52 +1,50 @@
 #include "ascan.h"
 
-#include <string.h>
-#include <unistd.h>
-#include <getopt.h>
 #include <algorithm>
 #include <cassert>
+#include <getopt.h>
 #include <iostream>
+#include <string.h>
+#include <unistd.h>
 
-#include "mfile.h"
 #include "common.h"
 #include "debug.h"
-
-using std::min;
+#include "mfile.h"
 
 int debug_level = DBG_LVL_DEBUG;
 
-#define PRINT_TITLE(title)                       \
-    if (isatty(STDOUT_FILENO)) {                 \
-        printf(CC(CC_BRIGHT, "%s") "\n", title); \
-    } else {                                     \
-        printf("%s\n", title);                   \
+#define PRINT_TITLE(title)                                                     \
+    if (isatty(STDOUT_FILENO)) {                                               \
+        printf(CC(CC_BRIGHT, "%s") "\n", title);                               \
+    } else {                                                                   \
+        printf("%s\n", title);                                                 \
     }
 
-#define PRINT_OPTION(short_opt, long_opt, arg)                           \
-    if (isatty(STDOUT_FILENO)) {                                         \
-        if (short_opt && long_opt) {                                     \
-            printf("\t" CC(CC_BRIGHT, "-%c") ", " CC(CC_BRIGHT, "--%s"), \
-                   short_opt, long_opt);                                 \
-        } else if (short_opt) {                                          \
-            printf("\t" CC(CC_BRIGHT, "-%c"), short_opt);                \
-        } else {                                                         \
-            printf("\t" CC(CC_BRIGHT, "--%s"), long_opt);                \
-        }                                                                \
-        if (arg) {                                                       \
-            printf("=" CC(CC_UNDERSCORE, "%s"), arg);                    \
-        }                                                                \
-    } else {                                                             \
-        if (short_opt && long_opt) {                                     \
-            printf("\t-%c, --%s", short_opt, long_opt);                  \
-        } else if (short_opt) {                                          \
-            printf("\t-%c", short_opt);                                  \
-        } else {                                                         \
-            printf("\t--%s", long_opt);                                  \
-        }                                                                \
-        if (arg) {                                                       \
-            printf("=%s", arg);                                          \
-        }                                                                \
-    }                                                                    \
+#define PRINT_OPTION(short_opt, long_opt, arg)                                 \
+    if (isatty(STDOUT_FILENO)) {                                               \
+        if (short_opt && long_opt) {                                           \
+            printf("\t" CC(CC_BRIGHT, "-%c") ", " CC(CC_BRIGHT, "--%s"),       \
+                   short_opt, long_opt);                                       \
+        } else if (short_opt) {                                                \
+            printf("\t" CC(CC_BRIGHT, "-%c"), short_opt);                      \
+        } else {                                                               \
+            printf("\t" CC(CC_BRIGHT, "--%s"), long_opt);                      \
+        }                                                                      \
+        if (arg) {                                                             \
+            printf("=" CC(CC_UNDERSCORE, "%s"), arg);                          \
+        }                                                                      \
+    } else {                                                                   \
+        if (short_opt && long_opt) {                                           \
+            printf("\t-%c, --%s", short_opt, long_opt);                        \
+        } else if (short_opt) {                                                \
+            printf("\t-%c", short_opt);                                        \
+        } else {                                                               \
+            printf("\t--%s", long_opt);                                        \
+        }                                                                      \
+        if (arg) {                                                             \
+            printf("=%s", arg);                                                \
+        }                                                                      \
+    }                                                                          \
     printf("\n");
 
 #define PRINT_DESC(desc) printf("\t\t%s.\n\n", desc)
@@ -133,7 +131,7 @@ int ascan::parse_cmd_args(int argc, char **argv) {
     const char *short_opts = m_options.get_short_opts();
     const struct option *long_opts = m_options.get_long_opts();
 
-    opterr = 0;  // do NOT print error message
+    opterr = 0; // do NOT print error message
 
     int opt, long_ind;
     int err = 0;
@@ -172,97 +170,92 @@ int ascan::parse_cmd_args(int argc, char **argv) {
         // print_debug_ex("long_index = %d\n", long_ind);
 
         switch (opt) {
-            case options::OT_ALL_SECS:
-                m_flags |= OPTION_A;
-                break;
-            case options::OT_BUILD:
-                m_flags |= OPTION_B;
-                break;
-            case options::OT_FORCE:
-                m_flags |= OPTION_F;
-                break;
-            case options::OT_G:
-                m_flags |= OPTION_G;
-                break;
-            case options::OT_HELP:
-                help = HT_ALL;
-                goto END;
-            case options::OT_OUTPUT:
-                m_flags |= OPTION_O;
-                m_cfg.output = string(optarg);
-                break;
-            case options::OT_VER:
-                help = HT_VER;
-                goto END;
-            case options::OT_DEBUG:
-                if (check_debug_level(optarg) < 0) {
-                    goto ERROR_DEBUG_LEVEL;
-                }
-                break;
-            case options::OT_CC:
-                m_cfg.v_cc = string(optarg);
-                break;
-            case options::OT_CXX:
-                m_cfg.v_cxx = string(optarg);
-                break;
-            case options::OT_CFLAGS:
-                m_cfg.v_cflag = string(optarg);
-                break;
-            case options::OT_CXXFLAGS:
-                m_cfg.v_cxxflag = string(optarg);
-                break;
-            default:
-                // find the option in case of missing argument
-                option = m_options.find_opt(options::OPT_TYPE(optopt));
-                if (option) {
-                    if ((optarg && !option->arg) || (!optarg && option->arg)) {
-                        if (optarg) {
-                            // control should never reach here
-                            print_error("unexpected option argument, '%s'.\n",
-                                        optarg);
-                        } else {
-                            print_error("missing option argument, '%s'.\n",
-                                        option->arg);
-                        }
-                        help = HT_SPECIFIC;
-                    }
-                } else {
-                    if (optopt != '\0') {
-                        print_error("unrecognized option: '%c'\n", optopt);
+        case options::OT_ALL_SECS:
+            m_flags |= OPTION_A;
+            break;
+        case options::OT_BUILD:
+            m_flags |= OPTION_B;
+            break;
+        case options::OT_FORCE:
+            m_flags |= OPTION_F;
+            break;
+        case options::OT_G:
+            m_flags |= OPTION_G;
+            break;
+        case options::OT_HELP:
+            help = HT_ALL;
+            goto END;
+        case options::OT_OUTPUT:
+            m_flags |= OPTION_O;
+            m_cfg.output = string(optarg);
+            break;
+        case options::OT_VER:
+            help = HT_VER;
+            goto END;
+        case options::OT_DEBUG:
+            if (check_debug_level(optarg) < 0) {
+                goto ERROR_DEBUG_LEVEL;
+            }
+            break;
+        case options::OT_CC:
+            m_cfg.v_cc = string(optarg);
+            break;
+        case options::OT_CXX:
+            m_cfg.v_cxx = string(optarg);
+            break;
+        case options::OT_CFLAGS:
+            m_cfg.v_cflag = string(optarg);
+            break;
+        case options::OT_CXXFLAGS:
+            m_cfg.v_cxxflag = string(optarg);
+            break;
+        default:
+            // find the option in case of missing argument
+            option = m_options.find_opt(options::OPT_TYPE(optopt));
+            if (option) {
+                if ((optarg && !option->arg) || (!optarg && option->arg)) {
+                    if (optarg) {
+                        // control should never reach here
+                        print_error("unexpected option argument, '%s'.\n",
+                                    optarg);
                     } else {
-                        // find similar option
-                        option = m_options.find_similar_opt(argv[optind - 1]);
-                        if (option) {
-                            printf("\tDo you mean \"");
-                            char short_opt = option->short_opt;
-                            const char *long_opt = option->long_opt;
-                            if (short_opt && long_opt) {
-                                printf(
-                                    CC_BEGIN(
-                                        CC_BRIGHT) "-%c" CC_END
-                                                   ", " CC_BEGIN(
-                                                       CC_BRIGHT) "--%s" CC_END,
-                                    short_opt, long_opt);
-                            } else if (short_opt) {
-                                printf(CC_BEGIN(CC_BRIGHT) "-%c" CC_END,
-                                       short_opt);
-                            } else {
-                                printf(CC_BEGIN(CC_BRIGHT) "--%s" CC_END,
-                                       long_opt);
-                            }
-                            printf("\"?\n\n");
-                            help = HT_SPECIFIC;
-                        } else {
-                            printf(
-                                "Type 'ascan --help' to see useful "
-                                "informations.\n");
-                        }
+                        print_error("missing option argument, '%s'.\n",
+                                    option->arg);
                     }
-
-                    ++err;
-                    goto END;
+                    help = HT_SPECIFIC;
                 }
-                break;
+            } else {
+                if (optopt != '\0') {
+                    print_error("unrecognized option: '%c'\n", optopt);
+                } else {
+                    // find similar option
+                    option = m_options.find_similar_opt(argv[optind - 1]);
+                    if (option) {
+                        printf("\tDo you mean \"");
+                        char short_opt = option->short_opt;
+                        const char *long_opt = option->long_opt;
+                        if (short_opt && long_opt) {
+                            printf(
+                                CC_BEGIN(CC_BRIGHT) "-%c" CC_END ", " CC_BEGIN(
+                                    CC_BRIGHT) "--%s" CC_END,
+                                short_opt, long_opt);
+                        } else if (short_opt) {
+                            printf(CC_BEGIN(CC_BRIGHT) "-%c" CC_END, short_opt);
+                        } else {
+                            printf(CC_BEGIN(CC_BRIGHT) "--%s" CC_END, long_opt);
+                        }
+                        printf("\"?\n\n");
+                        help = HT_SPECIFIC;
+                    } else {
+                        printf("Type 'ascan --help' to see useful "
+                               "informations.\n");
+                    }
+                }
+
+                ++err;
+                goto END;
+            }
+            break;
         }
     }
 
@@ -308,9 +301,8 @@ void ascan::print_help(enum HELP_TYPE help,
 
         PRINT_TITLE("DESCRIPTION");
         PRINT(desc);
-        PRINT(
-            "Mandatory arguments to long options are mandatory for short "
-            "options too.");
+        PRINT("Mandatory arguments to long options are mandatory for short "
+              "options too.");
 
         size_t n;
         const options::as_option *options = m_options.get_as_opts(&n);
@@ -327,18 +319,16 @@ void ascan::print_help(enum HELP_TYPE help,
         PRINT("<" AS_URL ">");
 
         PRINT_TITLE("COPYRIGHT");
-        PRINT(
-            "License GPLv3+: GNU GPL version 3 or later "
-            "<http://gnu.org/licenses/gpl.html>.");
+        PRINT("License GPLv3+: GNU GPL version 3 or later "
+              "<http://gnu.org/licenses/gpl.html>.");
 
         // PRINT_TITLE("SEE ALSO");
     } else if (help == HT_VER) {
         printf("ascan version: " AS_VERSION "\n");
     } else if (help == HT_SPECIFIC) {
         PRINT_TITLE("OPTION");
-        PRINT(
-            "Mandatory arguments to long options are mandatory for short "
-            "options too.");
+        PRINT("Mandatory arguments to long options are mandatory for short "
+              "options too.");
         PRINT_OPTION(option->short_opt, option->long_opt, option->arg);
         PRINT_DESC(option->description);
     }
