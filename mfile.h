@@ -38,6 +38,7 @@ class mfile {
     uint32_t m_flags;
     FILE *m_fout;
     std::vector<cfile *> m_executable;
+    std::vector<std::string> m_binaries; // files to be added to gitignore
 };
 
 #endif //_AUTO_SCAN_MFILE_H_

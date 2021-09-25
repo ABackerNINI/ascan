@@ -1,6 +1,8 @@
 #include "common.h"
 
 #include <algorithm>
+#include <fstream>
+#include <ios>
 #include <string.h>
 #include <unistd.h>
 
@@ -45,7 +47,31 @@ bool all_nums(const char *s) {
     return *s == '\0';
 }
 
-#define min(a, b) ((a < b) ? a : b)
+bool read_file(std::vector<std::string> &lines, const char *file) {
+    ifstream input(file);
+    if (!input) {
+        return false;
+    }
+    string line;
+    while (getline(input, line)) {
+        lines.push_back(line);
+    }
+    input.close();
+    return true;
+}
+
+bool append_file_by_line(const char *file,
+                         const std::vector<std::string> &lines) {
+    ofstream output(file, ios_base::app);
+    if (!output) {
+        return false;
+    }
+    for (auto &line : lines) {
+        output << line << "\n";
+    }
+    output.close();
+    return true;
+}
 
 size_t edit_distance(const char *s1, size_t len1, const char *s2, size_t len2) {
 #define DP(i, j) dp[(i) * (len2 + 1) + (j)]
@@ -62,8 +88,9 @@ size_t edit_distance(const char *s1, size_t len1, const char *s2, size_t len2) {
     for (size_t i = 1; i <= len1; ++i) {
         for (size_t j = 1; j <= len2; ++j) {
             flag = (s1[i - 1] == s2[j - 1]) ? 0 : 1;
-            DP(i, j) = min(DP(i - 1, j) + 1,
-                           min(DP(i, j - 1) + 1, DP(i - 1, j - 1) + flag));
+            DP(i, j) =
+                std::min(DP(i - 1, j) + 1,
+                         std::min(DP(i, j - 1) + 1, DP(i - 1, j - 1) + flag));
         }
     }
 

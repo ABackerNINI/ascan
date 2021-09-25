@@ -23,6 +23,13 @@ void get_date(char *date);
 // Check if the string are all digit numbers.
 bool all_nums(const char *s);
 
+// Read the file line by line.
+bool read_file_by_line(std::vector<std::string> &lines, const char *file);
+
+// Append contents to the file file line by line.
+bool append_file_by_line(const char *file,
+                         const std::vector<std::string> &lines);
+
 size_t edit_distance(const char *s1, size_t len1, const char *s2, size_t len2);
 size_t edit_distance(const std::string &source, const std::string &target);
 
