@@ -1,60 +1,138 @@
+#include "opt_parser.h"
+#include "debug.h"
 #include <cassert>
 #include <cstring>
-
-#include "opt_parser.h"
-
-#include "debug.h"
+#include <getopt.h>
 
 #define TEST 1
+
+// The getopt_long() function returns long option values as the short option
+// values, it's an int. Short option values is the option character itself. But
+// long option values is the values we passed in. So we need to define long
+// option values ourselves.
+// If the long option has a short option, use the short option character as the
+// value. If not has one, use (i + VAL_SHIFT), i is the index in the opt array.
 #define VAL_SHIFT 150
 
 opt::opt()
-    : short_opt('\0'), long_opt(NULL), type(NO_ARGUMENT), count(0), arg(NULL),
-      arg_name(NULL), description(NULL) {}
+    : short_opt('\0'), long_opt(NULL), arg_type(NO_ARGUMENT), arg_name(NULL),
+      description(NULL), count(0), index(-1), arg(NULL) {}
 
-static int make_options(struct opt *&options) {
-    const int n = 12;
+opt_parser::opt_parser() : short_opts(NULL), long_opts(NULL) {}
 
-    options = new opt[n];
-
-    options[0].short_opt = 'a';
-    options[0].long_opt = "all";
-
-    options[1].short_opt = 'b';
-    options[1].long_opt = "build";
-
-    options[2].short_opt = 'f';
-    options[2].long_opt = "force";
-
-    options[3].short_opt = 'g';
-
-    options[4].short_opt = 'h';
-    options[4].long_opt = "help";
-
-    options[5].short_opt = 'o';
-    options[5].long_opt = "output";
-    options[5].type = REQUIRE_ARGUMENT;
-
-    options[6].short_opt = 'v';
-    options[6].long_opt = "ver";
-
-    options[7].long_opt = "debug";
-    options[7].type = REQUIRE_ARGUMENT;
-
-    options[8].long_opt = "cc";
-    options[8].type = REQUIRE_ARGUMENT;
-
-    options[9].long_opt = "cxx";
-    options[9].type = REQUIRE_ARGUMENT;
-
-    options[10].long_opt = "cflags";
-    options[10].type = REQUIRE_ARGUMENT;
-
-    options[11].long_opt = "cxxflags";
-    options[11].type = REQUIRE_ARGUMENT;
-
-    return n;
+opt_parser::~opt_parser() {
+    delete[] short_opts;
+    delete[] long_opts;
 }
+
+int opt_parser::parse(opt *opts, int n, int argc, char *const *argv) {
+    make_short_opt(opts, n);
+    make_long_opt(opts, n);
+
+    // ?Why we need a make_ref()?
+    // The getopt_long() function returns the character for short options.
+    // We need to find the corresponding opt in the opts array.
+    // The short_opts_ref[] is a hash map of short options.
+    opt **short_opts_ref = make_ref(opts, n, 'z');
+    opt *opt_ptr;
+
+    opterr = 0; // do NOT print error message
+
+    int opt, long_ind;
+
+    while ((opt = getopt_long(argc, argv, short_opts, long_opts, &long_ind)) !=
+           -1) {
+        if (opt == '?') {
+            // '?' is returned if there are unrecognized/missing-arguments
+            // options. Unrecognized options is set to optopt.
+            // Note: don't need to concern about no-argument options having
+            // arguments.
+
+        } else {
+            // Long options: opt(value) = VAL_SHIFT + index
+            opt_ptr = (opt < VAL_SHIFT ? short_opts_ref[opt]
+                                       : &opts[opt - VAL_SHIFT]);
+
+            assert(opt_ptr);
+
+            if (opt_ptr->arg_type != NO_ARGUMENT) {
+                opt_ptr->arg = optarg;
+            }
+            ++opt_ptr->count;
+        }
+    }
+
+    delete[] short_opts_ref;
+
+    return optind;
+}
+
+void opt_parser::make_short_opt(const opt *opts, int n) {
+    short_opts = new char[n * 3 + 1];
+    int los = 0;
+    for (int i = 0; i < n; ++i) {
+        if (opts[i].short_opt != '\0') {
+            short_opts[los++] = opts[i].short_opt;
+            if (opts[i].arg_type == REQUIRE_ARGUMENT) {
+                short_opts[los++] = ':';
+            } else if (opts[i].arg_type == OPTIONAL_ARGUMENT) {
+                short_opts[los++] = ':';
+                short_opts[los++] = ':';
+            }
+        }
+    }
+    short_opts[los] = '\0';
+    dbg_assert(los < n * 3 + 1);
+
+    print_debug("short options: |%s|\n", short_opts);
+}
+
+void opt_parser::make_long_opt(const opt *opts, int n) {
+    long_opts = new struct option[n + 1];
+
+    int los = 0;
+    for (int i = 0; i < n; ++i) {
+        if (opts[i].long_opt) {
+            long_opts[los].name = opts[i].long_opt;
+            long_opts[los].has_arg =
+                opts[i].arg_type == REQUIRE_ARGUMENT
+                    ? required_argument
+                    : (opts[i].arg_type == OPTIONAL_ARGUMENT ? optional_argument
+                                                             : no_argument);
+            long_opts[los].flag = NULL;
+            long_opts[los].val =
+                opts[i].short_opt ? opts[i].short_opt : VAL_SHIFT + i;
+            ++los;
+        }
+    }
+    long_opts[los] = {NULL, 0, NULL, 0};
+    print_msgdump("long options size: %d\n", los);
+}
+
+opt **opt_parser::make_ref(opt *opts, int n, int max_val) const {
+    opt **opts_ref = new opt *[max_val + 1];
+
+    memset(opts_ref, 0, sizeof(void *) * (max_val + 1));
+
+    for (int i = 0; i < n; ++i) {
+        if (opts[i].short_opt) {
+            opts_ref[(int)opts[i].short_opt] = &opts[i];
+        }
+        // else if (opts[i].long_opt) {
+        //     opts_ref[i + VAL_SHIFT] = &opts[i];
+        // }
+    }
+
+    return opts_ref;
+}
+
+/*==========================================================================*/
+
+#if (TEST)
+
+#include <iostream>
+
+int debug_level = 5;
 
 // const options::as_option options::s_as_opts[] = {
 //     {OT_ALL_SECS, 'a', "all", NULL, true,
@@ -83,109 +161,49 @@ static int make_options(struct opt *&options) {
 //      "Set c++ compile flags, default: '" CONFIG_DEFAULT_V_CXXFLAG "'"},
 // };
 
-opt_parser::opt_parser() : short_opts(NULL), long_opts(NULL) {}
+static int make_options(struct opt *&options) {
+    const int n = 12;
 
-opt_parser::~opt_parser() {
-    delete[] short_opts;
-    delete[] long_opts;
+    options = new opt[n];
+
+    options[0].short_opt = 'a';
+    options[0].long_opt = "all";
+
+    options[1].short_opt = 'b';
+    options[1].long_opt = "build";
+
+    options[2].short_opt = 'f';
+    options[2].long_opt = "force";
+
+    options[3].short_opt = 'g';
+
+    options[4].short_opt = 'h';
+    options[4].long_opt = "help";
+
+    options[5].short_opt = 'o';
+    options[5].long_opt = "output";
+    options[5].arg_type = REQUIRE_ARGUMENT;
+
+    options[6].short_opt = 'v';
+    options[6].long_opt = "ver";
+
+    options[7].long_opt = "debug";
+    options[7].arg_type = REQUIRE_ARGUMENT;
+
+    options[8].long_opt = "cc";
+    options[8].arg_type = REQUIRE_ARGUMENT;
+
+    options[9].long_opt = "cxx";
+    options[9].arg_type = REQUIRE_ARGUMENT;
+
+    options[10].long_opt = "cflags";
+    options[10].arg_type = REQUIRE_ARGUMENT;
+
+    options[11].long_opt = "cxxflags";
+    options[11].arg_type = REQUIRE_ARGUMENT;
+
+    return n;
 }
-
-int opt_parser::parse(opt *opts, int n, int argc, char *const *argv) {
-    make_short_opt(opts, n);
-    make_long_opt(opts, n);
-
-    opt **opts_ref = make_ref(opts, n, n + VAL_SHIFT);
-
-    opterr = 0; // do NOT print error message
-
-    int opt, long_ind;
-
-    while ((opt = getopt_long(argc, argv, short_opts, long_opts, &long_ind)) !=
-           -1) {
-        if (opt == '?') {
-            // '?' is returned if there are unrecognized/missing-arguments
-            // options. Unrecognized options is set to optopt.
-            // Note: don't need to concern about no-argument options having
-            // arguments.
-
-        } else {
-            assert(opt <= n + VAL_SHIFT && opts_ref[opt]);
-
-            if (opts_ref[opt]->type != NO_ARGUMENT) {
-                opts_ref[opt]->arg = optarg;
-            }
-            ++opts_ref[opt]->count;
-        }
-    }
-
-    delete[] opts_ref;
-
-    return optind;
-}
-
-void opt_parser::make_short_opt(const opt *opts, int n) {
-    short_opts = new char[n * 3 + 1];
-    int los = 0;
-    for (int i = 0; i < n; ++i) {
-        if (opts[i].short_opt != '\0') {
-            short_opts[los++] = opts[i].short_opt;
-            if (opts[i].type == REQUIRE_ARGUMENT) {
-                short_opts[los++] = ':';
-            } else if (opts[i].type == OPTIONAL_ARGUMENT) {
-                short_opts[los++] = ':';
-                short_opts[los++] = ':';
-            }
-        }
-    }
-    short_opts[los] = '\0';
-    dbg_assert(los < n * 3 + 1);
-
-    print_debug("short options: |%s|\n", short_opts);
-}
-
-void opt_parser::make_long_opt(const opt *opts, int n) {
-    long_opts = new struct option[n + 1];
-
-    int los = 0;
-    for (int i = 0; i < n; ++i) {
-        if (opts[i].long_opt) {
-            long_opts[los].name = opts[i].long_opt;
-            long_opts[los].has_arg =
-                opts[i].type == REQUIRE_ARGUMENT
-                    ? required_argument
-                    : (opts[i].type == OPTIONAL_ARGUMENT ? optional_argument
-                                                         : no_argument);
-            long_opts[los].flag = NULL;
-            long_opts[los].val =
-                opts[i].short_opt ? opts[i].short_opt : VAL_SHIFT + i;
-            ++los;
-        }
-    }
-    long_opts[los] = {NULL, 0, NULL, 0};
-    print_msgdump("long options size: %d\n", los);
-}
-
-opt **opt_parser::make_ref(opt *opts, int n, int max_val) const {
-    opt **opts_ref = new opt *[max_val + 1];
-
-    memset(opts_ref, 0, sizeof(opt *) * (max_val + 1));
-
-    for (int i = 0; i < n; ++i) {
-        if (opts[i].short_opt) {
-            opts_ref[(int)opts[i].short_opt] = &opts[i];
-        } else if (opts[i].long_opt) {
-            opts_ref[i + VAL_SHIFT] = &opts[i];
-        }
-    }
-
-    return opts_ref;
-}
-
-/*==========================================================================*/
-
-#if (TEST)
-
-int debug_level = 5;
 
 int main(int argc, char **argv) {
     struct opt *options;
@@ -194,6 +212,17 @@ int main(int argc, char **argv) {
 
     opt_parser opt;
     opt.parse(options, n, argc, argv);
+
+    for (int i = 0; i < n; ++i) {
+        if (options[i].count) {
+            std::cout << (options[i].short_opt ? options[i].short_opt : ' ')
+                      << " | "
+                      << (options[i].long_opt ? options[i].long_opt : "")
+                      << (options[i].arg ? std::string(" : ") + options[i].arg
+                                         : "")
+                      << std::endl;
+        }
+    }
 
     delete[] options;
 

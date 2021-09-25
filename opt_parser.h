@@ -6,21 +6,30 @@
 #ifndef _OPTIONS_PARSER_H_
 #define _OPTIONS_PARSER_H_
 
-#include <getopt.h>
+#include <string>
+#include <vector>
+
+#define ENABLE_MULTPLE_OPTION 1
+#define ENABLE_HINT_MISMATCH_OPTION 1
 
 enum ARG_TYPE { NO_ARGUMENT, REQUIRE_ARGUMENT, OPTIONAL_ARGUMENT };
 
+// Since there is already a option struct defined in getopt.h
 struct opt {
+    // INPUT
+
     char short_opt;
     const char *long_opt;
-    enum ARG_TYPE type;
+    enum ARG_TYPE arg_type;
 
-    int count;
-    const char *arg;
-
-    // TODO: add more
     const char *arg_name;
     const char *description;
+
+    // OUTPUT
+
+    int count;       // number of times presented
+    int index;       // order in the arguments
+    const char *arg; // argument
 
     opt();
 };
