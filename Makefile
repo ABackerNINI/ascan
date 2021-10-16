@@ -7,7 +7,7 @@ BD = ./build
 # Compile to objects
 
 $(BD)/%.o: %.cpp
-	-$(if $(wildcard $(BD)),,mkdir -p $(BD))
+	@$(if $(wildcard $(BD)),,mkdir -p $(BD))
 	$(CXX) -c -o $@ $< $(CXXFLAGS)
 
 # Build Executable
