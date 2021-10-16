@@ -431,8 +431,12 @@ void mfile::_output_build_path_if_option_b() {
 }
 
 void mfile::_output_mk_build_if_option_b() {
+    // Character before command:
+    //   '@': turn off echo.
+    //   '-': ignore error, make will exit when error occurs.
+    //   '+': ignore make's -n -t -q options.
     if (m_flags & OPTION_B) {
-        OUT("\t-$(if $(wildcard $(%s)),,mkdir -p $(%s))\n", m_cfg.k_bd.c_str(),
+        OUT("\t@$(if $(wildcard $(%s)),,mkdir -p $(%s))\n", m_cfg.k_bd.c_str(),
             m_cfg.k_bd.c_str());
     }
 }
