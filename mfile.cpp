@@ -127,20 +127,25 @@ void mfile::output_build_details_and_compile_to_objects() {
 
     const char *flag_g = (m_flags & OPTION_G) ? " -g" : "";
 
+    // CC = gcc
     if (h_c) {
         OUT("%s = %s\n", m_cfg.k_cc.c_str(), m_cfg.v_cc.c_str());
     }
+    // CXX = g++
     if (h_cpp || h_cc) {
         OUT("%s = %s\n", m_cfg.k_cxx.c_str(), m_cfg.v_cxx.c_str());
     }
+    // CFLAGS = -W -Wall -lm -g
     if (h_c) {
         OUT("%s = %s%s\n", m_cfg.k_cflags.c_str(), m_cfg.v_cflag.c_str(),
             flag_g);
     }
+    // CXXFLAGS = -W -Wall -g
     if (h_cpp || h_cc) {
         OUT("%s = %s%s\n", m_cfg.k_cxxflags.c_str(), m_cfg.v_cxxflag.c_str(),
             flag_g);
     }
+    // BD = ./build
     if (m_flags & OPTION_B) {
         OUT("%s = %s\n", m_cfg.k_bd.c_str(), m_cfg.v_bd.c_str());
     }
