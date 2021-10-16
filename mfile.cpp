@@ -391,35 +391,35 @@ void mfile::output_part() {
 }
 
 void mfile::output_gitignore() {
-    if (m_flags & OPTION_B) {
-        m_binaries.push_back("build/");
-    } else {
-        m_binaries.push_back("*.o");
-    }
-
-    // TODO
-    vector<string> ignores;
-    read_file_by_line(ignores, ".gitignore");
-
-    size_t n = ignores.size();
-    for (size_t i = 0; i < n; ++i) {
-        if (ignores[i].length() && ignores[i].back() == '/') {
-            ignores.push_back(ignores[i].substr(0, ignores[i].length()));
-        }
-    }
-
-    for (auto &binary : m_binaries) {
-        for (auto &ignore : ignores) {
-            if (binary == ignore) {
-                binary = "";
-                break;
-            }
-        }
-    }
-
-    append_file_by_line(".gitignore", m_binaries);
-
-    append_file_by_line("", m_binaries);
+//     if (m_flags & OPTION_B) {
+//         m_binaries.push_back("build/");
+//     } else {
+//         m_binaries.push_back("*.o");
+//     }
+//
+//     // TODO
+//     vector<string> ignores;
+//     read_file_by_line(ignores, ".gitignore");
+//
+//     size_t n = ignores.size();
+//     for (size_t i = 0; i < n; ++i) {
+//         if (ignores[i].length() && ignores[i].back() == '/') {
+//             ignores.push_back(ignores[i].substr(0, ignores[i].length()));
+//         }
+//     }
+//
+//     for (auto &binary : m_binaries) {
+//         for (auto &ignore : ignores) {
+//             if (binary == ignore) {
+//                 binary = "";
+//                 break;
+//             }
+//         }
+//     }
+//
+//     append_file_by_line(".gitignore", m_binaries);
+//
+//     append_file_by_line("", m_binaries);
 }
 
 /*==========================================================================*/
