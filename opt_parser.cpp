@@ -12,7 +12,11 @@
 // option values ourselves.
 // If the long option has a short option, use the short option character as the
 // value. If not has one, use (i + VAL_SHIFT), i is the index in the opt array.
+// Note that the ascii value of '?' is 63 and 'z' is 122.
 #define VAL_SHIFT 150
+
+size_t edit_distance(const char *s1, size_t len1, const char *s2, size_t len2);
+size_t edit_distance(const std::string &source, const std::string &target);
 
 opt::opt()
     : short_opt('\0'), long_opt(NULL), arg_type(NO_ARGUMENT), arg_name(NULL),
@@ -39,7 +43,7 @@ int opt_parser::parse(opt *opts, int n, int argc, char *const *argv) {
     opterr = 0; // do NOT print error message
 
     int opt, long_ind;
-
+    int index = 0;
     while ((opt = getopt_long(argc, argv, short_opts, long_opts, &long_ind)) !=
            -1) {
         if (opt == '?') {
@@ -58,8 +62,11 @@ int opt_parser::parse(opt *opts, int n, int argc, char *const *argv) {
             if (opt_ptr->arg_type != NO_ARGUMENT) {
                 opt_ptr->arg = optarg;
             }
+            opt_ptr->index = index;
             ++opt_ptr->count;
         }
+
+        ++index;
     }
 
     delete[] short_opts_ref;
@@ -124,6 +131,39 @@ opt **opt_parser::make_ref(opt *opts, int n, int max_val) const {
     }
 
     return opts_ref;
+}
+
+size_t edit_distance(const char *s1, size_t len1, const char *s2, size_t len2) {
+#define DP(i, j) dp[(i) * (len2 + 1) + (j)]
+    // dp should be longer than dp[(len1+1)*(len2+1)]
+    size_t *dp = new size_t[(len1 + 1) * (len2 + 1)];
+    for (size_t i = 0; i <= len1; ++i) {
+        DP(i, 0) = i;
+    }
+    for (size_t i = 0; i <= len2; ++i) {
+        DP(0, i) = i;
+    }
+
+    size_t flag;
+    for (size_t i = 1; i <= len1; ++i) {
+        for (size_t j = 1; j <= len2; ++j) {
+            flag = (s1[i - 1] == s2[j - 1]) ? 0 : 1;
+            DP(i, j) =
+                std::min(DP(i - 1, j) + 1,
+                         std::min(DP(i, j - 1) + 1, DP(i - 1, j - 1) + flag));
+        }
+    }
+
+    size_t ret = DP(len1, len2);
+
+    delete[] dp;
+
+    return ret;
+#undef DP
+}
+
+size_t edit_distance(const std::string &s1, const std::string &s2) {
+    return edit_distance(s1.c_str(), s1.length(), s2.c_str(), s2.length());
 }
 
 /*==========================================================================*/
