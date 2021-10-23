@@ -12,8 +12,7 @@ const options::as_option options::s_as_opts[] = {
      "Overwrite all sections, ascan will only overwrite the "
      "'Dependencies' section on default"},
     {OT_BUILD, 'b', "build", NULL, true,
-     "Put binaries to 'build' subdirectory, Option '-b' is not implemented "
-     "yet!"},
+     "Put all binaries to 'build' subdirectory"},
     {OT_FORCE, 'f', "force", NULL, true, "Force overwrite"},
     {OT_G, 'g', NULL, NULL, true, "add '-g' flag to cflags or cxxflags"},
     {OT_HELP, 'h', "help", NULL, true, "Print help information"},
@@ -31,9 +30,9 @@ const options::as_option options::s_as_opts[] = {
     {OT_CXX, '\0', "cxx", "CXX", false,
      "Set c++ compiler, default: '" CONFIG_DEFAULT_V_CXX "'"},
     {OT_CFLAGS, '\0', "cflags", "CFLAGS", false,
-     "Set c compile flags, default: '" CONFIG_DEFAULT_V_CFLAG "'"},
+     "Set c compile flags, default: '" CONFIG_DEFAULT_V_CFLAGS "'"},
     {OT_CXXFLAGS, '\0', "cxxflags", "CXXFLAGS", false,
-     "Set c++ compile flags, default: '" CONFIG_DEFAULT_V_CXXFLAG "'"},
+     "Set c++ compile flags, default: '" CONFIG_DEFAULT_V_CXXFLAGS "'"},
 };
 
 const size_t options::s_as_opt_size = (sizeof(s_as_opts) / sizeof(as_option));

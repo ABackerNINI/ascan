@@ -23,11 +23,12 @@ enum CONFIG_TYPE {
 Config::Config()
     : output(CONFIG_DEFAULT_OUTPUT), k_cc(CONFIG_DEFAULT_K_CC),
       k_cxx(CONFIG_DEFAULT_K_CXX), k_cflags(CONFIG_DEFAULT_K_CFLAGS),
-      k_cxxflags(CONFIG_DEFAULT_K_CXXFLAGS), k_bd(CONFIG_DEFAULT_K_BD),
-      k_bin(CONFIG_DEFAULT_K_BIN), k_obj(CONFIG_DEFAULT_K_OBJ),
-      k_obj_bd(CONFIG_DEFAULT_K_OBJ_BD), v_cc(CONFIG_DEFAULT_V_CC),
-      v_cxx(CONFIG_DEFAULT_V_CXX), v_cflag(CONFIG_DEFAULT_V_CFLAG),
-      v_cxxflag(CONFIG_DEFAULT_V_CXXFLAG), v_bd(CONFIG_DEFAULT_V_BD) {}
+      k_cxxflags(CONFIG_DEFAULT_K_CXXFLAGS), k_lflags(CONFIG_DEFAULT_K_LFLAGS),
+      k_bd(CONFIG_DEFAULT_K_BD), k_bin(CONFIG_DEFAULT_K_BIN),
+      k_obj(CONFIG_DEFAULT_K_OBJ), k_obj_bd(CONFIG_DEFAULT_K_OBJ_BD),
+      v_cc(CONFIG_DEFAULT_V_CC), v_cxx(CONFIG_DEFAULT_V_CXX),
+      v_cflags(CONFIG_DEFAULT_V_CFLAGS), v_cxxflags(CONFIG_DEFAULT_V_CXXFLAGS),
+      v_lflags(CONFIG_DEFAULT_V_LFLAGS), v_bd(CONFIG_DEFAULT_V_BD) {}
 
 string Config::make(const string &s, int i) const {
     char tmp[BUFSIZ];
@@ -163,9 +164,9 @@ int read_config(const char *filename, Config *cfg) {
                     } else if (strcmp(k, "cxx") == 0) {
                         cfg->v_cxx = v;
                     } else if (strcmp(k, "cflag") == 0) {
-                        cfg->v_cflag = v;
+                        cfg->v_cflags = v;
                     } else if (strcmp(k, "cxxflag") == 0) {
-                        cfg->v_cxxflag = v;
+                        cfg->v_cxxflags = v;
                     } else {
                         fprintf(
                             stderr,

@@ -13,6 +13,7 @@
 #define CONFIG_DEFAULT_K_CXX "CXX"
 #define CONFIG_DEFAULT_K_CFLAGS "CFLAGS"
 #define CONFIG_DEFAULT_K_CXXFLAGS "CXXFLAGS"
+#define CONFIG_DEFAULT_K_LFLAGS "LFLAGS"
 #define CONFIG_DEFAULT_K_BD "BD"
 #define CONFIG_DEFAULT_K_BIN "bin%d"
 #define CONFIG_DEFAULT_K_OBJ "obj%d"
@@ -20,8 +21,9 @@
 
 #define CONFIG_DEFAULT_V_CC "gcc"
 #define CONFIG_DEFAULT_V_CXX "g++"
-#define CONFIG_DEFAULT_V_CFLAG "-W -Wall -lm"
-#define CONFIG_DEFAULT_V_CXXFLAG "-W -Wall"
+#define CONFIG_DEFAULT_V_CFLAGS "-W -Wall"
+#define CONFIG_DEFAULT_V_CXXFLAGS "-W -Wall"
+#define CONFIG_DEFAULT_V_LFLAGS "-lm"
 #define CONFIG_DEFAULT_V_BD "./build"
 
 class Config {
@@ -37,6 +39,7 @@ class Config {
     std::string k_cxx;
     std::string k_cflags;
     std::string k_cxxflags;
+    std::string k_lflags;
     std::string k_bd;
     std::string k_bin;
     std::string k_obj;
@@ -44,8 +47,9 @@ class Config {
 
     std::string v_cc;
     std::string v_cxx;
-    std::string v_cflag;
-    std::string v_cxxflag;
+    std::string v_cflags;
+    std::string v_cxxflags;
+    std::string v_lflags;
     std::string v_bd;
 
     std::map<std::string, std::string> executable;
