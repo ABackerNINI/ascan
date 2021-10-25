@@ -47,7 +47,9 @@ cfile::cfile(const string &filename, const string &name)
     m_visited = false;
 }
 
-void cfile::set_visited(bool visited) { m_visited = visited; }
+void cfile::set_visited(bool visited) {
+    m_visited = visited;
+}
 
 void cfile::match_includes(vector<cfile> &files) {
     if (m_includes_matched) {
@@ -89,34 +91,54 @@ void cfile::associate_header(vector<cfile> &files) {
     }
 }
 
-const string &cfile::filename() const { return m_filename; }
+const string &cfile::filename() const {
+    return m_filename;
+}
 
-const string &cfile::name() const { return m_name; }
+const string &cfile::name() const {
+    return m_name;
+}
 
-bool cfile::have_main_func() const { return m_have_main_func; }
+bool cfile::have_main_func() const {
+    return m_have_main_func;
+}
 
-enum cfile::FILE_TYPE cfile::file_type() const { return m_file_type; }
+enum cfile::FILE_TYPE cfile::file_type() const {
+    return m_file_type;
+}
 
-bool cfile::is_header() const { return file_type() == FILE_TYPE_H; }
+bool cfile::is_header() const {
+    return file_type() == FILE_TYPE_H;
+}
 
 bool cfile::is_source() const {
     return file_type() == FILE_TYPE_C || file_type() == FILE_TYPE_CPP ||
            file_type() == FILE_TYPE_CC;
 }
 
-bool cfile::is_c_source() const { return file_type() == FILE_TYPE_C; }
+bool cfile::is_c_source() const {
+    return file_type() == FILE_TYPE_C;
+}
 
 bool cfile::is_cxx_source() const {
     return file_type() == FILE_TYPE_CPP || file_type() == FILE_TYPE_CC;
 }
 
-const vector<cfile *> &cfile::includes() const { return m_includes; }
+const vector<cfile *> &cfile::includes() const {
+    return m_includes;
+}
 
-const cfile *cfile::associate() const { return m_associate; }
+const cfile *cfile::associate() const {
+    return m_associate;
+}
 
-cfile *cfile::associate() { return m_associate; }
+cfile *cfile::associate() {
+    return m_associate;
+}
 
-bool cfile::visited() const { return m_visited; }
+bool cfile::visited() const {
+    return m_visited;
+}
 
 /*==========================================================================*/
 

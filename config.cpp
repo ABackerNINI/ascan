@@ -20,8 +20,8 @@ enum CONFIG_TYPE {
 };
 
 Config::Config()
-    : output(CONFIG_DEFAULT_OUTPUT), k_bin(CONFIG_BIN),
-      k_obj(CONFIG_OBJ), k_obj_bd(CONFIG_OBJ_BD) {
+    : output(CONFIG_DEFAULT_OUTPUT), k_bin(CONFIG_BIN), k_obj(CONFIG_OBJ),
+      k_obj_bd(CONFIG_OBJ_BD) {
     configs[CONFIG_CC] = CONFIG_DEFAULT_V_CC;
     configs[CONFIG_CXX] = CONFIG_DEFAULT_V_CXX;
     configs[CONFIG_CFLAGS] = CONFIG_DEFAULT_V_CFLAGS;
@@ -44,11 +44,17 @@ void Config::set_config(const std::string &config_name,
     configs[config_name] = config_value;
 }
 
-string Config::make_bin(int i) const { return make(k_bin, i); }
+string Config::make_bin(int i) const {
+    return make(k_bin, i);
+}
 
-string Config::make_obj(int i) const { return make(k_obj, i); }
+string Config::make_obj(int i) const {
+    return make(k_obj, i);
+}
 
-string Config::make_obj_bd(int i) const { return make(k_obj_bd, i); }
+string Config::make_obj_bd(int i) const {
+    return make(k_obj_bd, i);
+}
 
 string Config::make(const string &s, int i) const {
     char tmp[BUFSIZ];

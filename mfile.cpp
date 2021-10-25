@@ -51,7 +51,8 @@ static void print_all_headers(FILE *m_fout, vector<cfile> &files, cfile *file);
 /*==========================================================================*/
 
 mfile::mfile(vector<cfile> &cfiles, Config &cfg, uint32_t flags)
-    : m_cfiles(cfiles), m_cfg(cfg), m_flags(flags) {}
+    : m_cfiles(cfiles), m_cfg(cfg), m_flags(flags) {
+}
 
 int mfile::output() {
 #if DISABLE_WRITE == 1
@@ -312,7 +313,8 @@ static void print_all_headers(FILE *m_fout, vector<cfile> &files, cfile *file) {
     }
 }
 
-void mfile::output_dependencies_helper(FILE *m_fout, vector<cfile> &files,
+void mfile::output_dependencies_helper(FILE *m_fout,
+                                       vector<cfile> &files,
                                        cfile *file) {
     file->set_visited(true);
     if (file->includes().size() > 0) {

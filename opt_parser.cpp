@@ -20,9 +20,11 @@ size_t edit_distance(const std::string &source, const std::string &target);
 
 opt::opt()
     : short_opt('\0'), long_opt(NULL), arg_type(NO_ARGUMENT), arg_name(NULL),
-      description(NULL), count(0), index(-1), arg(NULL) {}
+      description(NULL), count(0), index(-1), arg(NULL) {
+}
 
-opt_parser::opt_parser() : short_opts(NULL), long_opts(NULL) {}
+opt_parser::opt_parser() : short_opts(NULL), long_opts(NULL) {
+}
 
 opt_parser::~opt_parser() {
     delete[] short_opts;

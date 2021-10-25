@@ -25,9 +25,13 @@ const char *get_ext(const string &filename) {
     return get_ext(filename.c_str(), filename.length());
 }
 
-bool is_exist(const char *filename) { return access(filename, F_OK) == 0; }
+bool is_exist(const char *filename) {
+    return access(filename, F_OK) == 0;
+}
 
-bool is_exist(const string &filename) { return is_exist(filename.c_str()); }
+bool is_exist(const string &filename) {
+    return is_exist(filename.c_str());
+}
 
 void get_date(char *date) {
     time_t t = time(NULL);

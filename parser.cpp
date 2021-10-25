@@ -271,7 +271,8 @@ struct syntax_node {
     vector<syntax_node> seq;
     vector<syntax_node> alternative;
     syntax_node() : optional(false) {}
-    syntax_node(enum PARSER_TOKEN_TYPE token_type, const string &token_string,
+    syntax_node(enum PARSER_TOKEN_TYPE token_type,
+                const string &token_string,
                 bool optional = false)
         : token_type(token_type), token_string(token_string),
           optional(optional) {}

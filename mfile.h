@@ -19,7 +19,8 @@ class mfile {
     void output_build_details();
     void output_compile_to_objects();
     void output_build_executable();
-    void output_dependencies_helper(FILE *m_fout, std::vector<cfile> &files,
+    void output_dependencies_helper(FILE *m_fout,
+                                    std::vector<cfile> &files,
                                     cfile *file);
     void output_dependencies();
     void output_clean_up();

@@ -22,7 +22,7 @@ enum PARSER_TOKEN_TYPE {
 //
 // Return an array containing included file names.
 std::vector<std::string> scan_includes_and_main_func(const char *filename,
-                                           bool *main_func);
+                                                     bool *main_func);
 
 // Simple lex parser, get next token from file.
 // Note: do NOT parse multiple files at the same time.

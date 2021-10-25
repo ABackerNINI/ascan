@@ -44,9 +44,13 @@ options::options() {
     m_short_opts = make_short_opts();
 }
 
-const char *options::get_short_opts() const { return m_short_opts; }
+const char *options::get_short_opts() const {
+    return m_short_opts;
+}
 
-const struct option *options::get_long_opts() const { return m_long_opts; }
+const struct option *options::get_long_opts() const {
+    return m_long_opts;
+}
 
 const options::as_option *options::get_as_opts(size_t *size) const {
     *size = s_as_opt_size;
