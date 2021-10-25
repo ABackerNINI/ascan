@@ -21,7 +21,7 @@
 #define CONFIG_DEFAULT_V_CFLAGS "-W -Wall"
 #define CONFIG_DEFAULT_V_CXXFLAGS "-W -Wall"
 #define CONFIG_DEFAULT_V_LFLAGS "-lm"
-#define CONFIG_DEFAULT_V_BD "./build"
+#define CONFIG_DEFAULT_V_BD "build"
 
 #define CONFIG_BIN "bin%d"
 #define CONFIG_OBJ "obj%d"

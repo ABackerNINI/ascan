@@ -60,6 +60,9 @@ int mfile::output() {
 
     return EXIT_FAILURE;
 #else
+
+    // First write output to the temperary file, then rename it to the actual
+    // output file in case exiting on error during output stage.
     string tmp = "ascan_tmp.mf";
 
     m_fout = fopen(tmp.c_str(), "w");
@@ -79,13 +82,14 @@ int mfile::output() {
 
         output_gitignore();
     } else {
+        // TODO:
         output_part();
     }
+    
     fclose(m_fout);
 
     string cmd = "mv \"" + tmp + "\" \"" + m_cfg.output + "\"";
     print_debug("%s\n", cmd.c_str());
-
     if (system(cmd.c_str()) != 0) {
         print_error("unkown error!");
         return EXIT_FAILURE;
