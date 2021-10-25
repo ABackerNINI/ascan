@@ -22,10 +22,8 @@ class cfile {
 
     // File name with extension.
     const std::string &filename() const;
-    // File name without extension.
+    // File name without extension and directory.
     const std::string &name() const;
-    // File extension.
-    // const char *ext() const;
     // Whether the source file have a main function.
     bool have_main_func() const;
     // Get file type.
@@ -40,13 +38,13 @@ class cfile {
     bool is_cxx_source() const;
     // Get header files this file include.
     const std::vector<cfile *> &includes() const;
-    // -- Get associated file.
-    // -- Two files are associated if they have the same file name and one file
+    // Get associated file.
+    // Two files are associated if they have the same file name and one file
     // is a header file and the other is a source file, such as "foo.h" and
     // "foo.c".
     const cfile *associate() const;
-    // -- Get associated file.
-    // -- Two files are associated if they have the same file name and one file
+    // Get associated file.
+    // Two files are associated if they have the same file name and one file
     // is a header file and the other is a source file, such as "foo.h" and
     // "foo.c".
     cfile *associate();
@@ -56,7 +54,6 @@ class cfile {
   private:
     std::string m_filename;
     std::string m_name;
-    // const char *m_ext;
     bool m_have_main_func;
     bool m_includes_matched;
     enum FILE_TYPE m_file_type;

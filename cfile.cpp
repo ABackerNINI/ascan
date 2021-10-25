@@ -21,6 +21,9 @@ using namespace std;
 
 cfile::cfile(const string &filename, const string &name)
     : m_filename(filename), m_name(name) {
+    //! Be careful with get_ext(std::string.c_str()), the c_str() return value
+    //! is a dynamic memory which could move to another place when you modified
+    //! the string.
     const char *ext = get_ext(m_filename.c_str());
 
     assert(ext);
@@ -73,7 +76,6 @@ void cfile::match_includes(vector<cfile> &files) {
 }
 
 void cfile::associate_header(vector<cfile> &files) {
-    // size_t len = m_filename.length() - strlen(m_ext);
     assert(is_source());
     // TODO: multi-directory makefile
     for (auto file = files.begin(); file != files.end(); ++file) {
@@ -90,8 +92,6 @@ void cfile::associate_header(vector<cfile> &files) {
 const string &cfile::filename() const { return m_filename; }
 
 const string &cfile::name() const { return m_name; }
-
-// const char *cfile::ext() const { return m_ext; }
 
 bool cfile::have_main_func() const { return m_have_main_func; }
 
@@ -143,21 +143,29 @@ static bool recursion_scan_dir_c_cxx_files_helper(char *dir,
             assert(false);
         }
 
-        lstat(p_entry->d_name, &statbuf);
-
-        if (S_IFDIR & statbuf.st_mode) {
-            // if (strcmp(".", p_entry->d_name) != 0 &&
-            //     strcmp("..", p_entry->d_name) != 0) {
-            // }
-        } else {
-            const char *ext = get_ext(p_entry->d_name);
-            if (ext && (!strcmp(ext, ".h") || !strcmp(ext, ".c") ||
-                        !strcmp(ext, ".cpp") ||
-                        !strcmp(ext, ".cc") /*|| !strcmp(ext, ".hpp")*/)) {
-                vec.emplace_back(
-                    std::string(dir),
-                    string(p_entry->d_name).substr(0, ext - p_entry->d_name));
+        if (lstat(p_entry->d_name, &statbuf) == 0) {
+            if ((statbuf.st_mode & S_IFMT) == S_IFDIR) { /* dir */
+                // TODO: multi-directory makefile
+                /* ignore "." and ".." */
+                // if (strcmp(".", p_entry->d_name) != 0 &&
+                //     strcmp("..", p_entry->d_name) != 0) {
+                // }
+            } else if ((statbuf.st_mode & S_IFMT) ==
+                       S_IFREG) { /* regular file */
+                const char *ext = get_ext(p_entry->d_name);
+                if (ext && (!strcmp(ext, ".h") || !strcmp(ext, ".c") ||
+                            !strcmp(ext, ".cpp") ||
+                            !strcmp(ext, ".cc") /*|| !strcmp(ext, ".hpp")*/)) {
+                    vec.emplace_back(std::string(dir),
+                                     string(p_entry->d_name)
+                                         .substr(0, ext - p_entry->d_name));
+                }
+            } else {
+                print_info("Not a regular file or directory: \"%s\"\n",
+                           p_entry->d_name);
             }
+        } else {
+            print_info("Can't lstat file/directory: \"%s\"\n", p_entry->d_name);
         }
     }
 
