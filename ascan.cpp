@@ -379,7 +379,7 @@ bool ascan::test_makefile() {
 void ascan::match_c_cxx_includes() {
     for (auto file = m_cfiles.begin(); file != m_cfiles.end(); ++file) {
         if (file->is_source()) {
-            print_info("%s\n", file->filename().c_str());
+            print_debug("%s\n", file->filename().c_str());
             file->match_includes(m_cfiles);
             for (auto include = file->includes().begin();
                  include != file->includes().end(); ++include) {

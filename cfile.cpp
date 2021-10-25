@@ -84,8 +84,8 @@ void cfile::associate_header(vector<cfile> &files) {
         if (file->is_header() && m_name == file->m_name) {
             m_associate = &(*file);
             file->m_associate = this;
-            print_info("associated: %s <-> %s\n", m_filename.c_str(),
-                       file->m_filename.c_str());
+            print_debug("associated: %s <-> %s\n", m_filename.c_str(),
+                        file->m_filename.c_str());
             break;
         }
     }
@@ -183,11 +183,12 @@ static bool recursion_scan_dir_c_cxx_files_helper(char *dir,
                                          .substr(0, ext - p_entry->d_name));
                 }
             } else {
-                print_info("Not a regular file or directory: \"%s\"\n",
-                           p_entry->d_name);
+                print_warning("Not a regular file or directory: \"%s\"\n",
+                              p_entry->d_name);
             }
         } else {
-            print_info("Can't lstat file/directory: \"%s\"\n", p_entry->d_name);
+            print_warning("Can't lstat file/directory: \"%s\"\n",
+                          p_entry->d_name);
         }
     }
 

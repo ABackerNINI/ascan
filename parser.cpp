@@ -113,7 +113,7 @@ vector<string> scan_includes_and_main_func(const char *filename,
             break;
         case IMS_INCLUDE:
             if (type == TYPE_STRING) {
-                print_info_ex("\t|%s|\n", buff);
+                print_debug_ex("\t|%s|\n", buff);
                 includes.push_back(make_path(filename, buff));
             }
             state = IMS_INIT;
