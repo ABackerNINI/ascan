@@ -200,16 +200,16 @@ int ascan::parse_cmd_args(int argc, char **argv) {
             }
             break;
         case options::OT_CC:
-            m_cfg.v_cc = string(optarg);
+            m_cfg.set_config(CONFIG_CC, optarg);
             break;
         case options::OT_CXX:
-            m_cfg.v_cxx = string(optarg);
+            m_cfg.set_config(CONFIG_CXX, optarg);
             break;
         case options::OT_CFLAGS:
-            m_cfg.v_cflags = string(optarg);
+            m_cfg.set_config(CONFIG_CFLAGS, optarg);
             break;
         case options::OT_CXXFLAGS:
-            m_cfg.v_cxxflags = string(optarg);
+            m_cfg.set_config(CONFIG_CXXFLAGS, optarg);
             break;
         default:
             // find the option in case of missing argument

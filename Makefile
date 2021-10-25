@@ -39,7 +39,7 @@ $(BD)/config.o: config.h parser.h
 # COMPILE TO OBJECTS
 
 $(BD)/%.o: %.cpp
-	@$(if $(wildcard $(BD)),,mkdir -p $(BD))
+	@mkdir -p "$(BD)"
 	$(CXX) $(CXXFLAGS) -c -o $@ $<
 
 # PHONY

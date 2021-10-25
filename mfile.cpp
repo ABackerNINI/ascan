@@ -130,28 +130,28 @@ void mfile::output_build_details() {
 
     // CC = gcc
     if (h_c) {
-        OUT("%s = %s\n", m_cfg.k_cc.c_str(), m_cfg.v_cc.c_str());
+        OUT("%s = %s\n", CONFIG_CC, m_cfg.get_config(CONFIG_CC).c_str());
     }
     // CXX = g++
     if (h_cpp || h_cc) {
-        OUT("%s = %s\n", m_cfg.k_cxx.c_str(), m_cfg.v_cxx.c_str());
+        OUT("%s = %s\n", CONFIG_CXX, m_cfg.get_config(CONFIG_CXX).c_str());
     }
     // CFLAGS = -W -Wall -lm -g
     if (h_c) {
-        OUT("%s = %s%s\n", m_cfg.k_cflags.c_str(), m_cfg.v_cflags.c_str(),
-            flag_g);
+        OUT("%s = %s%s\n", CONFIG_CFLAGS,
+            m_cfg.get_config(CONFIG_CFLAGS).c_str(), flag_g);
     }
     // CXXFLAGS = -W -Wall -g
     if (h_cpp || h_cc) {
-        OUT("%s = %s%s\n", m_cfg.k_cxxflags.c_str(), m_cfg.v_cxxflags.c_str(),
-            flag_g);
+        OUT("%s = %s%s\n", CONFIG_CXXFLAGS,
+            m_cfg.get_config(CONFIG_CXXFLAGS).c_str(), flag_g);
     }
     // LFLAGS = -lm
-    OUT("%s = %s\n", m_cfg.k_lflags.c_str(), m_cfg.v_lflags.c_str());
+    OUT("%s = %s\n", CONFIG_LFLAGS, m_cfg.get_config(CONFIG_LFLAGS).c_str());
 
     // BD = ./build
     if (m_flags & OPTION_B) {
-        OUT("%s = %s\n", m_cfg.k_bd.c_str(), m_cfg.v_bd.c_str());
+        OUT("%s = %s\n", CONFIG_BD, m_cfg.get_config(CONFIG_BD).c_str());
     }
     OUT("\n");
 }
@@ -181,8 +181,7 @@ void mfile::output_compile_to_objects() {
 
         _output_mk_build_if_option_b();
 
-        OUT("\t$(%s) $(%s) -c -o $@ $<\n\n", m_cfg.k_cc.c_str(),
-            m_cfg.k_cflags.c_str());
+        OUT("\t$(%s) $(%s) -c -o $@ $<\n\n", CONFIG_CC, CONFIG_CFLAGS);
     }
     if (h_cpp) {
         _output_build_path_if_option_b();
@@ -190,8 +189,7 @@ void mfile::output_compile_to_objects() {
 
         _output_mk_build_if_option_b();
 
-        OUT("\t$(%s) $(%s) -c -o $@ $<\n\n", m_cfg.k_cxx.c_str(),
-            m_cfg.k_cxxflags.c_str());
+        OUT("\t$(%s) $(%s) -c -o $@ $<\n\n", CONFIG_CXX, CONFIG_CXXFLAGS);
     }
     if (h_cc) {
         _output_build_path_if_option_b();
@@ -199,8 +197,7 @@ void mfile::output_compile_to_objects() {
 
         _output_mk_build_if_option_b();
 
-        OUT("\t$(%s) $(%s) -c -o $@ $<\n\n", m_cfg.k_cxx.c_str(),
-            m_cfg.k_cxxflags.c_str());
+        OUT("\t$(%s) $(%s) -c -o $@ $<\n\n", CONFIG_CXX, CONFIG_CXXFLAGS);
     }
 }
 
@@ -275,7 +272,7 @@ void mfile::output_build_executable() {
         if (m_flags & OPTION_B) {
             // OUT: obj1_bd = $(obj1:%=$(BD)/%)
             OUT("%s = $(%s:%%=$(%s)/%%)\n", m_cfg.make_obj_bd(i).c_str(),
-                m_cfg.make_obj(i).c_str(), m_cfg.k_bd.c_str());
+                m_cfg.make_obj(i).c_str(), CONFIG_BD);
         }
         OUT("\n");
 
@@ -284,29 +281,31 @@ void mfile::output_build_executable() {
                 m_cfg.make_obj_bd(i).c_str());
         } else {
             // OUT: $(bin1): $(obj1)
-            OUT("%s: $(%s)\n", exec->name().c_str(), m_cfg.make_obj(i).c_str());
+            OUT("$(%s): $(%s)\n", m_cfg.make_bin(i).c_str(),
+                m_cfg.make_obj(i).c_str());
         }
+
         //! CXXFLAGS may contain dynamic libs such as -lm, this should be
         //! put behind the objects which use them.
         if (exec->is_c_source()) {
             if (m_flags & OPTION_B) {
                 // OUT: $(CC) $(CFLAGS) -o $@ $^ $(LFLAGS)
-                OUT("\t$(%s) $(%s) -o $@ $^ $(%s)\n", m_cfg.k_cc.c_str(),
-                    m_cfg.k_cflags.c_str(), m_cfg.k_lflags.c_str());
+                OUT("\t$(%s) $(%s) -o $@ $^ $(%s)\n", CONFIG_CC, CONFIG_CFLAGS,
+                    CONFIG_LFLAGS);
             } else {
                 // OUT: $(CC) $(CFLAGS) -o $@ $^ $(LFLAGS)
-                OUT("\t$(%s) $(%s) -o $@ $^ $(%s)\n", m_cfg.k_cc.c_str(),
-                    m_cfg.k_cflags.c_str(), m_cfg.k_lflags.c_str());
+                OUT("\t$(%s) $(%s) -o $@ $^ $(%s)\n", CONFIG_CC, CONFIG_CFLAGS,
+                    CONFIG_LFLAGS);
             }
         } else if (exec->is_cxx_source()) {
             if (m_flags & OPTION_B) {
                 // OUT: $(CXX) $(CXXFLAGS) -o $@ $^ $(LFLAGS)
-                OUT("\t$(%s) $(%s) -o $@ $^ $(%s)\n", m_cfg.k_cxx.c_str(),
-                    m_cfg.k_cxxflags.c_str(), m_cfg.k_lflags.c_str());
+                OUT("\t$(%s) $(%s) -o $@ $^ $(%s)\n", CONFIG_CXX,
+                    CONFIG_CXXFLAGS, CONFIG_LFLAGS);
             } else {
                 // OUT: $(CXX) $(CXXFLAGS) -o $@ $^ $(LFLAGS)
-                OUT("\t$(%s) $(%s) -o $@ $^ $(%s)\n", m_cfg.k_cxx.c_str(),
-                    m_cfg.k_cxxflags.c_str(), m_cfg.k_lflags.c_str());
+                OUT("\t$(%s) $(%s) -o $@ $^ $(%s)\n", CONFIG_CXX,
+                    CONFIG_CXXFLAGS, CONFIG_LFLAGS);
             }
         } else {
             // TODO error handle
@@ -385,7 +384,7 @@ void mfile::output_clean_up() {
             OUT(" \"$(%s)\"", m_cfg.make_bin(idx).c_str());
             ++idx;
         }
-        OUT(" \"$(%s)\"\n", m_cfg.k_bd.c_str());
+        OUT(" \"$(%s)\"\n", CONFIG_BD);
     } else {
         OUT("\trm -f");
         // for (size_t i = 0; i < m_executable.size(); ++i) {
@@ -453,7 +452,8 @@ void mfile::output_gitignore() {
 
 void mfile::_output_build_path_if_option_b() {
     if (m_flags & OPTION_B) {
-        OUT("$(%s)/", m_cfg.k_bd.c_str());
+        // OUT("$(%s)/", m_cfg.k_bd.c_str());
+        OUT("$(%s)/", CONFIG_BD);
     }
 }
 
@@ -463,8 +463,8 @@ void mfile::_output_mk_build_if_option_b() {
     //   '-': ignore error, make will exit when error occurs.
     //   '+': ignore make's -n -t -q options.
     if (m_flags & OPTION_B) {
-        OUT("\t@$(if $(wildcard $(%s)),,mkdir -p $(%s))\n", m_cfg.k_bd.c_str(),
-            m_cfg.k_bd.c_str());
+        // OUT @mkdir -p "$(BD)"
+        OUT("\t@mkdir -p \"$(%s)\"\n", CONFIG_BD);
     }
 }
 
