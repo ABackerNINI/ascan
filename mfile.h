@@ -29,8 +29,8 @@ class mfile {
 
     void output_gitignore();
 
-    void _output_build_path_if_option_b();
-    void _output_mk_build_if_option_b();
+    void output_build_path_if_option_b();
+    void output_mk_build_if_option_b();
 
   private:
     std::vector<cfile> &m_cfiles;

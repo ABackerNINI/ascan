@@ -21,17 +21,20 @@ using namespace std;
 
 cfile::cfile(const string &filename, const string &name)
     : m_filename(filename), m_name(name) {
-    m_ext = get_ext(m_filename.c_str());
+    const char *ext = get_ext(m_filename.c_str());
+
+    assert(ext);
+
     m_have_main_func = false;
     m_includes_matched = false;
 
-    if (strcmp(m_ext, ".h") == 0) {
+    if (strcmp(ext, ".h") == 0) {
         m_file_type = FILE_TYPE_H;
-    } else if (strcmp(m_ext, ".c") == 0) {
+    } else if (strcmp(ext, ".c") == 0) {
         m_file_type = FILE_TYPE_C;
-    } else if (strcmp(m_ext, ".cpp") == 0) {
+    } else if (strcmp(ext, ".cpp") == 0) {
         m_file_type = FILE_TYPE_CPP;
-    } else if (strcmp(m_ext, ".cc") == 0) {
+    } else if (strcmp(ext, ".cc") == 0) {
         m_file_type = FILE_TYPE_CC;
     } else {
         m_file_type = FILE_TYPE_ELSE;
@@ -70,11 +73,11 @@ void cfile::match_includes(vector<cfile> &files) {
 }
 
 void cfile::associate_header(vector<cfile> &files) {
-    size_t len = m_filename.length() - strlen(m_ext);
+    // size_t len = m_filename.length() - strlen(m_ext);
+    assert(is_source());
+    // TODO: multi-directory makefile
     for (auto file = files.begin(); file != files.end(); ++file) {
-        if (strncmp(m_filename.c_str(), file->m_filename.c_str(), len) == 0 &&
-            &(*file) != this &&
-            file->m_filename == m_filename.substr(0, len) + ".h") {
+        if (file->is_header() && m_name == file->m_name) {
             m_associate = &(*file);
             file->m_associate = this;
             print_info("associated: %s <-> %s\n", m_filename.c_str(),
@@ -88,7 +91,7 @@ const string &cfile::filename() const { return m_filename; }
 
 const string &cfile::name() const { return m_name; }
 
-const char *cfile::ext() const { return m_ext; }
+// const char *cfile::ext() const { return m_ext; }
 
 bool cfile::have_main_func() const { return m_have_main_func; }
 

@@ -25,7 +25,7 @@ class cfile {
     // File name without extension.
     const std::string &name() const;
     // File extension.
-    const char *ext() const;
+    // const char *ext() const;
     // Whether the source file have a main function.
     bool have_main_func() const;
     // Get file type.
@@ -56,7 +56,7 @@ class cfile {
   private:
     std::string m_filename;
     std::string m_name;
-    const char *m_ext;
+    // const char *m_ext;
     bool m_have_main_func;
     bool m_includes_matched;
     enum FILE_TYPE m_file_type;
