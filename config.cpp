@@ -34,7 +34,7 @@ const std::string &Config::get_config(const std::string &config_name) const {
     auto config = configs.find(config_name);
     if (config == configs.end()) {
         print_error("no such config: \"%s\"", config_name.c_str());
-        exit(1);
+        exit(EXIT_FAILURE);
     }
     return config->second;
 }

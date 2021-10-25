@@ -60,7 +60,9 @@ int mfile::output() {
 
     return EXIT_FAILURE;
 #else
-    m_fout = fopen(m_cfg.output.c_str(), "w");
+    string tmp = "ascan_tmp.mf";
+
+    m_fout = fopen(tmp.c_str(), "w");
     if (m_fout == NULL) {
         print_error("Can't open file \"%s\"\n", m_cfg.output.c_str());
         return EXIT_FAILURE;
@@ -80,6 +82,14 @@ int mfile::output() {
         output_part();
     }
     fclose(m_fout);
+
+    string cmd = "mv \"" + tmp + "\" \"" + m_cfg.output + "\"";
+    print_debug("%s\n", cmd.c_str());
+
+    if (system(cmd.c_str()) != 0) {
+        print_error("unkown error!");
+        return EXIT_FAILURE;
+    }
 
     return EXIT_SUCCESS;
 #endif
