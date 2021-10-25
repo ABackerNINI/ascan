@@ -85,7 +85,7 @@ int mfile::output() {
         // TODO:
         output_part();
     }
-    
+
     fclose(m_fout);
 
     string cmd = "mv \"" + tmp + "\" \"" + m_cfg.output + "\"";
@@ -376,26 +376,30 @@ void mfile::output_clean_up() {
 
     // OUT: rm -f "$(bin1)" $(obj1)
     // if only one executable, hide the index number
-    int idx = m_executable.size() == 1 ? -1 : 1;
     if (m_flags & OPTION_B) {
         OUT("\trm -rf");
+        int idx = m_executable.size() == 1 ? -1 : 1;
         for (size_t i = 0; i < m_executable.size(); ++i) {
             OUT(" \"$(%s)\"", m_cfg.make_bin(idx).c_str());
             ++idx;
         }
         OUT(" \"$(%s)\"\n", CONFIG_BD);
     } else {
+        //? Why not "rm -f *.o"?
+        //* Because sometimes we may compile with other pre-compiled .o files
+        //* This is not a problem if option -b.
+
+        // OUT rm -f "$(bin1)" "$(bin2)" $(obj1) $(obj2)
         OUT("\trm -f");
-        // for (size_t i = 0; i < m_executable.size(); ++i) {
-        //     OUT(" \"$(%s)\" $(%s)", m_cfg.make_bin(idx).c_str(),
-        //         m_cfg.make_obj(idx).c_str());
-        //     ++idx;
-        // }
+        int idx = m_executable.size() == 1 ? -1 : 1;
         for (size_t i = 0; i < m_executable.size(); ++i) {
-            OUT(" \"$(%s)\"", m_cfg.make_bin(idx).c_str());
-            ++idx;
+            OUT(" \"$(%s)\"", m_cfg.make_bin(idx++).c_str());
         }
-        OUT(" *.o\n");
+        idx = m_executable.size() == 1 ? -1 : 1;
+        for (size_t i = 0; i < m_executable.size(); ++i) {
+            OUT(" $(%s)", m_cfg.make_obj(idx++).c_str());
+        }
+        OUT("\n");
     }
     OUT("\n");
 }
@@ -403,7 +407,7 @@ void mfile::output_clean_up() {
 void mfile::output_phony() {
     OUT_SEC(SEC_PHONY);
 
-    OUT(".PHONY: all rebuild clean\n\n");
+    OUT(".PHONY: all rebuild clean\n");
 }
 
 /*==========================================================================*/
