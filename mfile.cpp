@@ -8,6 +8,7 @@
 
 #include "common.h"
 #include "options.h"
+#include <algorithm>
 
 using namespace std;
 
@@ -61,7 +62,7 @@ int mfile::output() {
     return EXIT_FAILURE;
 #else
 
-    // First write output to the temperary file, then rename it to the actual
+    // First write output to the temporary file, then rename it to the actual
     // output file in case exiting on error during output stage.
     string tmp = "ascan_tmp.mf";
 
@@ -222,6 +223,10 @@ void mfile::output_build_executable() {
         }
     }
 
+    // Sort executables by name
+    sort(m_executable.begin(), m_executable.end(),
+         [](const cfile *a, const cfile *b) { return a->name() < b->name(); });
+
     OUT_SEC(SEC_BUILD_EXECUTABLE);
 
     // Print bin1 var before all
@@ -255,7 +260,7 @@ void mfile::output_build_executable() {
         OUT_SEC2(SEC_EXECUTABLE, (i == -1 ? 1 : i));
         // OUT: obj1 = ascan.o
         OUT("%s = %s.o", m_cfg.make_obj(i).c_str(), exec->name().c_str());
-        // OUT: all objects dependecy.
+        // OUT: all objects dependency.
         find_all_headers(m_cfiles, exec);
         for (auto cfile = m_cfiles.begin(); cfile != m_cfiles.end(); ++cfile) {
             if (cfile->visited()) {
@@ -348,6 +353,7 @@ void mfile::output_dependencies_helper(FILE *m_fout,
         }
     } else {
         // .c/.cpp/.cc depends on itself if it has no includes
+        output_build_path_if_option_b();
         OUT("%s.o: %s\n", file->name().c_str(), file->filename().c_str());
     }
 }
