@@ -7,18 +7,6 @@
 
 using namespace std;
 
-enum CONFIG_STATE { CS_COMPILER, CS_EXECUTABLE, CS_IGNORE, CS_UNKNOWN };
-
-enum CONFIG_TYPE {
-    CT_TAG,
-    CT_KV,
-    CT_K,
-    CT_NOT_TAG,
-    CT_EMPTY,
-    CT_ERROR_TAG_MISSING_RIGHT_BRACKET,
-    CT_ERROR_KV
-};
-
 Config::Config()
     : output(CONFIG_DEFAULT_OUTPUT), k_bin(CONFIG_BIN), k_obj(CONFIG_OBJ),
       k_obj_bd(CONFIG_OBJ_BD) {
@@ -71,6 +59,18 @@ string Config::make(const string &s, int i) const {
     return string(tmp);
 }
 
+// enum CONFIG_STATE { CS_COMPILER, CS_EXECUTABLE, CS_IGNORE, CS_UNKNOWN };
+//
+// enum CONFIG_TYPE {
+//     CT_TAG,
+//     CT_KV,
+//     CT_K,
+//     CT_NOT_TAG,
+//     CT_EMPTY,
+//     CT_ERROR_TAG_MISSING_RIGHT_BRACKET,
+//     CT_ERROR_KV
+// };
+// 
 // // skip ' ' and '\t'
 // static char *skip_blank(char *s) {
 //     while (*s && isblank(*s)) {

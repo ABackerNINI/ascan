@@ -17,6 +17,15 @@
 
 using namespace std;
 
+const std::vector<std::string> cfile::file_type_ext = {".h", ".hpp", ".c",
+                                                       ".cpp", ".cc"};
+const std::vector<cfile::FILE_TYPE> cfile::c_header_types = {FILE_TYPE_H};
+const std::vector<cfile::FILE_TYPE> cfile::cxx_header_types = {FILE_TYPE_H,
+                                                               FILE_TYPE_HPP};
+const std::vector<cfile::FILE_TYPE> cfile::c_source_types = {FILE_TYPE_C};
+const std::vector<cfile::FILE_TYPE> cfile::cxx_source_types = {FILE_TYPE_CPP,
+                                                               FILE_TYPE_CC};
+
 /*==========================================================================*/
 
 cfile::cfile(const string &filename, const string &name)
@@ -26,22 +35,14 @@ cfile::cfile(const string &filename, const string &name)
     //! the string.
     const char *ext = get_ext(m_filename.c_str());
 
+    // TODO: check if filename contains spaces
+
     assert(ext);
 
     m_have_main_func = false;
     m_includes_matched = false;
 
-    if (strcmp(ext, ".h") == 0) {
-        m_file_type = FILE_TYPE_H;
-    } else if (strcmp(ext, ".c") == 0) {
-        m_file_type = FILE_TYPE_C;
-    } else if (strcmp(ext, ".cpp") == 0) {
-        m_file_type = FILE_TYPE_CPP;
-    } else if (strcmp(ext, ".cc") == 0) {
-        m_file_type = FILE_TYPE_CC;
-    } else {
-        m_file_type = FILE_TYPE_ELSE;
-    }
+    m_file_type = determine_type(ext);
 
     m_associate = NULL;
     m_visited = false;
@@ -108,20 +109,27 @@ enum cfile::FILE_TYPE cfile::file_type() const {
 }
 
 bool cfile::is_header() const {
-    return file_type() == FILE_TYPE_H;
+    return is_c_header() || is_cxx_header();
 }
 
 bool cfile::is_source() const {
-    return file_type() == FILE_TYPE_C || file_type() == FILE_TYPE_CPP ||
-           file_type() == FILE_TYPE_CC;
+    return is_c_source() || is_cxx_source();
+}
+
+bool cfile::is_c_header() const {
+    return check_type(c_header_types, file_type());
+}
+
+bool cfile::is_cxx_header() const {
+    return check_type(cxx_header_types, file_type());
 }
 
 bool cfile::is_c_source() const {
-    return file_type() == FILE_TYPE_C;
+    return check_type(c_source_types, file_type());
 }
 
 bool cfile::is_cxx_source() const {
-    return file_type() == FILE_TYPE_CPP || file_type() == FILE_TYPE_CC;
+    return check_type(cxx_source_types, file_type());
 }
 
 const vector<cfile *> &cfile::includes() const {
@@ -140,7 +148,36 @@ bool cfile::visited() const {
     return m_visited;
 }
 
+cfile::FILE_TYPE cfile::determine_type(const std::string &ext) const {
+    for (int i = 0; i < (int)FILE_TYPE::FILE_TYPE_ELSE; ++i) {
+        if (ext == cfile::file_type_ext[i]) {
+            return (FILE_TYPE)i;
+        }
+    }
+    assert(false);
+    return FILE_TYPE_ELSE;
+}
+
+bool cfile::check_type(const std::vector<FILE_TYPE> &types,
+                       FILE_TYPE type) const {
+    for (auto &t : types) {
+        if (type == t) {
+            return true;
+        }
+    }
+    return false;
+}
+
 /*==========================================================================*/
+
+bool is_concerned_file_type(const std::string &ext) {
+    for (auto &t : cfile::file_type_ext) {
+        if (ext == t) {
+            return true;
+        }
+    }
+    return false;
+}
 
 static bool recursion_scan_dir_c_cxx_files_helper(char *dir,
                                                   vector<cfile> &vec) {
@@ -175,9 +212,7 @@ static bool recursion_scan_dir_c_cxx_files_helper(char *dir,
             } else if ((statbuf.st_mode & S_IFMT) ==
                        S_IFREG) { /* regular file */
                 const char *ext = get_ext(p_entry->d_name);
-                if (ext && (!strcmp(ext, ".h") || !strcmp(ext, ".c") ||
-                            !strcmp(ext, ".cpp") ||
-                            !strcmp(ext, ".cc") /*|| !strcmp(ext, ".hpp")*/)) {
+                if (ext && is_concerned_file_type(ext)) {
                     vec.emplace_back(std::string(dir),
                                      string(p_entry->d_name)
                                          .substr(0, ext - p_entry->d_name));

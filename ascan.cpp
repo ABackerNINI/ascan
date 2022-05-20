@@ -127,8 +127,8 @@ int ascan::parse_cmd_args(int argc, char **argv) {
     // -f: force overwrite
     // -cc gcc|g++|cc: set c compiler, default: gcc
     // -cxx g++: set c++ compiler, default: g++
-    // -cflag "": set c flags, default: -W -Wall -lm
-    // -cxxflag "" set c++ flags, default: -W -Wall
+    // -cflags "": set c flags, default: -W -Wall -lm
+    // -cxxflags "" set c++ flags, default: -W -Wall
 
     const char *short_opts = m_options.get_short_opts();
     const struct option *long_opts = m_options.get_long_opts();
