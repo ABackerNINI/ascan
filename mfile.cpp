@@ -359,18 +359,18 @@ void mfile::output_dependencies() {
 }
 
 void mfile::output_mm_dependencies() {
-    string types;
+    string c_types, cxx_types;
 
     if (m_c) {
-        types += " *.c";
+        c_types += " *.c";
     }
 
     if (m_cc) {
-        types += " *.cc";
+        cxx_types += " *.cc";
     }
 
     if (m_cpp) {
-        types += " *.cpp";
+        cxx_types += " *.cpp";
     }
 
     OUT_SEC(SEC_DEPENDENCIES);
@@ -386,20 +386,20 @@ void mfile::output_mm_dependencies() {
         if (m_c) {
             OUT("\t@$(%s) -MM%s | sed 's/^\\(.*\\).o:/$$(%s)\\/\\1.o:/' >> "
                 "$@\n",
-                CONFIG_CC, types.c_str(), CONFIG_BD);
+                CONFIG_CC, c_types.c_str(), CONFIG_BD);
         }
 
         if (m_cc || m_cpp) {
             OUT("\t@$(%s) -MM%s | sed 's/^\\(.*\\).o:/$$(%s)\\/\\1.o:/' >> "
                 "$@\n",
-                CONFIG_CXX, types.c_str(), CONFIG_BD);
+                CONFIG_CXX, cxx_types.c_str(), CONFIG_BD);
         }
     } else {
         if (m_c) {
-            OUT("\t@$(%s) -MM%s >> $@\n", CONFIG_CC, types.c_str());
+            OUT("\t@$(%s) -MM%s >> $@\n", CONFIG_CC, c_types.c_str());
         }
         if (m_cc || m_cpp) {
-            OUT("\t@$(%s) -MM%s >> $@\n", CONFIG_CXX, types.c_str());
+            OUT("\t@$(%s) -MM%s >> $@\n", CONFIG_CXX, cxx_types.c_str());
         }
     }
     OUT("\n");
