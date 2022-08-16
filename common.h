@@ -33,4 +33,6 @@ bool append_file_by_line(const char *file,
 size_t edit_distance(const char *s1, size_t len1, const char *s2, size_t len2);
 size_t edit_distance(const std::string &source, const std::string &target);
 
+bool contain_space(const std::string &s);
+
 #endif //_AUTO_SCAN_COMMON_H_

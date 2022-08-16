@@ -23,6 +23,7 @@ class mfile {
                                     std::vector<cfile> &files,
                                     cfile *file);
     void output_dependencies();
+    void output_mm_dependencies();
     void output_clean_up();
     void output_phony();
 
@@ -30,7 +31,7 @@ class mfile {
 
     void output_gitignore();
 
-    void output_build_path_if_option_b();
+    // void output_build_path_if_option_b();
     void output_mk_build_if_option_b();
 
   private:
@@ -41,6 +42,11 @@ class mfile {
     FILE *m_fout;
     std::vector<cfile *> m_executable;
     std::vector<std::string> m_binaries; // files to be added to gitignore
+
+    bool m_c;
+    bool m_cc;
+    bool m_cpp;
+    std::string m_build_path; // = "$(BD)/" iff OPTION_B is set
 };
 
 #endif //_AUTO_SCAN_MFILE_H_

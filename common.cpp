@@ -109,3 +109,12 @@ size_t edit_distance(const char *s1, size_t len1, const char *s2, size_t len2) {
 size_t edit_distance(const string &s1, const string &s2) {
     return edit_distance(s1.c_str(), s1.length(), s2.c_str(), s2.length());
 }
+
+bool contain_space(const std::string &s) {
+    for (auto &c : s) {
+        if (isspace(c)) {
+            return true;
+        }
+    }
+    return false;
+}

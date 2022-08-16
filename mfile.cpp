@@ -53,6 +53,24 @@ static void print_all_headers(FILE *m_fout, vector<cfile> &files, cfile *file);
 
 mfile::mfile(vector<cfile> &cfiles, Config &cfg, uint32_t flags)
     : m_cfiles(cfiles), m_cfg(cfg), m_flags(flags) {
+    m_c = m_cc = m_cpp = false;
+    for (auto &cfile : m_cfiles) {
+        if (cfile.file_type() == cfile::FILE_TYPE_C) {
+            m_c = true;
+        } else if (cfile.file_type() == cfile::FILE_TYPE_CPP) {
+            m_cpp = true;
+        } else if (cfile.file_type() == cfile::FILE_TYPE_CC) {
+            m_cc = true;
+        }
+    }
+
+    if (!m_c && !m_cpp && !m_cc) {
+        m_c = m_cpp = m_cc = true;
+    }
+
+    if (m_flags & OPTION_B) {
+        m_build_path = string("$(") + CONFIG_BD + ")/";
+    }
 }
 
 int mfile::output() {
@@ -77,7 +95,7 @@ int mfile::output() {
         output_build_details();
         output_build_executable();
         output_clean_up();
-        output_dependencies();
+        output_mm_dependencies();
         output_compile_to_objects();
         output_phony();
 
@@ -109,40 +127,25 @@ void mfile::output_header_comments() {
 }
 
 void mfile::output_build_details() {
-    bool h_c = false, h_cpp = false, h_cc = false;
-    for (auto it = m_cfiles.begin(); it != m_cfiles.end(); ++it) {
-        if (it->file_type() == cfile::FILE_TYPE_C) {
-            h_c = true;
-        } else if (it->file_type() == cfile::FILE_TYPE_CPP) {
-            h_cpp = true;
-        } else if (it->file_type() == cfile::FILE_TYPE_CC) {
-            h_cc = true;
-        }
-    }
-
-    if (!h_c && !h_cpp && !h_cc) {
-        h_c = h_cpp = h_cc = true;
-    }
-
     OUT_SEC(SEC_BUILD_DETAILS);
 
     const char *flag_g = (m_flags & OPTION_G) ? " -g" : "";
 
     // CC = gcc
-    if (h_c) {
+    if (m_c) {
         OUT("%s = %s\n", CONFIG_CC, m_cfg.get_config(CONFIG_CC).c_str());
     }
     // CXX = g++
-    if (h_cpp || h_cc) {
+    if (m_cpp || m_cc) {
         OUT("%s = %s\n", CONFIG_CXX, m_cfg.get_config(CONFIG_CXX).c_str());
     }
     // CFLAGS = -W -Wall -lm -g
-    if (h_c) {
+    if (m_c) {
         OUT("%s = %s%s\n", CONFIG_CFLAGS,
             m_cfg.get_config(CONFIG_CFLAGS).c_str(), flag_g);
     }
     // CXXFLAGS = -W -Wall -g
-    if (h_cpp || h_cc) {
+    if (m_cpp || m_cc) {
         OUT("%s = %s%s\n", CONFIG_CXXFLAGS,
             m_cfg.get_config(CONFIG_CXXFLAGS).c_str(), flag_g);
     }
@@ -157,43 +160,24 @@ void mfile::output_build_details() {
 }
 
 void mfile::output_compile_to_objects() {
-    // TODO: duplicated codes
-    bool h_c = false, h_cpp = false, h_cc = false;
-    for (auto it = m_cfiles.begin(); it != m_cfiles.end(); ++it) {
-        if (it->file_type() == cfile::FILE_TYPE_C) {
-            h_c = true;
-        } else if (it->file_type() == cfile::FILE_TYPE_CPP) {
-            h_cpp = true;
-        } else if (it->file_type() == cfile::FILE_TYPE_CC) {
-            h_cc = true;
-        }
-    }
-
-    if (!h_c && !h_cpp && !h_cc) {
-        h_c = h_cpp = h_cc = true;
-    }
-
     OUT_SEC(SEC_COMPILE_TO_OBJECTS);
 
-    if (h_c) {
-        output_build_path_if_option_b();
-        OUT("%%.o: %%.c\n");
+    if (m_c) {
+        OUT("%s%%.o: %%.c\n", m_build_path.c_str());
 
         output_mk_build_if_option_b();
 
         OUT("\t$(%s) $(%s) -c -o $@ $<\n\n", CONFIG_CC, CONFIG_CFLAGS);
     }
-    if (h_cpp) {
-        output_build_path_if_option_b();
-        OUT("%%.o: %%.cpp\n");
+    if (m_cpp) {
+        OUT("%s%%.o: %%.cpp\n", m_build_path.c_str());
 
         output_mk_build_if_option_b();
 
         OUT("\t$(%s) $(%s) -c -o $@ $<\n\n", CONFIG_CXX, CONFIG_CXXFLAGS);
     }
-    if (h_cc) {
-        output_build_path_if_option_b();
-        OUT("%%.o: %%.cc\n");
+    if (m_cc) {
+        OUT("%s%%.o: %%.cc\n", m_build_path.c_str());
 
         output_mk_build_if_option_b();
 
@@ -249,7 +233,7 @@ void mfile::output_build_executable() {
     OUT("\n\n");
 
     // Print rebuild
-    OUT("rebuild: clean all\n\n");
+    // OUT("rebuild: clean all\n\n");
 
     // Print executable
     // if only one executable, hide the index number
@@ -339,8 +323,7 @@ void mfile::output_dependencies_helper(FILE *m_fout,
     if (file->includes().size() > 0) {
         // .c/.cpp/.cc depends on all headers it includes, recursively
 
-        output_build_path_if_option_b();
-        OUT("%s.o:", file->name().c_str());
+        OUT("%s%s.o:", m_build_path.c_str(), file->name().c_str());
 
         print_all_headers(m_fout, files, file);
         OUT("\n");
@@ -353,8 +336,8 @@ void mfile::output_dependencies_helper(FILE *m_fout,
         }
     } else {
         // .c/.cpp/.cc depends on itself if it has no includes
-        output_build_path_if_option_b();
-        OUT("%s.o: %s\n", file->name().c_str(), file->filename().c_str());
+        OUT("%s%s.o: %s\n", m_build_path.c_str(), file->name().c_str(),
+            file->filename().c_str());
     }
 }
 
@@ -372,6 +355,56 @@ void mfile::output_dependencies() {
             }
         }
     }
+    OUT("\n");
+}
+
+void mfile::output_mm_dependencies() {
+    string types;
+
+    if (m_c) {
+        types += " *.c";
+    }
+
+    if (m_cc) {
+        types += " *.cc";
+    }
+
+    if (m_cpp) {
+        types += " *.cpp";
+    }
+
+    OUT_SEC(SEC_DEPENDENCIES);
+
+    OUT("SRC = $(wildcard *.h *.hpp *.c *.cpp *.cc)\n");
+    OUT("\n");
+    OUT("%s%s: $(SRC)\n", m_build_path.c_str(), CONFIG_DEPENDENCIES_FILENAME);
+
+    output_mk_build_if_option_b();
+    OUT("\t@rm -f \"%s%s\"\n", m_build_path.c_str(),
+        CONFIG_DEPENDENCIES_FILENAME);
+    if (m_flags & OPTION_B) {
+        if (m_c) {
+            OUT("\t@$(%s) -MM%s | sed 's/^\\(.*\\).o:/$$(%s)\\/\\1.o:/' >> "
+                "$@\n",
+                CONFIG_CC, types.c_str(), CONFIG_BD);
+        }
+
+        if (m_cc || m_cpp) {
+            OUT("\t@$(%s) -MM%s | sed 's/^\\(.*\\).o:/$$(%s)\\/\\1.o:/' >> "
+                "$@\n",
+                CONFIG_CXX, types.c_str(), CONFIG_BD);
+        }
+    } else {
+        if (m_c) {
+            OUT("\t@$(%s) -MM%s >> $@\n", CONFIG_CC, types.c_str());
+        }
+        if (m_cc || m_cpp) {
+            OUT("\t@$(%s) -MM%s >> $@\n", CONFIG_CXX, types.c_str());
+        }
+    }
+    OUT("\n");
+    OUT("include %s%s\n", m_build_path.c_str(), CONFIG_DEPENDENCIES_FILENAME);
+
     OUT("\n");
 }
 
@@ -397,6 +430,7 @@ void mfile::output_clean_up() {
 
         // OUT rm -f "$(bin1)" "$(bin2)" $(obj1) $(obj2)
         OUT("\trm -f");
+        OUT(" %s%s", m_build_path.c_str(), CONFIG_DEPENDENCIES_FILENAME);
         int idx = m_executable.size() == 1 ? -1 : 1;
         for (size_t i = 0; i < m_executable.size(); ++i) {
             OUT(" \"$(%s)\"", m_cfg.make_bin(idx++).c_str());
@@ -413,7 +447,8 @@ void mfile::output_clean_up() {
 void mfile::output_phony() {
     OUT_SEC(SEC_PHONY);
 
-    OUT(".PHONY: all rebuild clean\n");
+    // OUT(".PHONY: all rebuild clean\n");
+    OUT(".PHONY: all clean\n");
 }
 
 /*==========================================================================*/
@@ -459,12 +494,12 @@ void mfile::output_gitignore() {
 
 /*==========================================================================*/
 
-void mfile::output_build_path_if_option_b() {
-    if (m_flags & OPTION_B) {
-        // OUT("$(%s)/", m_cfg.k_bd.c_str());
-        OUT("$(%s)/", CONFIG_BD);
-    }
-}
+// void mfile::output_build_path_if_option_b() {
+//     if (m_flags & OPTION_B) {
+//         // OUT("$(%s)/", m_cfg.k_bd.c_str());
+//         OUT("$(%s)/", CONFIG_BD);
+//     }
+// }
 
 void mfile::output_mk_build_if_option_b() {
     // Character before command:

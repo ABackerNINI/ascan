@@ -1,4 +1,5 @@
 #include "config.h"
+#include "common.h"
 #include "debug.h"
 #include "parser.h"
 #include <cassert>
@@ -16,6 +17,33 @@ Config::Config()
     configs[CONFIG_CXXFLAGS] = CONFIG_DEFAULT_V_CXXFLAGS;
     configs[CONFIG_LFLAGS] = CONFIG_DEFAULT_V_LFLAGS;
     configs[CONFIG_BD] = CONFIG_DEFAULT_V_BD;
+
+    // These are variable names in the Makefile, thus can NOT contain spaces
+    check_space(CONFIG_CC);
+    check_space(CONFIG_CXX);
+    check_space(CONFIG_CFLAGS);
+    check_space(CONFIG_CXXFLAGS);
+    check_space(CONFIG_LFLAGS);
+
+    // These may show in the clean section of the Makefile, thus can NOT contain
+    // spaces
+    check_space(CONFIG_FILENAME);
+    check_space(CONFIG_DEPENDENCIES_FILENAME);
+    check_space(CONFIG_DEFAULT_V_BD);
+    check_space(CONFIG_BD);
+    check_space(CONFIG_BIN);
+    check_space(CONFIG_OBJ);
+    check_space(CONFIG_OBJ_BD);
+
+    // These may show in the clean section of the Makefile, thus can NOT start
+    // with '/'
+    check_slash(CONFIG_FILENAME);
+    check_slash(CONFIG_DEPENDENCIES_FILENAME);
+    check_slash(CONFIG_DEFAULT_V_BD);
+    check_slash(CONFIG_BD);
+    check_slash(CONFIG_BIN);
+    check_slash(CONFIG_OBJ);
+    check_slash(CONFIG_OBJ_BD);
 }
 
 const std::string &Config::get_config(const std::string &config_name) const {
@@ -59,6 +87,22 @@ string Config::make(const string &s, int i) const {
     return string(tmp);
 }
 
+void Config::check_space(const std::string &config) const {
+    if (contain_space(config)) {
+        cerr << "The configuration value \"" << config
+             << "\" contains space, which is not allowed!" << endl;
+        exit(1);
+    }
+}
+
+void Config::check_slash(const std::string &config) const {
+    if (config.find('/') != config.npos) {
+        cerr << "The configuration value \"" << config
+             << "\" contains '/', which is not allowed!" << endl;
+        exit(1);
+    }
+}
+
 // enum CONFIG_STATE { CS_COMPILER, CS_EXECUTABLE, CS_IGNORE, CS_UNKNOWN };
 //
 // enum CONFIG_TYPE {
@@ -70,7 +114,7 @@ string Config::make(const string &s, int i) const {
 //     CT_ERROR_TAG_MISSING_RIGHT_BRACKET,
 //     CT_ERROR_KV
 // };
-// 
+//
 // // skip ' ' and '\t'
 // static char *skip_blank(char *s) {
 //     while (*s && isblank(*s)) {
