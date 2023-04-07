@@ -91,13 +91,16 @@ int mfile::output() {
     }
 
     if (m_flags & OPTION_A) {
+        prepare();
+
         // output_header_comments();
         output_build_details();
         output_build_executable();
         output_clean_up();
-        output_mm_dependencies();
+        output_executables();
         output_compile_to_objects();
         output_phony();
+        output_mm_dependencies();
 
         output_gitignore();
     } else {
@@ -120,6 +123,19 @@ int mfile::output() {
 
 /*==========================================================================*/
 
+void mfile::prepare() {
+    // Find all executable
+    for (auto cfile = m_cfiles.begin(); cfile != m_cfiles.end(); ++cfile) {
+        if (cfile->have_main_func() && cfile->is_source()) {
+            m_executable.push_back(&(*cfile));
+        }
+    }
+
+    // Sort executables by name
+    sort(m_executable.begin(), m_executable.end(),
+         [](const cfile *a, const cfile *b) { return a->name() < b->name(); });
+}
+
 void mfile::output_header_comments() {
     char date[20];
     get_date(date);
@@ -133,28 +149,30 @@ void mfile::output_build_details() {
 
     // CC = gcc
     if (m_c) {
-        OUT("%s = %s\n", CONFIG_CC, m_cfg.get_config(CONFIG_CC).c_str());
+        OUT("%s = %s\n", CONFIG_CC, m_cfg.get_config_value(CONFIG_CC).c_str());
     }
     // CXX = g++
     if (m_cpp || m_cc) {
-        OUT("%s = %s\n", CONFIG_CXX, m_cfg.get_config(CONFIG_CXX).c_str());
+        OUT("%s = %s\n", CONFIG_CXX,
+            m_cfg.get_config_value(CONFIG_CXX).c_str());
     }
     // CFLAGS = -W -Wall -lm -g
     if (m_c) {
         OUT("%s = %s%s\n", CONFIG_CFLAGS,
-            m_cfg.get_config(CONFIG_CFLAGS).c_str(), flag_g);
+            m_cfg.get_config_value(CONFIG_CFLAGS).c_str(), flag_g);
     }
     // CXXFLAGS = -W -Wall -g
     if (m_cpp || m_cc) {
         OUT("%s = %s%s\n", CONFIG_CXXFLAGS,
-            m_cfg.get_config(CONFIG_CXXFLAGS).c_str(), flag_g);
+            m_cfg.get_config_value(CONFIG_CXXFLAGS).c_str(), flag_g);
     }
     // LFLAGS = -lm
-    OUT("%s = %s\n", CONFIG_LFLAGS, m_cfg.get_config(CONFIG_LFLAGS).c_str());
+    OUT("%s = %s\n", CONFIG_LFLAGS,
+        m_cfg.get_config_value(CONFIG_LFLAGS).c_str());
 
     // BD = ./build
     if (m_flags & OPTION_B) {
-        OUT("%s = %s\n", CONFIG_BD, m_cfg.get_config(CONFIG_BD).c_str());
+        OUT("%s = %s\n", CONFIG_BD, m_cfg.get_config_value(CONFIG_BD).c_str());
     }
     OUT("\n");
 }
@@ -200,17 +218,6 @@ static void find_all_headers(vector<cfile> &files, cfile *file) {
 }
 
 void mfile::output_build_executable() {
-    // Find all executable
-    for (auto cfile = m_cfiles.begin(); cfile != m_cfiles.end(); ++cfile) {
-        if (cfile->have_main_func() && cfile->is_source()) {
-            m_executable.push_back(&(*cfile));
-        }
-    }
-
-    // Sort executables by name
-    sort(m_executable.begin(), m_executable.end(),
-         [](const cfile *a, const cfile *b) { return a->name() < b->name(); });
-
     OUT_SEC(SEC_BUILD_EXECUTABLE);
 
     // Print bin1 var before all
@@ -234,6 +241,10 @@ void mfile::output_build_executable() {
 
     // Print rebuild
     // OUT("rebuild: clean all\n\n");
+}
+
+void mfile::output_executables() {
+    int i;
 
     // Print executable
     // if only one executable, hide the index number
@@ -448,7 +459,7 @@ void mfile::output_phony() {
     OUT_SEC(SEC_PHONY);
 
     // OUT(".PHONY: all rebuild clean\n");
-    OUT(".PHONY: all clean\n");
+    OUT(".PHONY: all clean\n\n");
 }
 
 /*==========================================================================*/

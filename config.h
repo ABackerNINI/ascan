@@ -54,13 +54,13 @@
 
 // Can NOT contain spaces.
 // Can NOT contain '/'.
-#define CONFIG_BIN "bin%d"
+#define CONFIG_BIN "TARGET%d"
 // Can NOT contain spaces.
 // Can NOT contain '/'.
-#define CONFIG_OBJ "obj%d"
+#define CONFIG_OBJ "OBJ%d"
 // Can NOT contain spaces.
 // Can NOT contain '/'.
-#define CONFIG_OBJ_BD "obj%dbd"
+#define CONFIG_OBJ_BD "OBJ%dBD"
 
 class Config {
   public:
@@ -75,13 +75,13 @@ class Config {
     std::string k_obj;
     std::string k_obj_bd;
 
-    std::map<std::string, std::string> executable;
-    std::vector<std::string> ignores; // TODO add ignores?
+    // std::map<std::string, std::string> executable;
+    // std::vector<std::string> ignores; // TODO add ignores?
 
   public:
     Config();
 
-    const std::string &get_config(const std::string &config_name) const;
+    const std::string &get_config_value(const std::string &config_name) const;
     void set_config(const std::string &config_name,
                     const std::string &config_value);
 

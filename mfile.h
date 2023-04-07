@@ -15,10 +15,12 @@ class mfile {
     int output();
 
   private:
+    void prepare();
     void output_header_comments();
     void output_build_details();
     void output_compile_to_objects();
     void output_build_executable();
+    void output_executables();
     void output_dependencies_helper(FILE *m_fout,
                                     std::vector<cfile> &files,
                                     cfile *file);

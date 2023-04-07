@@ -46,7 +46,8 @@ Config::Config()
     check_slash(CONFIG_OBJ_BD);
 }
 
-const std::string &Config::get_config(const std::string &config_name) const {
+const std::string &
+Config::get_config_value(const std::string &config_name) const {
     auto config = configs.find(config_name);
     if (config == configs.end()) {
         print_error("no such config: \"%s\"", config_name.c_str());
