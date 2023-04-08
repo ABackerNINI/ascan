@@ -6,6 +6,7 @@
 #include <string>
 #include <vector>
 
+#include "align.h"
 #include "cfile.h"
 #include "config.h"
 #include "debug.h"
@@ -22,8 +23,7 @@ class mfile {
     void output_compile_to_objects();
     void output_build_executable();
     void output_executables();
-    void output_dependencies_helper(const std::vector<cfile> &files,
-                                    cfile *file);
+    void output_dependencies_helper(const std::vector<cfile> &files, cfile *file);
     void output_dependencies();
     void output_mm_dependencies();
     void output_clean_up();
@@ -46,6 +46,7 @@ class mfile {
     std::ofstream m_fout;
     std::vector<cfile *> m_executable;
     std::vector<std::string> m_binaries; // files to be added to gitignore
+    Align m_align;
 
     bool m_c;
     bool m_cc;

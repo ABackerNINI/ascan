@@ -119,6 +119,29 @@ void mfile::prepare() {
     // Sort executables by name
     sort(m_executable.begin(), m_executable.end(),
          [](const cfile *a, const cfile *b) { return a->name() < b->name(); });
+
+    if (m_c) {
+        m_align.add(CONFIG_CC);
+        m_align.add(CONFIG_CFLAGS);
+    }
+
+    if (m_cpp || m_cc) {
+        m_align.add(CONFIG_CXX);
+        m_align.add(CONFIG_CXXFLAGS);
+    }
+
+    m_align.add(CONFIG_LFLAGS);
+    m_align.add(CONFIG_BD);
+
+    if (m_executable.size() <= 1) {
+        m_align.add(m_cfg.make_bin(-1));
+        m_align.add(m_cfg.make_obj(-1));
+        m_align.add(m_cfg.make_obj_bd(-1));
+    } else {
+        m_align.add(m_cfg.make_bin(m_executable.size()));
+        m_align.add(m_cfg.make_obj(m_executable.size()));
+        m_align.add(m_cfg.make_obj_bd(m_executable.size()));
+    }
 }
 
 void mfile::output_header_comments() {
@@ -134,26 +157,26 @@ void mfile::output_build_details() {
 
     // OUT: CC = gcc
     if (m_c) {
-        m_fout << CONFIG_CC << " = " << m_cfg.get_config_value(CONFIG_CC) << endl;
+        m_fout << m_align(CONFIG_CC) << " = " << m_cfg.get_config_value(CONFIG_CC) << endl;
     }
     // OUT: CXX = g++
     if (m_cpp || m_cc) {
-        m_fout << CONFIG_CXX << " = " << m_cfg.get_config_value(CONFIG_CXX) << endl;
+        m_fout << m_align(CONFIG_CXX) << " = " << m_cfg.get_config_value(CONFIG_CXX) << endl;
     }
     // OUT: CFLAGS = -W -Wall -lm -g
     if (m_c) {
-        m_fout << CONFIG_CFLAGS << " = " << m_cfg.get_config_value(CONFIG_CFLAGS) << flag_g << endl;
+        m_fout << m_align(CONFIG_CFLAGS) << " = " << m_cfg.get_config_value(CONFIG_CFLAGS) << flag_g << endl;
     }
     // OUT: CXXFLAGS = -W -Wall -g
     if (m_cpp || m_cc) {
-        m_fout << CONFIG_CXXFLAGS << " = " << m_cfg.get_config_value(CONFIG_CXXFLAGS) << flag_g << endl;
+        m_fout << m_align(CONFIG_CXXFLAGS) << " = " << m_cfg.get_config_value(CONFIG_CXXFLAGS) << flag_g << endl;
     }
     // OUT: LFLAGS = -lm
-    m_fout << CONFIG_LFLAGS << " = " << m_cfg.get_config_value(CONFIG_LFLAGS) << endl;
+    m_fout << m_align(CONFIG_LFLAGS) << " = " << m_cfg.get_config_value(CONFIG_LFLAGS) << endl;
 
     // OUT: BUILD = build
     if (m_flags & OPTION_B) {
-        m_fout << CONFIG_BD << " = " << m_cfg.get_config_value(CONFIG_BD) << endl;
+        m_fout << m_align(CONFIG_BD) << " = " << m_cfg.get_config_value(CONFIG_BD) << endl;
     }
 
     m_fout << endl;
@@ -210,7 +233,7 @@ void mfile::output_build_executable() {
     int i = m_executable.size() == 1 ? -1 : 1;
     for (auto &exec : m_executable) {
         // OUT: BIN1 = ascan
-        m_fout << m_cfg.make_bin(i) << " = " << exec->name() << endl;
+        m_fout << m_align(m_cfg.make_bin(i)) << " = " << exec->name() << endl;
         ++i;
     }
     m_fout << endl;
@@ -246,7 +269,7 @@ void mfile::output_executables() {
         }
 
         // OUT: OBJ1 = ascan.o
-        m_fout << m_cfg.make_obj(i) << " = " << exec->name() << ".o";
+        m_fout << m_align(m_cfg.make_obj(i)) << " = " << exec->name() << ".o";
 
         // OUT: all objects dependency.
         find_all_headers(m_cfiles, exec);
@@ -264,7 +287,7 @@ void mfile::output_executables() {
 
         if (m_flags & OPTION_B) {
             // OUT: OBJ1BD = $(OBJ1:%=$(BUILD)/%)
-            m_fout << m_cfg.make_obj_bd(i) << " = $(" << m_cfg.make_obj(i) << ":%=$(" << CONFIG_BD << ")/%)\n";
+            m_fout << m_align(m_cfg.make_obj_bd(i)) << " = $(" << m_cfg.make_obj(i) << ":%=$(" << CONFIG_BD << ")/%)\n";
         }
 
         m_fout << endl;

@@ -11,7 +11,7 @@ bin = ascan
 
 all: $(bin)
 
-obj = ascan.o options.o parser.o cfile.o mfile.o common.o config.o
+obj = ascan.o options.o parser.o cfile.o mfile.o common.o config.o align.o
 
 # CLEAN UP
 
