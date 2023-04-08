@@ -1,6 +1,6 @@
 ---
 # 每行字符的限制，0表示没有限制
-ColumnLimit:     80
+ColumnLimit:     120
 # 缩进宽度
 IndentWidth:     4
 
