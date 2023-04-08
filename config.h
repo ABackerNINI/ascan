@@ -41,7 +41,7 @@
 #define CONFIG_LFLAGS "LFLAGS"
 // Can NOT contain spaces.
 // Can NOT contain '/'.
-#define CONFIG_BD "BD"
+#define CONFIG_BD "BUILD"
 
 #define CONFIG_DEFAULT_V_CC "gcc"
 #define CONFIG_DEFAULT_V_CXX "g++"

@@ -2,6 +2,7 @@
 #define _AUTO_SCAN_MFILE_H_
 
 #include <cstdio>
+#include <fstream>
 #include <string>
 #include <vector>
 
@@ -21,8 +22,7 @@ class mfile {
     void output_compile_to_objects();
     void output_build_executable();
     void output_executables();
-    void output_dependencies_helper(FILE *m_fout,
-                                    std::vector<cfile> &files,
+    void output_dependencies_helper(const std::vector<cfile> &files,
                                     cfile *file);
     void output_dependencies();
     void output_mm_dependencies();
@@ -36,19 +36,21 @@ class mfile {
     // void output_build_path_if_option_b();
     void output_mk_build_if_option_b();
 
+    void print_all_headers(const std::vector<cfile> &files, cfile *file);
+
   private:
     std::vector<cfile> &m_cfiles;
     Config &m_cfg;
     // bool m_flag_a;
     uint32_t m_flags;
-    FILE *m_fout;
+    std::ofstream m_fout;
     std::vector<cfile *> m_executable;
     std::vector<std::string> m_binaries; // files to be added to gitignore
 
     bool m_c;
     bool m_cc;
     bool m_cpp;
-    std::string m_build_path; // = "$(BD)/" iff OPTION_B is set
+    std::string m_build_path; // = "$(BUILD)/" iff OPTION_B is set
 };
 
 #endif //_AUTO_SCAN_MFILE_H_
