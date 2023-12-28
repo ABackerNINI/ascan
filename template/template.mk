@@ -1,9 +1,11 @@
 # BUILD DETAILS
 
-CXX = g++
-CXXFLAGS = -W -Wall -g -DDEBUG=1 -DDISABLE_WRITE=0
-LFLAGS =
-BD = ./build
+%CC%
+%CFLAGS%
+%CXX%
+%CXXFLAGS%
+LFLAGS = %LFLAGS%
+%BUILD%
 
 # BUILD EXECUTABLE
 
@@ -11,7 +13,7 @@ bin = ascan
 
 all: $(bin)
 
-obj = ascan.o options.o parser.o cfile.o mfile.o common.o config.o align.o
+obj = ascan.o options.o parser.o cfile.o mfile.o common.o config.o
 
 # CLEAN UP
 
@@ -33,14 +35,16 @@ $(BD)/%.o: %.cpp
 
 # DEPENDENCIES
 
+depend: $(BD)/depend.mak
+
 SRC = $(wildcard *.h *.hpp *.c *.cpp *.cc)
 
-$(BD)/depend.mk: $(SRC)
+$(BD)/depend.mak: $(SRC)
 	@mkdir -p "$(BD)"
-	@rm -f "$(BD)/depend.mk"
+	@rm -f "$(BD)/depend.mak"
 	@$(CXX) -MM *.cpp | sed 's/^\(.*\).o:/$$(BD)\/\1.o:/' >> $@
 
-include $(BD)/depend.mk
+include $(BD)/depend.mak
 
 # PHONY
 

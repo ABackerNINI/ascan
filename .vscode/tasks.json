@@ -1,0 +1,11 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "build",
+            "type": "shell",
+            // "command": "g++ opt_parser.cpp -W -Wall -g",
+            "command": "make",
+        }
+    ]
+}
