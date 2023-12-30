@@ -82,11 +82,24 @@ class Config {
     Config();
 
     const std::string &get_config_value(const std::string &config_name) const;
-    void set_config(const std::string &config_name,
-                    const std::string &config_value);
+    void set_config(const std::string &config_name, const std::string &config_value);
 
+    // Make the i-th binary file name.
+    // For example, if CONFIG_BIN is set to "TARGET%d", then
+    // make_bin(1) returns "TARGET1". However, if i == -1, then
+    // make_bin(-1) returns "TARGET".
     std::string make_bin(int i) const;
+
+    // Make the i-th object file name.
+    // For example, if CONFIG_OBJ is set to "OBJ%d", then
+    // make_obj(1) returns "OBJ1". However, if i == -1, then
+    // make_obj(-1) returns "OBJ".
     std::string make_obj(int i) const;
+
+    // Make the i-th object file name with build directory.
+    // For example, if CONFIG_OBJ_BD is set to "OBJ%dBD", then
+    // make_obj_bd(1) returns "OBJ1BD". However, if i == -1, then
+    // make_obj_bd(-1) returns "OBJBD".
     std::string make_obj_bd(int i) const;
 
   private:

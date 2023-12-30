@@ -18,7 +18,7 @@ debug: $(BUILD)/debug.mode $(TARGET1) $(TARGET2)
 release: CXXFLAGS += -O3 # -DNDEBUG=1
 release: $(BUILD)/release.mode $(TARGET1) $(TARGET2)
 
-# EXECUTABLE DETAILS
+# EXECUTABLES
 
 OBJ1     = ascan.o options.o parser.o cfile.o align.o mfile.o common.o config.o
 OBJ2     = opt_parser.o
@@ -50,7 +50,7 @@ $(BUILD)/%.mode:
 		touch "$@"; \
 	fi
 
-# CLEAN UP
+# CLEAN
 
 clean:
 	rm -rf "$(TARGET1)" "$(TARGET2)" "$(BUILD)"

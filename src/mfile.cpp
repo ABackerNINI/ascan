@@ -80,10 +80,11 @@ int mfile::output() {
 
         // output_header_comments();
         output_build_details();
-        output_build_executable();
-        output_clean_up();
-        output_executables();
+        output_targets();
+        output_executable_details();
         output_compile_to_objects();
+        output_mode_control();
+        output_clean_up();
         output_phony();
         output_mm_dependencies();
 
@@ -151,7 +152,7 @@ void mfile::output_header_comments() {
 }
 
 void mfile::output_build_details() {
-    m_fout << SEC(SEC_BUILD_DETAILS) << "\n" << endl;
+    m_fout << "# BUILD DETAILS\n" << endl;
 
     const char *flag_g = (m_flags & OPTION_G) ? " -g" : "";
 
@@ -180,6 +181,184 @@ void mfile::output_build_details() {
     }
 
     m_fout << endl;
+}
+
+void mfile::output_targets() {
+    m_fout << "# TARGETS\n" << endl;
+
+    // OUT: TARGET1 = xxx
+    // OUT: TARGET2 = xxx
+    int idx = m_executable.size() == 1 ? -1 : 1;
+    for (auto &exec : m_executable) {
+        m_fout << m_align(m_cfg.make_bin(idx)) << " = " << exec->name() << endl;
+        ++idx;
+    }
+    m_fout << endl;
+
+    /*
+        OUT:
+            default: debug
+
+            debug: CXXFLAGS += -g -DDEBUG=1
+            debug: $(BUILD)/debug.mode $(TARGET1) $(TARGET2)
+
+            release: CXXFLAGS += -O3 # -DNDEBUG=1
+            release: $(BUILD)/release.mode $(TARGET1) $(TARGET2)
+     */
+    m_fout << "default: debug\n" << endl;
+
+    if (m_c) {
+        m_fout << "debug: CFLAGS += -g -DDEBUG=1\n";
+    }
+    if (m_cpp || m_cc) {
+        m_fout << "debug: CXXFLAGS += -g -DDEBUG=1\n";
+    }
+    m_fout << "debug: " << m_build_path << "debug.mode";
+    idx = m_executable.size() == 1 ? -1 : 1;
+    for (size_t i = 0; i < m_executable.size(); ++i) {
+        m_fout << " $(" << m_cfg.make_bin(idx) << ")";
+        ++idx;
+    }
+    m_fout << "\n\n";
+
+    if (m_c) {
+        m_fout << "release: CFLAGS += -O3 # -DNDEBUG=1\n";
+    }
+    if (m_cpp || m_cc) {
+        m_fout << "release: CXXFLAGS += -O3 # -DNDEBUG=1\n";
+    }
+    m_fout << "release: " << m_build_path << "release.mode";
+    idx = m_executable.size() == 1 ? -1 : 1;
+    for (size_t i = 0; i < m_executable.size(); ++i) {
+        m_fout << " $(" << m_cfg.make_bin(idx) << ")";
+        ++idx;
+    }
+    m_fout << "\n\n";
+}
+
+static void find_all_headers(vector<cfile> &files, cfile *file) {
+    file->set_visited(true);
+    for (auto include = file->includes().begin(); include != file->includes().end(); ++include) {
+        if (!(*include)->visited()) {
+            find_all_headers(files, *include);
+            if ((*include)->associate() && !(*include)->associate()->visited()) {
+                find_all_headers(files, (*include)->associate());
+            }
+        }
+    }
+}
+
+/* void mfile::output_build_executable() {
+    m_fout << SEC(SEC_BUILD_EXECUTABLE) << "\n" << endl;
+
+    // Print bin1 var before all
+    int i = m_executable.size() == 1 ? -1 : 1;
+    for (auto &exec : m_executable) {
+        // OUT: BIN1 = ascan
+        m_fout << m_align(m_cfg.make_bin(i)) << " = " << exec->name() << endl;
+        ++i;
+    }
+    m_fout << endl;
+
+    // Print all
+    //! This should be after bin1/bin2...
+    // OUT: all: $(TARGET1) $(TARGET2)
+    m_fout << "all:";
+    i = m_executable.size() == 1 ? -1 : 1;
+    for (auto exec = m_executable.begin(); exec != m_executable.end(); ++exec) {
+        m_fout << " $(" << m_cfg.make_bin(i) << ")";
+        ++i;
+    }
+
+    m_fout << "\n\n";
+
+    // Print rebuild
+    // OUT: rebuild: clean all
+    // m_fout<< "rebuild: clean all\n" << endl;
+} */
+
+void mfile::output_executable_details() {
+    m_fout << "# EXECUTABLE DETAILS\n" << endl;
+
+    // Print executable
+    // TODO: add new flag to disable "hide the index number"
+    int idx = m_executable.size() == 1 ? -1 : 1;
+    for (auto &exec : m_executable) {
+        // if only one executable, hide the index number
+
+        // OUT: OBJ1 = ascan.o
+        m_fout << m_align(m_cfg.make_obj(idx)) << " = " << exec->name() << ".o";
+
+        // OUT: all objects dependency.
+        find_all_headers(m_cfiles, exec);
+        for (auto cfile = m_cfiles.begin(); cfile != m_cfiles.end(); ++cfile) {
+            if (cfile->visited()) {
+                if (cfile->associate() != NULL && cfile->is_source() && &(*cfile) != exec) {
+                    // OUT: config.o
+                    m_fout << " " << cfile->associate()->name() << ".o";
+                }
+                cfile->set_visited(false);
+            }
+        }
+
+        m_fout << endl;
+
+        ++idx;
+    }
+
+    m_fout << endl;
+
+    if (m_flags & OPTION_B) {
+        idx = m_executable.size() == 1 ? -1 : 1;
+        for (size_t i = 0; i < m_executable.size(); ++i) {
+            // OUT: OBJ1BD = $(OBJ1:%=$(BUILD)/%)
+            m_fout << m_align(m_cfg.make_obj_bd(idx)) << " = $(" << m_cfg.make_obj(idx) << ":%=$(" << CONFIG_BD
+                   << ")/%)\n";
+            ++idx;
+        }
+
+        m_fout << endl;
+    }
+
+    idx = m_executable.size() == 1 ? -1 : 1;
+    for (auto &exec : m_executable) {
+        if (m_flags & OPTION_B) {
+            // OUT: $(TARGET1): $(OBJ1BD)
+            m_fout << "$(" << m_cfg.make_bin(idx) << "): $(" << m_cfg.make_obj_bd(idx) << ")\n";
+        } else {
+            // OUT: $(TARGET1): $(OBJ1)
+            m_fout << "$(" << m_cfg.make_bin(idx) << "): $(" << m_cfg.make_obj(idx) << ")\n";
+        }
+
+        //! CXXFLAGS may contain dynamic libs such as -lm, this should be
+        //! put behind the objects which use them.
+        if (exec->is_c_source()) {
+            if (m_flags & OPTION_B) {
+                // OUT: $(CC) $(CFLAGS) -o $@ $^ $(LFLAGS)
+                m_fout << "\t$(" << CONFIG_CC << ") $(" << CONFIG_CFLAGS << ") -o $@ $^ $(" << CONFIG_LFLAGS << ")\n";
+            } else {
+                // OUT: $(CC) $(CFLAGS) -o $@ $^ $(LFLAGS)
+                m_fout << "\t$(" << CONFIG_CC << ") $(" << CONFIG_CFLAGS << ") -o $@ $^ $(" << CONFIG_LFLAGS << ")\n";
+            }
+        } else if (exec->is_cxx_source()) {
+            if (m_flags & OPTION_B) {
+                // OUT: $(CXX) $(CXXFLAGS) -o $@ $^ $(LFLAGS)
+                m_fout << "\t$(" << CONFIG_CXX << ") $(" << CONFIG_CXXFLAGS << ") -o $@ $^ $(" << CONFIG_LFLAGS
+                       << ")\n";
+            } else {
+                // OUT: $(CXX) $(CXXFLAGS) -o $@ $^ $(LFLAGS)
+                m_fout << "\t$(" << CONFIG_CXX << ") $(" << CONFIG_CXXFLAGS << ") -o $@ $^ $(" << CONFIG_LFLAGS
+                       << ")\n";
+            }
+        } else {
+            // TODO error handle
+            assert(0);
+        }
+
+        m_fout << endl;
+
+        ++idx;
+    }
 }
 
 void mfile::output_compile_to_objects() {
@@ -214,121 +393,95 @@ void mfile::output_compile_to_objects() {
     }
 }
 
-static void find_all_headers(vector<cfile> &files, cfile *file) {
-    file->set_visited(true);
-    for (auto include = file->includes().begin(); include != file->includes().end(); ++include) {
-        if (!(*include)->visited()) {
-            find_all_headers(files, *include);
-            if ((*include)->associate() && !(*include)->associate()->visited()) {
-                find_all_headers(files, (*include)->associate());
-            }
-        }
+void mfile::output_mode_control() {
+    /*
+        OUT:
+            # MODE CONTROL
+
+            $(BUILD)/%.mode:
+                @if [ ! -f "$@" ]; then \
+                    if [ -d "$(BUILD)" ]; then \
+                        echo "Switching to $* mode..."; \
+                        $(MAKE) clean; \
+                    fi; \
+                    mkdir -p "$(BUILD)"; \
+                    touch "$@"; \
+                fi
+     */
+    m_fout << "# MODE CONTROL\n" << endl;
+
+    m_fout << m_build_path << "%.mode:\n";
+    m_fout << "\t@if [ ! -f \"$@\" ]; then \\" << endl;
+
+    if (m_flags & OPTION_B) {
+        // If build directory exists, then switch to another mode.
+        // If not, then "make clean" is not needed.
+        m_fout << "\t\tif [ -d \"$(" << CONFIG_BD << ")\" ]; then \\" << endl;
+        m_fout << "\t\t\techo \"Switching to $* mode...\"; \\" << endl;
+        m_fout << "\t\t\t$(MAKE) clean; \\" << endl;
+        m_fout << "\t\tfi; \\" << endl;
+        m_fout << "\t\tmkdir -p \"$(" << CONFIG_BD << ")\"; \\" << endl;
+    } else {
+        // "make clean" anyway
+        m_fout << "\t\t$(MAKE) clean; \\" << endl;
     }
+
+    m_fout << "\t\ttouch \"$@\"; \\" << endl;
+    m_fout << "\tfi\n" << endl;
 }
 
-void mfile::output_build_executable() {
-    m_fout << SEC(SEC_BUILD_EXECUTABLE) << "\n" << endl;
+void mfile::output_clean_up() {
+    m_fout << "# CLEAN UP\n" << endl;
 
-    // Print bin1 var before all
-    int i = m_executable.size() == 1 ? -1 : 1;
-    for (auto &exec : m_executable) {
-        // OUT: BIN1 = ascan
-        m_fout << m_align(m_cfg.make_bin(i)) << " = " << exec->name() << endl;
-        ++i;
+    m_fout << "clean:\n";
+
+    // if only one executable, hide the index number
+    if (m_flags & OPTION_B) {
+        // OUT: rm -f "$(TARGET1)" "$(TARGET2)" $(BUILD)
+
+        m_fout << "\trm -rf";
+
+        int idx = m_executable.size() == 1 ? -1 : 1;
+        for (size_t i = 0; i < m_executable.size(); ++i) {
+            // OUT: "$(TARGET1)"
+            m_fout << " \"$(" << m_cfg.make_bin(idx) << ")\"";
+            ++idx;
+        }
+
+        // OUT: $(BUILD)
+        m_fout << " \"$(" << CONFIG_BD << ")\"\n";
+    } else {
+        //? Why not "rm -f *.o"?
+        //* Because sometimes we may compile with other pre-compiled .o files
+        //* This is not a problem if option -b.
+
+        // OUT rm -f depend.mk "$(TARGET1)" "$(TARGET2)" $(OBJ1) $(OBJ2)
+
+        // OUT("\trm -f");
+        m_fout << "\trm -f";
+
+        // OUT: depend.mk
+        m_fout << " " << m_build_path << CONFIG_DEPENDENCIES_FILENAME;
+
+        int idx = m_executable.size() == 1 ? -1 : 1;
+        for (size_t i = 0; i < m_executable.size(); ++i) {
+            // OUT: "$(TARGET1)"
+            m_fout << " \"$(" << m_cfg.make_bin(idx++) << ")\"";
+        }
+        idx = m_executable.size() == 1 ? -1 : 1;
+        for (size_t i = 0; i < m_executable.size(); ++i) {
+            // OUT: $(OBJ1)
+            m_fout << " $(" << m_cfg.make_obj(idx++) << ")";
+        }
+        m_fout << endl;
     }
+
     m_fout << endl;
-
-    // Print all
-    //! This should be after bin1/bin2...
-    // OUT: all: $(TARGET1) $(TARGET2)
-    m_fout << "all:";
-    i = m_executable.size() == 1 ? -1 : 1;
-    for (auto exec = m_executable.begin(); exec != m_executable.end(); ++exec) {
-        m_fout << " $(" << m_cfg.make_bin(i) << ")";
-        ++i;
-    }
-
-    m_fout << "\n\n";
-
-    // Print rebuild
-    // OUT: rebuild: clean all
-    // m_fout<< "rebuild: clean all\n" << endl;
 }
 
-void mfile::output_executables() {
-    // Print executable
-    // TODO: add new flag to disable "hide the index number"
-    int i = m_executable.size() == 1 ? -1 : 1;
-    for (auto &exec : m_executable) {
-        // if only one executable, hide the index number
-        // OUT"# Executable 1"
-        if (m_executable.size() == 1) {
-            m_fout << SEC(SEC_EXECUTABLE) << "\n" << endl;
-        } else {
-            m_fout << SEC(SEC_EXECUTABLE) << " " << i << "\n" << endl;
-        }
-
-        // OUT: OBJ1 = ascan.o
-        m_fout << m_align(m_cfg.make_obj(i)) << " = " << exec->name() << ".o";
-
-        // OUT: all objects dependency.
-        find_all_headers(m_cfiles, exec);
-        for (auto cfile = m_cfiles.begin(); cfile != m_cfiles.end(); ++cfile) {
-            if (cfile->visited()) {
-                if (cfile->associate() != NULL && cfile->is_source() && &(*cfile) != exec) {
-                    // OUT: config.o
-                    m_fout << " " << cfile->associate()->name() << ".o";
-                }
-                cfile->set_visited(false);
-            }
-        }
-
-        m_fout << endl;
-
-        if (m_flags & OPTION_B) {
-            // OUT: OBJ1BD = $(OBJ1:%=$(BUILD)/%)
-            m_fout << m_align(m_cfg.make_obj_bd(i)) << " = $(" << m_cfg.make_obj(i) << ":%=$(" << CONFIG_BD << ")/%)\n";
-        }
-
-        m_fout << endl;
-
-        if (m_flags & OPTION_B) {
-            // OUT: $(BIN1): $(OBJ1BD)
-            m_fout << "$(" << m_cfg.make_bin(i) << "): $(" << m_cfg.make_obj_bd(i) << ")\n";
-        } else {
-            // OUT: $(BIN1): $(OBJ1)
-            m_fout << "$(" << m_cfg.make_bin(i) << "): $(" << m_cfg.make_obj(i) << ")\n";
-        }
-
-        //! CXXFLAGS may contain dynamic libs such as -lm, this should be
-        //! put behind the objects which use them.
-        if (exec->is_c_source()) {
-            if (m_flags & OPTION_B) {
-                // OUT: $(CC) $(CFLAGS) -o $@ $^ $(LFLAGS)
-                m_fout << "\t$(" << CONFIG_CC << ") $(" << CONFIG_CFLAGS << ") -o $@ $^ $(" << CONFIG_LFLAGS << ")\n";
-            } else {
-                // OUT: $(CC) $(CFLAGS) -o $@ $^ $(LFLAGS)
-                m_fout << "\t$(" << CONFIG_CC << ") $(" << CONFIG_CFLAGS << ") -o $@ $^ $(" << CONFIG_LFLAGS << ")\n";
-            }
-        } else if (exec->is_cxx_source()) {
-            if (m_flags & OPTION_B) {
-                // OUT: $(CXX) $(CXXFLAGS) -o $@ $^ $(LFLAGS)
-                m_fout << "\t$(" << CONFIG_CXX << ") $(" << CONFIG_CXXFLAGS << ") -o $@ $^ $(" << CONFIG_LFLAGS
-                       << ")\n";
-            } else {
-                // OUT: $(CXX) $(CXXFLAGS) -o $@ $^ $(LFLAGS)
-                m_fout << "\t$(" << CONFIG_CXX << ") $(" << CONFIG_CXXFLAGS << ") -o $@ $^ $(" << CONFIG_LFLAGS
-                       << ")\n";
-            }
-        } else {
-            // TODO error handle
-            assert(0);
-        }
-
-        m_fout << endl;
-
-        ++i;
-    }
+void mfile::output_phony() {
+    m_fout << "# PHONY\n" << endl;
+    m_fout << ".PHONY: default debug release clean\n" << endl;
 }
 
 void mfile::print_all_headers(const vector<cfile> &files, cfile *file) {
@@ -439,64 +592,6 @@ void mfile::output_mm_dependencies() {
     m_fout << "include " << m_build_path << CONFIG_DEPENDENCIES_FILENAME << endl;
 
     m_fout << endl;
-}
-
-void mfile::output_clean_up() {
-    m_fout << SEC(SEC_CLEAN_UP) << "\n" << endl;
-
-    // OUT: clean:
-    m_fout << "clean:\n";
-
-    // if only one executable, hide the index number
-    if (m_flags & OPTION_B) {
-        // OUT: rm -f "$(TARGET1)" "$(TARGET2)" $(OBJ1) $(OBJ2) $(BUILD)
-
-        // OUT: rm -rf
-        m_fout << "\trm -rf";
-
-        int idx = m_executable.size() == 1 ? -1 : 1;
-        for (size_t i = 0; i < m_executable.size(); ++i) {
-            // OUT: "$(TARGET1)"
-            m_fout << " \"$(" << m_cfg.make_bin(idx) << ")\"";
-            ++idx;
-        }
-        // OUT: $(BUILD)
-        m_fout << " \"$(" << CONFIG_BD << ")\"\n";
-    } else {
-        //? Why not "rm -f *.o"?
-        //* Because sometimes we may compile with other pre-compiled .o files
-        //* This is not a problem if option -b.
-
-        // OUT rm -f $(BUILD)/depend.mk "$(TARGET1)" "$(TARGET2)" $(OBJ1) $(OBJ2)
-
-        // OUT("\trm -f");
-        m_fout << "\trm -f";
-
-        // OUT: $(BUILD)/depend.mk
-        m_fout << " " << m_build_path << CONFIG_DEPENDENCIES_FILENAME;
-
-        int idx = m_executable.size() == 1 ? -1 : 1;
-        for (size_t i = 0; i < m_executable.size(); ++i) {
-            // OUT: "$(TARGET1)"
-            m_fout << " \"$(" << m_cfg.make_bin(idx++) << ")\"";
-        }
-        idx = m_executable.size() == 1 ? -1 : 1;
-        for (size_t i = 0; i < m_executable.size(); ++i) {
-            // OUT: $(OBJ1)
-            m_fout << " $(" << m_cfg.make_obj(idx++) << ")";
-        }
-        m_fout << endl;
-    }
-
-    m_fout << endl;
-}
-
-void mfile::output_phony() {
-    m_fout << SEC(SEC_PHONY) << "\n" << endl;
-
-    // OUT: .PHONY: all clean rebuild
-    // OUT: .PHONY: all clean
-    m_fout << ".PHONY: all clean\n" << endl;
 }
 
 /*==========================================================================*/

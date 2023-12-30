@@ -5,8 +5,12 @@
         "abfgho",
         "cfile",
         "cfiles",
+        "cxxflag",
+        "DDEBUG",
+        "DNDEBUG",
         "mfile",
         "msgdump",
+        "OBJBD",
         "sdepend"
     ],
 	"C_Cpp.intelliSenseEngine": "Disabled",

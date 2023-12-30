@@ -20,14 +20,16 @@ class mfile {
     void prepare();
     void output_header_comments();
     void output_build_details();
+    void output_targets();
     void output_compile_to_objects();
-    void output_build_executable();
-    void output_executables();
+    // void output_build_executable();
+    void output_executable_details();
+    void output_mode_control();
+    void output_clean_up();
+    void output_phony();
     void output_dependencies_helper(const std::vector<cfile> &files, cfile *file);
     void output_dependencies();
     void output_mm_dependencies();
-    void output_clean_up();
-    void output_phony();
 
     void output_part();
 
