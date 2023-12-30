@@ -18,11 +18,9 @@ class mfile {
 
   private:
     void prepare();
-    void output_header_comments();
     void output_build_details();
     void output_targets();
     void output_compile_to_objects();
-    // void output_build_executable();
     void output_executable_details();
     void output_mode_control();
     void output_clean_up();
@@ -35,7 +33,6 @@ class mfile {
 
     void output_gitignore();
 
-    // void output_build_path_if_option_b();
     void output_mk_build_if_option_b();
 
     void print_all_headers(const std::vector<cfile> &files, cfile *file);
