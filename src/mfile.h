@@ -1,15 +1,14 @@
 #ifndef _AUTO_SCAN_MFILE_H_
 #define _AUTO_SCAN_MFILE_H_
 
-#include <cstdio>
-#include <fstream>
-#include <string>
-#include <vector>
-
 #include "align.h"
 #include "cfile.h"
 #include "config.h"
 #include "debug.h"
+#include <cstdio>
+#include <fstream>
+#include <string>
+#include <vector>
 
 class mfile {
   public:
@@ -25,17 +24,21 @@ class mfile {
     void output_mode_control();
     void output_clean_up();
     void output_phony();
-    void output_dependencies_helper(const std::vector<cfile> &files, cfile *file);
-    void output_dependencies();
+
+    // Output dependencies using gcc -MM.
     void output_mm_dependencies();
+
+    void output_mk_build_if_option_b();
 
     void output_part();
 
     void output_gitignore();
 
-    void output_mk_build_if_option_b();
+    void output_all_headers(const std::vector<cfile> &files, cfile *file);
+    void output_dependencies_helper(const std::vector<cfile> &files, cfile *file);
 
-    void print_all_headers(const std::vector<cfile> &files, cfile *file);
+    // Output dependencies by scanning all source files.
+    void output_dependencies();
 
   private:
     std::vector<cfile> &m_cfiles;

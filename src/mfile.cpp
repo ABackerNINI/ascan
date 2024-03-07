@@ -1,5 +1,4 @@
 #include "mfile.h"
-#include "common.h"
 #include "options.h"
 #include <algorithm>
 #include <cassert>
@@ -387,20 +386,19 @@ void mfile::output_compile_to_objects() {
 }
 
 void mfile::output_mode_control() {
-    /*
-        OUT:
-            # MODE CONTROL
+    // OUT:
+    //    # MODE CONTROL
+    //
+    //    $(BUILD)/%.mode:
+    //        @if [ ! -f "$@" ]; then
+    //            if [ -d "$(BUILD)" ]; then
+    //                echo "Switching to $* mode...";
+    //                $(MAKE) clean;
+    //            fi;
+    //            mkdir -p "$(BUILD)";
+    //            touch "$@";
+    //        fi
 
-            $(BUILD)/%.mode:
-                @if [ ! -f "$@" ]; then \
-                    if [ -d "$(BUILD)" ]; then \
-                        echo "Switching to $* mode..."; \
-                        $(MAKE) clean; \
-                    fi; \
-                    mkdir -p "$(BUILD)"; \
-                    touch "$@"; \
-                fi
-     */
     m_fout << "# MODE CONTROL\n" << endl;
 
     m_fout << m_build_path << "%.mode:\n";
@@ -477,61 +475,6 @@ void mfile::output_phony() {
     m_fout << ".PHONY: default debug release clean\n" << endl;
 }
 
-void mfile::print_all_headers(const vector<cfile> &files, cfile *file) {
-    file->set_visited(true);
-    // OUT: ascan.h config.h
-    for (auto include = file->includes().begin(); include != file->includes().end(); ++include) {
-        if (!(*include)->visited()) {
-            // OUT: ascan.h
-            m_fout << " " << (*include)->name() << ".h";
-            print_all_headers(files, *include);
-        }
-    }
-}
-
-void mfile::output_dependencies_helper(const vector<cfile> &files, cfile *file) {
-    file->set_visited(true);
-    if (file->includes().size() > 0) {
-        // .c/.cpp/.cc depends on all headers it includes, recursively
-
-        // OUT: $(BUILD)/ascan.o:
-        m_fout << m_build_path << file->name() << ".o:";
-
-        print_all_headers(files, file);
-
-        m_fout << endl;
-
-        for (auto include = file->includes().begin(); include != file->includes().end(); ++include) {
-            if (!(*include)->visited()) {
-                output_dependencies_helper(files, *include);
-            }
-        }
-    } else {
-        // .c/.cpp/.cc depends on itself if it has no includes
-        // OUT: $(BUILD)/ascan.o: ascan.c
-        m_fout << m_build_path << file->name() << ".o: " << file->filename() << endl;
-    }
-}
-
-// Output dependencies by scanning all source files.
-void mfile::output_dependencies() {
-    m_fout << "# DEPENDENCIES\n" << endl;
-
-    for (auto cfile = m_cfiles.begin(); cfile != m_cfiles.end(); ++cfile) {
-        if (cfile->is_source()) {
-            output_dependencies_helper(m_cfiles, &(*cfile));
-        }
-        for (auto cfile2 = m_cfiles.begin(); cfile2 != m_cfiles.end(); ++cfile2) {
-            if (cfile2->is_header()) {
-                cfile2->set_visited(false);
-            }
-        }
-    }
-
-    m_fout << endl;
-}
-
-// Output dependencies using gcc -MM.
 void mfile::output_mm_dependencies() {
     string c_types, cxx_types;
 
@@ -553,36 +496,39 @@ void mfile::output_mm_dependencies() {
     m_fout << "SRC = $(wildcard *.h *.hpp *.c *.cpp *.cc)\n";
 
     m_fout << endl;
+
     // OUT: $(BUILD)/depend.mk: $(SRC)
     m_fout << m_build_path << CONFIG_DEPENDENCIES_FILENAME << ": $(SRC)\n";
 
     output_mk_build_if_option_b();
+
     // OUT: @rm -f "$@"
     m_fout << "\t@rm -f \"$@\"\n";
     if (m_flags & OPTION_B) {
         if (m_c) {
             // OUT: @$(CC) $(CFLAGS) -MM *.c | sed 's/^\\(.*\\).o:/$$(BUILD)\/\1.o:/' >> $@
-            m_fout << "\t@$(" << CONFIG_CC << ") -MM" << c_types << " | sed 's/^\\(.*\\).o:/$$(" << CONFIG_BD
-                   << ")\\/\\1.o:/' >> $@\n";
+            m_fout << "\t@$(" << CONFIG_CC << ") $(" << CONFIG_CFLAGS << ") -MM" << c_types
+                   << " | sed 's/^\\(.*\\).o:/$$(" << CONFIG_BD << ")\\/\\1.o:/' >> $@\n";
         }
 
         if (m_cc || m_cpp) {
             // OUT: @$(CXX) $(CXXFLAGS) -MM *.cpp *.cc | sed 's/^\\(.*\\).o:/$$(BUILD)\/\1.o:/' > $@
-            m_fout << "\t@$(" << CONFIG_CXX << ") -MM" << cxx_types << " | sed 's/^\\(.*\\).o:/$$(" << CONFIG_BD
-                   << ")\\/\\1.o:/' >> $@\n";
+            m_fout << "\t@$(" << CONFIG_CXX << ") $(" << CONFIG_CXXFLAGS << ") -MM" << cxx_types
+                   << " | sed 's/^\\(.*\\).o:/$$(" << CONFIG_BD << ")\\/\\1.o:/' >> $@\n";
         }
     } else {
         if (m_c) {
             // OUT: @$(CC) $(CFLAGS) -MM *.c >> $@
-            m_fout << "\t@$(" << CONFIG_CC << ") -MM" << c_types << " >> $@\n";
+            m_fout << "\t@$(" << CONFIG_CC << ") $(" << CONFIG_CFLAGS << ") -MM" << c_types << " >> $@\n";
         }
         if (m_cc || m_cpp) {
             // OUT: @$(CXX) $(CXXFLAGS) -MM *.cpp *.cc >> $@
-            m_fout << "\t@$(" << CONFIG_CXX << ") -MM" << cxx_types << " >> $@\n";
+            m_fout << "\t@$(" << CONFIG_CXX << ") $(" << CONFIG_CXXFLAGS << ") -MM" << cxx_types << " >> $@\n";
         }
     }
 
     m_fout << endl;
+
     // OUT: include $(BUILD)/depend.mk
     m_fout << "include " << m_build_path << CONFIG_DEPENDENCIES_FILENAME << endl;
 
@@ -642,3 +588,56 @@ void mfile::output_mk_build_if_option_b() {
 }
 
 /*==========================================================================*/
+
+void mfile::output_all_headers(const vector<cfile> &files, cfile *file) {
+    file->set_visited(true);
+    // OUT: ascan.h config.h
+    for (auto include = file->includes().begin(); include != file->includes().end(); ++include) {
+        if (!(*include)->visited()) {
+            // OUT: ascan.h
+            m_fout << " " << (*include)->name() << ".h";
+            output_all_headers(files, *include);
+        }
+    }
+}
+
+void mfile::output_dependencies_helper(const vector<cfile> &files, cfile *file) {
+    file->set_visited(true);
+    if (file->includes().size() > 0) {
+        // .c/.cpp/.cc depends on all headers it includes, recursively
+
+        // OUT: $(BUILD)/ascan.o:
+        m_fout << m_build_path << file->name() << ".o:";
+
+        output_all_headers(files, file);
+
+        m_fout << endl;
+
+        for (auto include = file->includes().begin(); include != file->includes().end(); ++include) {
+            if (!(*include)->visited()) {
+                output_dependencies_helper(files, *include);
+            }
+        }
+    } else {
+        // .c/.cpp/.cc depends on itself if it has no includes
+        // OUT: $(BUILD)/ascan.o: ascan.c
+        m_fout << m_build_path << file->name() << ".o: " << file->filename() << endl;
+    }
+}
+
+void mfile::output_dependencies() {
+    m_fout << "# DEPENDENCIES\n" << endl;
+
+    for (auto cfile = m_cfiles.begin(); cfile != m_cfiles.end(); ++cfile) {
+        if (cfile->is_source()) {
+            output_dependencies_helper(m_cfiles, &(*cfile));
+        }
+        for (auto cfile2 = m_cfiles.begin(); cfile2 != m_cfiles.end(); ++cfile2) {
+            if (cfile2->is_header()) {
+                cfile2->set_visited(false);
+            }
+        }
+    }
+
+    m_fout << endl;
+}

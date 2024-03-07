@@ -66,7 +66,7 @@ SRC = $(wildcard *.h *.hpp *.c *.cpp *.cc)
 $(BUILD)/depend.mk: $(SRC)
 	@mkdir -p "$(BUILD)"
 	@rm -f "$@"
-	@$(CXX) -MM *.cpp | sed 's/^\(.*\).o:/$$(BUILD)\/\1.o:/' >> $@
+	@$(CXX) $(CXXFLAGS) -MM *.cpp | sed 's/^\(.*\).o:/$$(BUILD)\/\1.o:/' >> $@
 
 include $(BUILD)/depend.mk
 
