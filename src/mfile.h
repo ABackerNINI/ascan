@@ -34,12 +34,6 @@ class mfile {
 
     void output_gitignore();
 
-    void output_all_headers(const std::vector<cfile> &files, cfile *file);
-    void output_dependencies_helper(const std::vector<cfile> &files, cfile *file);
-
-    // Output dependencies by scanning all source files.
-    void output_dependencies();
-
   private:
     std::vector<cfile> &m_cfiles;
     Config &m_cfg;

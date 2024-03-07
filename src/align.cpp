@@ -1,5 +1,4 @@
 #include "align.h"
-#include "debug.h"
 
 std::ostream &operator<<(std::ostream &os, const Align::AlignWrapper &wrapper) {
     os << wrapper.word;
