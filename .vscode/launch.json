@@ -9,10 +9,11 @@
             "args": [
                 "-afgb",
                 "-o",
-                "M.mf"
+                "M.mk",
+                "align.cpp"
             ],
             "stopAtEntry": false,
-            "cwd": "${workspaceFolder}/src/not_working",
+            "cwd": "${workspaceFolder}/src/",
             "environment": [],
             "preLaunchTask": "build",
             "externalConsole": false,

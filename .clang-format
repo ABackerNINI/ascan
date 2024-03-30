@@ -9,6 +9,9 @@ Language:        Cpp
 # BasedOnStyle:  LLVM
 # 访问说明符(public、private等)的偏移
 AccessModifierOffset: -2
+
+# Align ########################################################################
+
 # 开括号(开圆括号、开尖括号、开方括号)后的对齐: Align, DontAlign, AlwaysBreak(总是在开括号后换行)
 AlignAfterOpenBracket: Align
 AlignConsecutiveMacros: false
@@ -21,13 +24,26 @@ AlignEscapedNewlines: Right
 # 水平对齐二元和三元表达式的操作数
 AlignOperands:   true
 # 对齐连续的尾随的注释
-AlignTrailingComments: true
-AllowAllArgumentsOnNextLine: true
-AllowAllConstructorInitializersOnNextLine: true
-# 允许函数声明的所有参数放在下一行
-AllowAllParametersOfDeclarationOnNextLine: true
-# 允许短的块放在同一行
-AllowShortBlocksOnASingleLine: Never
+AlignTrailingComments: false
+
+# Bin Pack #####################################################################
+
+# false表示函数实参(function call)要么都在同一行，要么都各自一行
+BinPackArguments: true
+# false表示所有形参(function declaration or function definition)要么都在同一行，要么都各自一行
+BinPackParameters: false
+
+# 允许所有函数实参(function call)放在下一行, Boolean
+AllowAllArgumentsOnNextLine: false
+# Boolean
+AllowAllConstructorInitializersOnNextLine: false
+# 允许所有形参(function declaration or function definition)放在下一行, Boolean
+AllowAllParametersOfDeclarationOnNextLine: false
+
+# Short Block ##################################################################
+
+# 允许短的块放在同一行: {Never/Empty/Always}
+AllowShortBlocksOnASingleLine: Always
 # 允许短的case标签放在同一行
 AllowShortCaseLabelsOnASingleLine: false
 # 允许短的函数放在同一行: None, InlineOnly(定义在类中), Empty(空函数), Inline(定义在类中，空函数), All
@@ -37,6 +53,9 @@ AllowShortLambdasOnASingleLine: All
 AllowShortIfStatementsOnASingleLine: Never
 # 允许短的循环保持在同一行
 AllowShortLoopsOnASingleLine: false
+
+# Break ########################################################################
+
 # 总是在定义返回类型后换行(deprecated)
 AlwaysBreakAfterDefinitionReturnType: None
 # 总是在返回类型后换行: None, All, TopLevel(顶级函数，不包括在类中的函数),
@@ -46,34 +65,33 @@ AlwaysBreakAfterReturnType: None
 AlwaysBreakBeforeMultilineStrings: false
 # 总是在template声明后换行
 AlwaysBreakTemplateDeclarations: MultiLine
-# false表示函数实参要么都在同一行，要么都各自一行
-BinPackArguments: true
-# false表示所有形参要么都在同一行，要么都各自一行
-BinPackParameters: false
+
+# Detailed Break ###############################################################
+
 # 大括号换行，只有当BreakBeforeBraces设置为Custom时才有效
 BraceWrapping:
   # class定义后面
-  AfterCaseLabel:  false
-  AfterClass:      false
+  AfterCaseLabel:  true
+  AfterClass:      true
   # 控制语句后面
-  AfterControlStatement: false
+  AfterControlStatement: true
   # enum定义后面
-  AfterEnum:       false
+  AfterEnum:       true
   # 函数定义后面
-  AfterFunction:   false
+  AfterFunction:   true
   # 命名空间定义后面
-  AfterNamespace:  false
+  AfterNamespace:  true
   # ObjC定义后面
-  AfterObjCDeclaration: false
+  AfterObjCDeclaration: true
   # struct定义后面
-  AfterStruct:     false
+  AfterStruct:     true
   # union定义后面
-  AfterUnion:      false
-  AfterExternBlock: false
+  AfterUnion:      true
+  AfterExternBlock: true
   # catch之前
-  BeforeCatch:     false
+  BeforeCatch:     true
   # else之前
-  BeforeElse:      false
+  BeforeElse:      true
   # 缩进大括号
   IndentBraces:    false
   SplitEmptyFunction: true
@@ -86,6 +104,7 @@ BreakBeforeBinaryOperators: None
 #   Allman(总是在大括号前换行), GNU(总是在大括号前换行，并对于控制语句的大括号增加额外的缩进), WebKit(在函数前换行), Custom
 #   注：这里认为语句块也属于函数
 BreakBeforeBraces: Attach
+# BreakBeforeBraces: Custom
 BreakBeforeInheritanceComma: false
 BreakInheritanceList: BeforeColon
 # 在三元运算符前换行
@@ -95,6 +114,9 @@ BreakConstructorInitializersBeforeComma: false
 BreakConstructorInitializers: BeforeColon
 BreakAfterJavaFieldAnnotations: false
 BreakStringLiterals: true
+
+# ? ############################################################################
+
 # 描述具有特殊意义的注释的正则表达式，它不应该被分割为多行或以其它方式改变
 CommentPragmas:  '^ IWYU pragma:'
 CompactNamespaces: false
@@ -159,11 +181,15 @@ ObjCBlockIndentWidth: 2
 ObjCSpaceAfterProperty: false
 # 在ObjC的protocol列表前添加一个空格
 ObjCSpaceBeforeProtocolList: true
-PenaltyBreakAssignment: 2
+
+# Penalty ######################################################################
+
+# 在=后换行的penalty
+PenaltyBreakAssignment: 400
 # 在call(后对函数调用换行的penalty
 PenaltyBreakBeforeFirstCallParameter: 19
 # 在一个注释中引入换行的penalty
-PenaltyBreakComment: 300
+PenaltyBreakComment: 5
 # 第一次在<<前换行的penalty
 PenaltyBreakFirstLessLess: 120
 # 在一个字符串字面量中引入换行的penalty
@@ -172,7 +198,10 @@ PenaltyBreakTemplateDeclaration: 10
 # 对于每个在行字符数限制之外的字符的penalty
 PenaltyExcessCharacter: 1000000
 # 将函数的返回类型放到它自己的行的penalty
-PenaltyReturnTypeOnItsOwnLine: 60
+PenaltyReturnTypeOnItsOwnLine: 1000
+
+# ?  ###########################################################################
+
 # 指针和引用的对齐: Left, Right, Middle
 PointerAlignment: Right
 # 允许重新排版注释
@@ -180,6 +209,9 @@ ReflowComments:  true
 # 允许排序#include
 SortIncludes:    true
 SortUsingDeclarations: true
+
+# Space ########################################################################
+
 # 在C风格类型转换后添加空格
 SpaceAfterCStyleCast: false
 SpaceAfterLogicalNot: false
@@ -209,6 +241,9 @@ SpacesInParentheses: false
 # 在方括号的[后和]前添加空格，lamda表达式和未指明大小的数组的声明不受影响
 SpacesInSquareBrackets: false
 SpaceBeforeSquareBrackets: false
+
+# Others #######################################################################
+
 # 标准: Cpp03, Cpp11, Auto
 Standard:        Latest
 StatementMacros:
@@ -221,3 +256,6 @@ UseCRLF:         false
 UseTab:          Never
 ...
 
+# https://clang.llvm.org/docs/ClangFormatStyleOptions.html
+
+# Possiable values: {Never/Empty/Always}

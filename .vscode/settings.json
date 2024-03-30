@@ -15,6 +15,7 @@
         "msgdump",
         "OBJBD",
         "sdepend",
+        "sfile",
         "SQUOTE"
     ],
 	"C_Cpp.intelliSenseEngine": "Disabled",
