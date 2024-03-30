@@ -32,7 +32,7 @@ mfile::mfile(vector<cfile> &cfiles, Config &cfg, uint32_t flags) : m_cfiles(cfil
 }
 
 int mfile::output() {
-#if DISABLE_WRITE == 1
+#ifdef DISABLE_WRITE
     print_warning("DISABLE_WRITE enabled\n");
 
     return EXIT_FAILURE;

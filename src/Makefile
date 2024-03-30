@@ -1,35 +1,29 @@
 # BUILD DETAILS
 
 CXX      = g++
-CXXFLAGS = -W -Wall -DDISABLE_WRITE=0
+CXXFLAGS = -W -Wall
 LFLAGS   = -lm
 BUILD    = build
 
 # TARGETS
 
-TARGET1  = ascan
-TARGET2  = opt_parser
+TARGET   = ascan
 
 default: debug
 
 debug: CXXFLAGS += -g -DDEBUG=1
-debug: $(BUILD)/debug.mode $(TARGET1) $(TARGET2)
+debug: $(BUILD)/debug.mode $(TARGET)
 
 release: CXXFLAGS += -O3 # -DNDEBUG=1
-release: $(BUILD)/release.mode $(TARGET1) $(TARGET2)
+release: $(BUILD)/release.mode $(TARGET)
 
 # EXECUTABLE DETAILS
 
-OBJ1     = ascan.o options.o parser.o cfile.o align.o mfile.o common.o config.o
-OBJ2     = opt_parser.o
+OBJ      = ascan.o options.o parser.o cfile.o align.o mfile.o common.o config.o
 
-OBJ1BD   = $(OBJ1:%=$(BUILD)/%)
-OBJ2BD   = $(OBJ2:%=$(BUILD)/%)
+OBJBD    = $(OBJ:%=$(BUILD)/%)
 
-$(TARGET1): $(OBJ1BD)
-	$(CXX) $(CXXFLAGS) -o $@ $^ $(LFLAGS)
-
-$(TARGET2): $(OBJ2BD)
+$(TARGET): $(OBJBD)
 	$(CXX) $(CXXFLAGS) -o $@ $^ $(LFLAGS)
 
 # COMPILE TO OBJECTS
@@ -53,7 +47,7 @@ $(BUILD)/%.mode:
 # CLEAN UP
 
 clean:
-	rm -rf "$(TARGET1)" "$(TARGET2)" "$(BUILD)"
+	rm -rf "$(TARGET)" "$(BUILD)"
 
 # PHONY
 
