@@ -10,10 +10,12 @@
         "cxxflag",
         "DDEBUG",
         "DNDEBUG",
+        "DQUOTE",
         "mfile",
         "msgdump",
         "OBJBD",
-        "sdepend"
+        "sdepend",
+        "SQUOTE"
     ],
 	"C_Cpp.intelliSenseEngine": "Disabled",
 	"C_Cpp.intelliSenseEngineFallback": "Disabled",

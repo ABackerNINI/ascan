@@ -4,8 +4,10 @@
         {
             "label": "build",
             "type": "shell",
-            // "command": "g++ opt_parser.cpp -W -Wall -g",
-            "command": "make",
+            "command": [
+                "cd src || exit 1; ",
+                "make"
+            ]
         }
     ]
 }

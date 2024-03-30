@@ -5,14 +5,14 @@
             "name": "(gdb) Launch",
             "type": "cppdbg",
             "request": "launch",
-            "program": "${workspaceFolder}/ascan",
+            "program": "${workspaceFolder}/src/ascan",
             "args": [
                 "-afgb",
                 "-o",
                 "M.mf"
             ],
             "stopAtEntry": false,
-            "cwd": "${workspaceFolder}",
+            "cwd": "${workspaceFolder}/src/not_working",
             "environment": [],
             "preLaunchTask": "build",
             "externalConsole": false,
