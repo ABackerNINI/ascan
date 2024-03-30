@@ -7,11 +7,11 @@
 class cfile {
   public:
     enum FILE_TYPE {
-        FILE_TYPE_H,   // c/c++ header file
+        FILE_TYPE_H, // c/c++ header file
         FILE_TYPE_HPP, // c++ header file
-        FILE_TYPE_C,   // c source file
+        FILE_TYPE_C, // c source file
         FILE_TYPE_CPP, // c++ source file
-        FILE_TYPE_CC,  // c++ source file
+        FILE_TYPE_CC, // c++ source file
         FILE_TYPE_ELSE
     };
 

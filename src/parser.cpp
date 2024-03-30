@@ -14,9 +14,9 @@ enum PARSER_STATE {
     STA_COMMENT2_1,
     STA_COMMENT2_2,
     STA_SLASH,
-    STA_DQUOTE,            // "
+    STA_DQUOTE, // "
     STA_DQUOTE_BACK_SLASH, // \"
-    STA_SQUOTE,            // '
+    STA_SQUOTE, // '
     STA_SQUOTE_BACK_SLASH, // \'
     STA_EOF
 };
@@ -28,18 +28,18 @@ enum INCLUDE_MAIN_STATE {
     IMS_MAIN_RETURN_TYPE,
     IMS_MAIN,
     IMS_MAIN_LEFT_PAREN, // (
-    IMS_MAIN_VOID,       // void
+    IMS_MAIN_VOID, // void
     IMS_MAIN_ARG_1_TYPE,
     IMS_MAIN_ARG_1,
     IMS_MAIN_ARG_1_COMMA,
     IMS_MAIN_ARG_2_TYPE,
     IMS_MAIN_ARG_2_ASTERISK_1,
     IMS_MAIN_ARG_2_ASTERISK_2,
-    IMS_MAIN_ARG_2_1,               // char *argv[]
-    IMS_MAIN_ARG_2_2,               // char **argv
-    IMS_MAIN_ARG_2_LEFT_BRACKET_1,  // [
+    IMS_MAIN_ARG_2_1, // char *argv[]
+    IMS_MAIN_ARG_2_2, // char **argv
+    IMS_MAIN_ARG_2_LEFT_BRACKET_1, // [
     IMS_MAIN_ARG_2_RIGHT_BRACKET_2, // ]
-    IMS_MAIN_RIGHT_PAREN            // )
+    IMS_MAIN_RIGHT_PAREN // )
 };
 
 static size_t erase_last_slash(const char *str, size_t length);

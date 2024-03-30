@@ -1,5 +1,4 @@
 #include "common.h"
-
 #include <algorithm>
 #include <fstream>
 #include <ios>
@@ -36,8 +35,7 @@ bool is_exist(const string &filename) {
 void get_date(char *date) {
     time_t t = time(NULL);
     tm *ltm = localtime(&t);
-    sprintf(date, "%4d/%02d/%02d", ltm->tm_year + 1900, ltm->tm_mon + 1,
-            ltm->tm_mday);
+    sprintf(date, "%4d/%02d/%02d", ltm->tm_year + 1900, ltm->tm_mon + 1, ltm->tm_mday);
 }
 
 bool all_nums(const char *s) {
@@ -64,8 +62,7 @@ bool read_file(std::vector<std::string> &lines, const char *file) {
     return true;
 }
 
-bool append_file_by_line(const char *file,
-                         const std::vector<std::string> &lines) {
+bool append_file_by_line(const char *file, const std::vector<std::string> &lines) {
     ofstream output(file, ios_base::app);
     if (!output) {
         return false;
@@ -92,9 +89,7 @@ size_t edit_distance(const char *s1, size_t len1, const char *s2, size_t len2) {
     for (size_t i = 1; i <= len1; ++i) {
         for (size_t j = 1; j <= len2; ++j) {
             flag = (s1[i - 1] == s2[j - 1]) ? 0 : 1;
-            DP(i, j) =
-                std::min(DP(i - 1, j) + 1,
-                         std::min(DP(i, j - 1) + 1, DP(i - 1, j - 1) + flag));
+            DP(i, j) = std::min(DP(i - 1, j) + 1, std::min(DP(i, j - 1) + 1, DP(i - 1, j - 1) + flag));
         }
     }
 

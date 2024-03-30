@@ -27,8 +27,8 @@ struct opt {
 
     // OUTPUT
 
-    int count;       // number of times presented
-    int index;       // order in the arguments
+    int count; // number of times presented
+    int index; // order in the arguments
     const char *arg; // argument
 
     opt();

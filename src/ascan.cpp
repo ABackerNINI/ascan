@@ -406,13 +406,9 @@ void ascan::print_cfiles() const {
                     try {
                         filesystem::path p2(inc->filename());
                         print_debug_ex("\t|%s|\n", filesystem::relative(p2).c_str());
-                    } catch (...) {
-                        print_debug_ex("\n");
-                    }
+                    } catch (...) { print_debug_ex("\n"); }
                 }
-            } catch (...) {
-                print_debug_ex("\n");
-            }
+            } catch (...) { print_debug_ex("\n"); }
         }
     }
 }

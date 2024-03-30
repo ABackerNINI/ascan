@@ -1,5 +1,7 @@
 #include "cfile.h"
-
+#include "common.h"
+#include "debug.h"
+#include "parser.h"
 #include <cassert>
 #include <dirent.h>
 #include <fcntl.h>
@@ -10,25 +12,17 @@
 #include <sys/types.h>
 #include <unistd.h>
 
-#include "common.h"
-#include "debug.h"
-#include "parser.h"
-
 using namespace std;
 
-const std::vector<std::string> cfile::file_type_ext = {".h", ".hpp", ".c",
-                                                       ".cpp", ".cc"};
+const std::vector<std::string> cfile::file_type_ext = {".h", ".hpp", ".c", ".cpp", ".cc"};
 const std::vector<cfile::FILE_TYPE> cfile::c_header_types = {FILE_TYPE_H};
-const std::vector<cfile::FILE_TYPE> cfile::cxx_header_types = {FILE_TYPE_H,
-                                                               FILE_TYPE_HPP};
+const std::vector<cfile::FILE_TYPE> cfile::cxx_header_types = {FILE_TYPE_H, FILE_TYPE_HPP};
 const std::vector<cfile::FILE_TYPE> cfile::c_source_types = {FILE_TYPE_C};
-const std::vector<cfile::FILE_TYPE> cfile::cxx_source_types = {FILE_TYPE_CPP,
-                                                               FILE_TYPE_CC};
+const std::vector<cfile::FILE_TYPE> cfile::cxx_source_types = {FILE_TYPE_CPP, FILE_TYPE_CC};
 
 /*==========================================================================*/
 
-cfile::cfile(const string &filename, const string &name)
-    : m_filename(filename), m_name(name) {
+cfile::cfile(const string &filename, const string &name) : m_filename(filename), m_name(name) {
     //! Be careful with get_ext(std::string.c_str()), the c_str() return value
     //! is a dynamic memory which could move to another place when you modified
     //! the string.
@@ -60,11 +54,9 @@ void cfile::match_includes_and_detect_main(vector<cfile> &files) {
         return;
     }
 
-    vector<string> includes =
-        scan_includes_and_main_func(m_filename.c_str(), &m_have_main_func);
+    vector<string> includes = scan_includes_and_main_func(m_filename.c_str(), &m_have_main_func);
 
-    for (auto include = includes.begin(); include != includes.end();
-         ++include) {
+    for (auto include = includes.begin(); include != includes.end(); ++include) {
         bool found = false;
         for (auto file = files.begin(); file != files.end(); ++file) {
             if (*include == file->filename()) {
@@ -74,8 +66,7 @@ void cfile::match_includes_and_detect_main(vector<cfile> &files) {
             }
         }
         if (!found) {
-            fprintf(stderr, "File \"%s\" included by \"%s\" not found\n",
-                    include->c_str(), m_filename.c_str());
+            fprintf(stderr, "File \"%s\" included by \"%s\" not found\n", include->c_str(), m_filename.c_str());
         }
     }
     m_includes_matched = true;
@@ -88,8 +79,7 @@ void cfile::associate_header(vector<cfile> &files) {
         if (file->is_header() && m_name == file->m_name) {
             m_associate = &(*file);
             file->m_associate = this;
-            print_debug("associated: %s <-> %s\n", m_filename.c_str(),
-                        file->m_filename.c_str());
+            print_debug("associated: %s <-> %s\n", m_filename.c_str(), file->m_filename.c_str());
             break;
         }
     }
@@ -161,8 +151,7 @@ cfile::FILE_TYPE cfile::determine_type(const std::string &ext) const {
     return FILE_TYPE_ELSE;
 }
 
-bool cfile::check_type(const std::vector<FILE_TYPE> &types,
-                       FILE_TYPE type) const {
+bool cfile::check_type(const std::vector<FILE_TYPE> &types, FILE_TYPE type) const {
     for (auto &t : types) {
         if (type == t) {
             return true;
@@ -182,16 +171,14 @@ bool is_concerned_file_type(const std::string &ext) {
     return false;
 }
 
-static bool recursion_scan_dir_c_cxx_files_helper(char *dir,
-                                                  vector<cfile> &vec) {
+static bool recursion_scan_dir_c_cxx_files_helper(char *dir, vector<cfile> &vec) {
     DIR *p_dir = NULL;
     struct dirent *p_entry = NULL;
     struct stat statbuf;
     bool ret = true;
 
     if ((p_dir = opendir(dir)) == NULL) {
-        fprintf(stderr, "Can't open dir \"%s\". @%s line %d\n", dir, __func__,
-                __LINE__);
+        fprintf(stderr, "Can't open dir \"%s\". @%s line %d\n", dir, __func__, __LINE__);
         return false;
     }
 
@@ -212,21 +199,16 @@ static bool recursion_scan_dir_c_cxx_files_helper(char *dir,
                 // if (strcmp(".", p_entry->d_name) != 0 &&
                 //     strcmp("..", p_entry->d_name) != 0) {
                 // }
-            } else if ((statbuf.st_mode & S_IFMT) ==
-                       S_IFREG) { /* regular file */
+            } else if ((statbuf.st_mode & S_IFMT) == S_IFREG) { /* regular file */
                 const char *ext = get_ext(p_entry->d_name);
                 if (ext && is_concerned_file_type(ext)) {
-                    vec.emplace_back(std::string(dir),
-                                     string(p_entry->d_name)
-                                         .substr(0, ext - p_entry->d_name));
+                    vec.emplace_back(std::string(dir), string(p_entry->d_name).substr(0, ext - p_entry->d_name));
                 }
             } else {
-                print_warning("Not a regular file or directory: \"%s\"\n",
-                              p_entry->d_name);
+                print_warning("Not a regular file or directory: \"%s\"\n", p_entry->d_name);
             }
         } else {
-            print_warning("Can't lstat file/directory: \"%s\"\n",
-                          p_entry->d_name);
+            print_warning("Can't lstat file/directory: \"%s\"\n", p_entry->d_name);
         }
     }
 

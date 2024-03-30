@@ -103,7 +103,8 @@ enum DBG_LEVEL {
 
 #define CC_BEGIN(clr) "\033[" _CC_EXPAND(clr) "m"
 #define CC_BEGIN2(clr1, clr2) "\033[" _CC_EXPAND(clr1) ";" _CC_EXPAND(clr2) "m"
-#define CC_BEGIN3(clr1, clr2, clr3) "\033[" _CC_EXPAND(clr1) ";" _CC_EXPAND(clr2) ";" _CC_EXPAND(clr3) "m"
+#define CC_BEGIN3(clr1, clr2, clr3) \
+    "\033[" _CC_EXPAND(clr1) ";" _CC_EXPAND(clr2) ";" _CC_EXPAND(clr3) "m"
 #define CC_END "\033[0m"
 
 #define CC(clr, str) CC_BEGIN(clr) str CC_END
@@ -128,7 +129,8 @@ enum DBG_LEVEL {
 /*===========================================================================*/
 
 #define _DEBUG_PRINT(...) fprintf(DBG_OUT, __VA_ARGS__)
-#define _PRINT_FILE_FUNC_LINE0 _DEBUG_PRINT("@file:%s, func:%s, line:%d\n", __FILE__, __func__, __LINE__);
+#define _PRINT_FILE_FUNC_LINE0 \
+    _DEBUG_PRINT("@file:%s, func:%s, line:%d\n", __FILE__, __func__, __LINE__);
 
 #if (PRINT_FILE_FUNC_LINE)
 #define _PRINT_FILE_FUNC_LINE _PRINT_FILE_FUNC_LINE0
@@ -154,7 +156,8 @@ extern int debug_level;
 #include <stdio.h> /* fprintf */
 
 #define _DEBUG_PRINT(...) fprintf(DBG_OUT, __VA_ARGS__)
-#define __PRINT_FILE_FUNC_LINE _DEBUG_PRINT("@file:%s, func:%s, line:%d\n", __FILE__, __func__, __LINE__);
+#define __PRINT_FILE_FUNC_LINE \
+    _DEBUG_PRINT("@file:%s, func:%s, line:%d\n", __FILE__, __func__, __LINE__);
 
 #if (PRINT_FILE_FUNC_LINE)
 #define _PRINT_FILE_FUNC_LINE __PRINT_FILE_FUNC_LINE
@@ -174,37 +177,37 @@ extern int debug_level;
 
 #include <unistd.h> /* isatty */
 
-#define __PRINT_FUNC(_begin_clr_, dbg_lvl, lvl_str, ...)                                                               \
-    if (debug_level >= dbg_lvl) {                                                                                      \
-        _PRINT_FILE_FUNC_LINE;                                                                                         \
-        if (isatty(fileno(DBG_OUT))) {                                                                                 \
-            _DEBUG_PRINT("[" _begin_clr_ lvl_str CC_END "]: ");                                                        \
-        } else {                                                                                                       \
-            _DEBUG_PRINT("[" lvl_str "]: ");                                                                           \
-        }                                                                                                              \
-        _DEBUG_PRINT(__VA_ARGS__);                                                                                     \
+#define __PRINT_FUNC(_begin_clr_, dbg_lvl, lvl_str, ...)        \
+    if (debug_level >= dbg_lvl) {                               \
+        _PRINT_FILE_FUNC_LINE;                                  \
+        if (isatty(fileno(DBG_OUT))) {                          \
+            _DEBUG_PRINT("[" _begin_clr_ lvl_str CC_END "]: "); \
+        } else {                                                \
+            _DEBUG_PRINT("[" lvl_str "]: ");                    \
+        }                                                       \
+        _DEBUG_PRINT(__VA_ARGS__);                              \
     }
 
 #else /* ENABLE_COLOR_PRINT: do not need to check isatty */
 
-#define __PRINT_FUNC(_begin_clr_, dbg_lvl, lvl_str, ...)                                                               \
-    if (debug_level >= dbg_lvl) {                                                                                      \
-        _PRINT_FILE_FUNC_LINE;                                                                                         \
-        _DEBUG_PRINT("[" lvl_str "]: ");                                                                               \
-        _DEBUG_PRINT(__VA_ARGS__);                                                                                     \
+#define __PRINT_FUNC(_begin_clr_, dbg_lvl, lvl_str, ...) \
+    if (debug_level >= dbg_lvl) {                        \
+        _PRINT_FILE_FUNC_LINE;                           \
+        _DEBUG_PRINT("[" lvl_str "]: ");                 \
+        _DEBUG_PRINT(__VA_ARGS__);                       \
     }
 
 #endif /* ENABLE_COLOR_PRINT */
 
-#define _PRINT_FUNC_EX(lvl, ...)                                                                                       \
-    if (debug_level >= DBG_LVL_##lvl) {                                                                                \
-        _PRINT_FILE_FUNC_LINE_EX;                                                                                      \
-        _DEBUG_PRINT(__VA_ARGS__);                                                                                     \
+#define _PRINT_FUNC_EX(lvl, ...)        \
+    if (debug_level >= DBG_LVL_##lvl) { \
+        _PRINT_FILE_FUNC_LINE_EX;       \
+        _DEBUG_PRINT(__VA_ARGS__);      \
     }
 
-#define _STMT_FUNC(lvl, ...)                                                                                           \
-    if (debug_level >= DBG_LVL_##lvl) {                                                                                \
-        __VA_ARGS__                                                                                                    \
+#define _STMT_FUNC(lvl, ...)            \
+    if (debug_level >= DBG_LVL_##lvl) { \
+        __VA_ARGS__                     \
     }
 
 #else /* ENABLE_RUNTIME_DEBUG_LEVEL */
@@ -213,43 +216,45 @@ extern int debug_level;
 
 #include <unistd.h> /* isatty */
 
-#define __PRINT_FUNC(_begin_clr_, dbg_lvl, lvl_str, ...)                                                               \
-    do {                                                                                                               \
-        _PRINT_FILE_FUNC_LINE;                                                                                         \
-        if (isatty(fileno(DBG_OUT))) {                                                                                 \
-            _DEBUG_PRINT("[" _begin_clr_ lvl_str CC_END "]: ");                                                        \
-        } else {                                                                                                       \
-            _DEBUG_PRINT("[" lvl_str "]: ");                                                                           \
-        }                                                                                                              \
-        _DEBUG_PRINT(__VA_ARGS__);                                                                                     \
+#define __PRINT_FUNC(_begin_clr_, dbg_lvl, lvl_str, ...)        \
+    do {                                                        \
+        _PRINT_FILE_FUNC_LINE;                                  \
+        if (isatty(fileno(DBG_OUT))) {                          \
+            _DEBUG_PRINT("[" _begin_clr_ lvl_str CC_END "]: "); \
+        } else {                                                \
+            _DEBUG_PRINT("[" lvl_str "]: ");                    \
+        }                                                       \
+        _DEBUG_PRINT(__VA_ARGS__);                              \
     } while (0)
 
 #else /* ENABLE_COLOR_PRINT: do not need to check isatty */
 
-#define __PRINT_FUNC(_begin_clr_, dbg_lvl, lvl_str, ...)                                                               \
-    do {                                                                                                               \
-        _PRINT_FILE_FUNC_LINE;                                                                                         \
-        _DEBUG_PRINT("[" lvl_str "]: ");                                                                               \
-        _DEBUG_PRINT(__VA_ARGS__);                                                                                     \
+#define __PRINT_FUNC(_begin_clr_, dbg_lvl, lvl_str, ...) \
+    do {                                                 \
+        _PRINT_FILE_FUNC_LINE;                           \
+        _DEBUG_PRINT("[" lvl_str "]: ");                 \
+        _DEBUG_PRINT(__VA_ARGS__);                       \
     } while (0)
 
 #endif /* ENABLE_COLOR_PRINT */
 
-#define _PRINT_FUNC_EX(lvl, ...)                                                                                       \
-    do {                                                                                                               \
-        _PRINT_FILE_FUNC_LINE_EX;                                                                                      \
-        _DEBUG_PRINT(__VA_ARGS__);                                                                                     \
+#define _PRINT_FUNC_EX(lvl, ...)   \
+    do {                           \
+        _PRINT_FILE_FUNC_LINE_EX;  \
+        _DEBUG_PRINT(__VA_ARGS__); \
     } while (0)
 
-#define _STMT_FUNC(lvl, ...)                                                                                           \
-    do {                                                                                                               \
-        __VA_ARGS__                                                                                                    \
+#define _STMT_FUNC(lvl, ...) \
+    do {                     \
+        __VA_ARGS__          \
     } while (0)
 
 #endif /* ENABLE_RUNTIME_DEBUG_LEVEL */
 
-#define _PRINT_FUNC(clr, lvl, ...) __PRINT_FUNC(CC_BEGIN(clr), DBG_LVL_##lvl, #lvl, __VA_ARGS__)
-#define _PRINT_FUNC2(clr1, clr2, lvl, ...) __PRINT_FUNC(CC_BEGIN2(clr1, clr2), DBG_LVL_##lvl, #lvl, __VA_ARGS__)
+#define _PRINT_FUNC(clr, lvl, ...) \
+    __PRINT_FUNC(CC_BEGIN(clr), DBG_LVL_##lvl, #lvl, __VA_ARGS__)
+#define _PRINT_FUNC2(clr1, clr2, lvl, ...) \
+    __PRINT_FUNC(CC_BEGIN2(clr1, clr2), DBG_LVL_##lvl, #lvl, __VA_ARGS__)
 
 /*---------------------------------------------------------------------------*/
 
@@ -404,9 +409,9 @@ extern int debug_level;
 #include <stdio.h> /* printf */
 
 #define dbg_print(...) printf(__VA_ARGS__)
-#define dbg_stmt(...)                                                                                                  \
-    do {                                                                                                               \
-        __VA_ARGS__                                                                                                    \
+#define dbg_stmt(...) \
+    do {              \
+        __VA_ARGS__   \
     } while (0)
 
 #include <assert.h> /* assert */

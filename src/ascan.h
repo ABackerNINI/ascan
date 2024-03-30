@@ -1,13 +1,12 @@
 #ifndef _AUTO_SCAN_ASCAN_H_
 #define _AUTO_SCAN_ASCAN_H_
 
-#include <iostream>
-#include <string>
-#include <vector>
-
 #include "cfile.h"
 #include "config.h"
 #include "options.h"
+#include <iostream>
+#include <string>
+#include <vector>
 
 class ascan {
   public:
@@ -30,8 +29,7 @@ class ascan {
     // an error occurred.
     // -- 0: otherwise.
     int parse_cmd_args(int argc, char **argv);
-    void print_help(enum HELP_TYPE help,
-                    const options::as_option *option) const;
+    void print_help(enum HELP_TYPE help, const options::as_option *option) const;
 
     // Check if there is one makefile, prompt overwrite when -f is not set.
     //
@@ -46,9 +44,9 @@ class ascan {
     void print_cfiles() const;
 
   private:
-    int m_error;      // whether there is an error during parsing args
+    int m_error; // whether there is an error during parsing args
     uint32_t m_flags; // contains all options
-    Config m_cfg;     // config
+    Config m_cfg; // config
     // string m_cwd;            // current working dir
     std::vector<cfile> m_cfiles; // cfiles
     options m_options;

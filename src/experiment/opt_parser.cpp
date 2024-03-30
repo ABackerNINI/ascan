@@ -19,8 +19,8 @@ size_t edit_distance(const char *s1, size_t len1, const char *s2, size_t len2);
 size_t edit_distance(const std::string &source, const std::string &target);
 
 opt::opt()
-    : short_opt('\0'), long_opt(NULL), arg_type(NO_ARGUMENT), arg_name(NULL),
-      description(NULL), count(0), index(-1), arg(NULL) {
+    : short_opt('\0'), long_opt(NULL), arg_type(NO_ARGUMENT), arg_name(NULL), description(NULL), count(0), index(-1),
+      arg(NULL) {
 }
 
 opt_parser::opt_parser() : short_opts(NULL), long_opts(NULL) {
@@ -46,8 +46,7 @@ int opt_parser::parse(opt *opts, int n, int argc, char *const *argv) {
 
     int opt, long_ind;
     int index = 0;
-    while ((opt = getopt_long(argc, argv, short_opts, long_opts, &long_ind)) !=
-           -1) {
+    while ((opt = getopt_long(argc, argv, short_opts, long_opts, &long_ind)) != -1) {
         if (opt == '?') {
             // '?' is returned if there are unrecognized/missing-arguments
             // options. Unrecognized options is set to optopt.
@@ -56,8 +55,7 @@ int opt_parser::parse(opt *opts, int n, int argc, char *const *argv) {
 
         } else {
             // Long options: opt(value) = VAL_SHIFT + index
-            opt_ptr = (opt < VAL_SHIFT ? short_opts_ref[opt]
-                                       : &opts[opt - VAL_SHIFT]);
+            opt_ptr = (opt < VAL_SHIFT ? short_opts_ref[opt] : &opts[opt - VAL_SHIFT]);
 
             assert(opt_ptr);
 
@@ -103,14 +101,11 @@ void opt_parser::make_long_opt(const opt *opts, int n) {
     for (int i = 0; i < n; ++i) {
         if (opts[i].long_opt) {
             long_opts[los].name = opts[i].long_opt;
-            long_opts[los].has_arg =
-                opts[i].arg_type == REQUIRE_ARGUMENT
-                    ? required_argument
-                    : (opts[i].arg_type == OPTIONAL_ARGUMENT ? optional_argument
-                                                             : no_argument);
+            long_opts[los].has_arg = opts[i].arg_type == REQUIRE_ARGUMENT
+                                         ? required_argument
+                                         : (opts[i].arg_type == OPTIONAL_ARGUMENT ? optional_argument : no_argument);
             long_opts[los].flag = NULL;
-            long_opts[los].val =
-                opts[i].short_opt ? opts[i].short_opt : VAL_SHIFT + i;
+            long_opts[los].val = opts[i].short_opt ? opts[i].short_opt : VAL_SHIFT + i;
             ++los;
         }
     }
@@ -150,9 +145,7 @@ size_t edit_distance(const char *s1, size_t len1, const char *s2, size_t len2) {
     for (size_t i = 1; i <= len1; ++i) {
         for (size_t j = 1; j <= len2; ++j) {
             flag = (s1[i - 1] == s2[j - 1]) ? 0 : 1;
-            DP(i, j) =
-                std::min(DP(i - 1, j) + 1,
-                         std::min(DP(i, j - 1) + 1, DP(i - 1, j - 1) + flag));
+            DP(i, j) = std::min(DP(i - 1, j) + 1, std::min(DP(i, j - 1) + 1, DP(i - 1, j - 1) + flag));
         }
     }
 
@@ -257,12 +250,9 @@ int main(int argc, char **argv) {
 
     for (int i = 0; i < n; ++i) {
         if (options[i].count) {
-            std::cout << (options[i].short_opt ? options[i].short_opt : ' ')
-                      << " | "
+            std::cout << (options[i].short_opt ? options[i].short_opt : ' ') << " | "
                       << (options[i].long_opt ? options[i].long_opt : "")
-                      << (options[i].arg ? std::string(" : ") + options[i].arg
-                                         : "")
-                      << std::endl;
+                      << (options[i].arg ? std::string(" : ") + options[i].arg : "") << std::endl;
         }
     }
 

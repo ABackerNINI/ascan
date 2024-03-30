@@ -6,10 +6,10 @@
 
 #include "config.h"
 
-#define OPTION_A 0x1  // option -a: overwrite all sections
-#define OPTION_B 0x2  // option -b: put binaries to 'build' subdirectory
-#define OPTION_F 0x4  // option -f: force overwrite
-#define OPTION_G 0x8  // option -g: add '-g' flag to cflags or cxxflags
+#define OPTION_A 0x1 // option -a: overwrite all sections
+#define OPTION_B 0x2 // option -b: put binaries to 'build' subdirectory
+#define OPTION_F 0x4 // option -f: force overwrite
+#define OPTION_G 0x8 // option -g: add '-g' flag to cflags or cxxflags
 #define OPTION_C 0x10 // option -c: add header comments
 #define OPTION_O 0x20 // option -o: output
 #define OPTION_I 0x40 // option -i: add objects and executables to gitignore
@@ -17,19 +17,19 @@
 class options {
   public:
     enum OPT_TYPE {
-        OT_ALL_SECS = 'a',  // -a
-        OT_BUILD = 'b',     // -b
-        OT_FORCE = 'f',     // -f
-        OT_G = 'g',         // -g
-        OT_HELP = 'h',      // -h, --help
-        OT_OUTPUT = 'o',    // -o, --output
-        OT_VER = 'v',       // -v, --ver
+        OT_ALL_SECS = 'a', // -a
+        OT_BUILD = 'b', // -b
+        OT_FORCE = 'f', // -f
+        OT_G = 'g', // -g
+        OT_HELP = 'h', // -h, --help
+        OT_OUTPUT = 'o', // -o, --output
+        OT_VER = 'v', // -v, --ver
         OT_GITIGNORE = 'i', // -i, --gitignore
-        OT_DEBUG = 200,     //     --debug
-        OT_CC,              //     --cc
-        OT_CXX,             //     --cxx
-        OT_CFLAGS,          //     --cflags
-        OT_CXXFLAGS,        //     --cxxflags
+        OT_DEBUG = 200, //     --debug
+        OT_CC, //     --cc
+        OT_CXX, //     --cxx
+        OT_CFLAGS, //     --cflags
+        OT_CXXFLAGS, //     --cxxflags
     };
 
     struct as_option {
