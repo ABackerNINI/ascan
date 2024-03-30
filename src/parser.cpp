@@ -1,9 +1,6 @@
 #include "parser.h"
-
 #include <cassert>
 #include <string.h>
-
-#include "debug.h"
 
 using namespace std;
 
@@ -115,7 +112,6 @@ vector<string> scan_includes_and_main_func(const char *filename, bool *main_func
             break;
         case IMS_INCLUDE:
             if (type == TYPE_STRING) {
-                print_debug_ex("\t|%s|\n", buff);
                 includes.push_back(make_path(filename, buff));
             }
             state = IMS_INIT;

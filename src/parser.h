@@ -11,7 +11,7 @@ enum PARSER_TOKEN_TYPE {
     TYPE_NUMBER,     // '[0-9]+'
     TYPE_COMMENT1,   // '//*\n'
     TYPE_COMMENT2,   // '/***/'
-    TYPE_STRING,     // '"*"'
+    TYPE_STRING,     // '"*"' or '\'*\''
     TYPE_REACH_MAX_BUFFER_SIZE,
     TYPE_EOF // EOF
 };

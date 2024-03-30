@@ -40,8 +40,10 @@ class ascan {
     // found.
     // -- false: otherwise.
     bool test_makefile();
+    void match_starter_files();
     void match_c_cxx_includes();
     void associate_header();
+    void print_cfiles() const;
 
   private:
     int m_error;      // whether there is an error during parsing args

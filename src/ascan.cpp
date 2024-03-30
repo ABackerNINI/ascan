@@ -1,52 +1,47 @@
 #include "ascan.h"
-
-#include <algorithm>
-#include <cassert>
-#include <getopt.h>
-#include <iostream>
-#include <string.h>
-#include <unistd.h>
-
 #include "common.h"
 #include "debug.h"
 #include "mfile.h"
+#include <filesystem>
+#include <getopt.h>
+#include <string.h>
+#include <unistd.h>
 
 using namespace std;
 
 int debug_level = DBG_LVL_DEBUG;
 
-#define PRINT_TITLE(title)                                                     \
-    if (isatty(STDOUT_FILENO)) {                                               \
-        printf(CC(CC_BRIGHT, "%s") "\n", title);                               \
-    } else {                                                                   \
-        printf("%s\n", title);                                                 \
+#define PRINT_TITLE(title)                                                                                             \
+    if (isatty(STDOUT_FILENO)) {                                                                                       \
+        printf(CC(CC_BRIGHT, "%s") "\n", title);                                                                       \
+    } else {                                                                                                           \
+        printf("%s\n", title);                                                                                         \
     }
 
-#define PRINT_OPTION(short_opt, long_opt, arg)                                 \
-    if (isatty(STDOUT_FILENO)) {                                               \
-        if (short_opt && long_opt) {                                           \
-            printf("\t" CC(CC_BRIGHT, "-%c") ", " CC(CC_BRIGHT, "--%s"),       \
-                   short_opt, long_opt);                                       \
-        } else if (short_opt) {                                                \
-            printf("\t" CC(CC_BRIGHT, "-%c"), short_opt);                      \
-        } else {                                                               \
-            printf("\t" CC(CC_BRIGHT, "--%s"), long_opt);                      \
-        }                                                                      \
-        if (arg) {                                                             \
-            printf("=" CC(CC_UNDERSCORE, "%s"), arg);                          \
-        }                                                                      \
-    } else {                                                                   \
-        if (short_opt && long_opt) {                                           \
-            printf("\t-%c, --%s", short_opt, long_opt);                        \
-        } else if (short_opt) {                                                \
-            printf("\t-%c", short_opt);                                        \
-        } else {                                                               \
-            printf("\t--%s", long_opt);                                        \
-        }                                                                      \
-        if (arg) {                                                             \
-            printf("=%s", arg);                                                \
-        }                                                                      \
-    }                                                                          \
+#define PRINT_OPTION(short_opt, long_opt, arg)                                                                         \
+    if (isatty(STDOUT_FILENO)) {                                                                                       \
+        if (short_opt && long_opt) {                                                                                   \
+            printf("\t" CC(CC_BRIGHT, "-%c") ", " CC(CC_BRIGHT, "--%s"), short_opt, long_opt);                         \
+        } else if (short_opt) {                                                                                        \
+            printf("\t" CC(CC_BRIGHT, "-%c"), short_opt);                                                              \
+        } else {                                                                                                       \
+            printf("\t" CC(CC_BRIGHT, "--%s"), long_opt);                                                              \
+        }                                                                                                              \
+        if (arg) {                                                                                                     \
+            printf("=" CC(CC_UNDERSCORE, "%s"), arg);                                                                  \
+        }                                                                                                              \
+    } else {                                                                                                           \
+        if (short_opt && long_opt) {                                                                                   \
+            printf("\t-%c, --%s", short_opt, long_opt);                                                                \
+        } else if (short_opt) {                                                                                        \
+            printf("\t-%c", short_opt);                                                                                \
+        } else {                                                                                                       \
+            printf("\t--%s", long_opt);                                                                                \
+        }                                                                                                              \
+        if (arg) {                                                                                                     \
+            printf("=%s", arg);                                                                                        \
+        }                                                                                                              \
+    }                                                                                                                  \
     printf("\n");
 
 #define PRINT_DESC(desc) printf("\t\t%s.\n\n", desc)
@@ -78,6 +73,8 @@ int ascan::start() {
     m_cfiles = recursion_scan_dir_c_cxx_files(".");
 
     match_c_cxx_includes();
+    match_starter_files();
+    print_cfiles();
     associate_header();
 
     mfile mf(m_cfiles, m_cfg, m_flags);
@@ -147,12 +144,10 @@ int ascan::parse_cmd_args(int argc, char **argv) {
     }
 
     print_debug("parsing arguments\n");
-    while ((opt = getopt_long(argc, argv, short_opts, long_opts, &long_ind)) !=
-           -1) {
+    while ((opt = getopt_long(argc, argv, short_opts, long_opts, &long_ind)) != -1) {
         print_debug_ex("\topt = ");
         stmt_debug(
-            int col = -8; option = m_options.find_opt((options::OPT_TYPE)opt);
-            if (option) {
+            int col = -8; option = m_options.find_opt((options::OPT_TYPE)opt); if (option) {
                 if (option->short_opt) {
                     print_debug_ex("%*c\t", col, option->short_opt);
                 } else if (option->long_opt) {
@@ -218,11 +213,9 @@ int ascan::parse_cmd_args(int argc, char **argv) {
                 if ((optarg && !option->arg) || (!optarg && option->arg)) {
                     if (optarg) {
                         // control should never reach here
-                        print_error("unexpected option argument, '%s'.\n",
-                                    optarg);
+                        print_error("unexpected option argument, '%s'.\n", optarg);
                     } else {
-                        print_error("missing option argument, '%s'.\n",
-                                    option->arg);
+                        print_error("missing option argument, '%s'.\n", option->arg);
                     }
                     help = HT_SPECIFIC;
                 }
@@ -237,10 +230,8 @@ int ascan::parse_cmd_args(int argc, char **argv) {
                         char short_opt = option->short_opt;
                         const char *long_opt = option->long_opt;
                         if (short_opt && long_opt) {
-                            printf(
-                                CC_BEGIN(CC_BRIGHT) "-%c" CC_END ", " CC_BEGIN(
-                                    CC_BRIGHT) "--%s" CC_END,
-                                short_opt, long_opt);
+                            printf(CC_BEGIN(CC_BRIGHT) "-%c" CC_END ", " CC_BEGIN(CC_BRIGHT) "--%s" CC_END, short_opt,
+                                   long_opt);
                         } else if (short_opt) {
                             printf(CC_BEGIN(CC_BRIGHT) "-%c" CC_END, short_opt);
                         } else {
@@ -284,15 +275,13 @@ ERROR_DEBUG_LEVEL:
     goto END;
 }
 
-void ascan::print_help(enum HELP_TYPE help,
-                       const options::as_option *option) const {
-    static const char *desc =
-        "Ascan will scan the c/c++ project and create simple makefile.\n\n"
-        "\tAscan is suitable for c/c++ projects that are:\n"
-        "\t\t1. Simple structured that all source codes are in one "
-        "directory.\n"
-        "\t\t2. Source codes are `.h` or `.c` or `.cpp` or `.cc`.\n"
-        "\t`cd` to the project directory and run `ascan`.";
+void ascan::print_help(enum HELP_TYPE help, const options::as_option *option) const {
+    static const char *desc = "Ascan will scan the c/c++ project and create simple makefile.\n\n"
+                              "\tAscan is suitable for c/c++ projects that are:\n"
+                              "\t\t1. Simple structured that all source codes are in one "
+                              "directory.\n"
+                              "\t\t2. Source codes are `.h` or `.c` or `.cpp` or `.cc`.\n"
+                              "\t`cd` to the project directory and run `ascan`.";
 
     if (help == HT_ALL) {
         PRINT_TITLE("NAME");
@@ -309,8 +298,7 @@ void ascan::print_help(enum HELP_TYPE help,
         size_t n;
         const options::as_option *options = m_options.get_as_opts(&n);
         for (unsigned int i = 0; i < n; ++i) {
-            PRINT_OPTION(options[i].short_opt, options[i].long_opt,
-                         options[i].arg);
+            PRINT_OPTION(options[i].short_opt, options[i].long_opt, options[i].arg);
             PRINT_DESC(options[i].description);
         }
 
@@ -356,8 +344,7 @@ bool ascan::test_makefile() {
     }
 
     if (!(m_flags & OPTION_F) && exist) {
-        printf("There is already one %s, overwrite it? [y/N] ",
-               (exist == 1 ? "Makefile" : "makefile"));
+        printf("There is already one %s, overwrite it? [y/N] ", (exist == 1 ? "Makefile" : "makefile"));
 
         char cmd[BUFSIZ];
         if (fgets(cmd, BUFSIZ, stdin)) {
@@ -376,23 +363,64 @@ bool ascan::test_makefile() {
     return true;
 }
 
+// Set 'have_main_func' for cfiles that are starter files specified by command line arguments.
+void ascan::match_starter_files() {
+    for (auto &sfile : m_cfg.start_files) {
+        for (auto &cfile : m_cfiles) {
+            if (cfile.is_source()) {
+                filesystem::path p1(cfile.filename());
+                filesystem::path p2(sfile);
+                if (filesystem::relative(p1) == filesystem::relative(p2)) {
+                    cfile.set_have_main_func(true);
+                    break;
+                }
+            }
+        }
+    }
+}
+
 void ascan::match_c_cxx_includes() {
-    for (auto file = m_cfiles.begin(); file != m_cfiles.end(); ++file) {
-        if (file->is_source()) {
-            print_debug("%s\n", file->filename().c_str());
-            file->match_includes(m_cfiles);
-            for (auto include = file->includes().begin();
-                 include != file->includes().end(); ++include) {
-                (*include)->match_includes(m_cfiles);
+    // Match includes for cfiles
+    for (auto &cfile : m_cfiles) {
+        if (cfile.is_source()) {
+            cfile.match_includes_and_detect_main(m_cfiles);
+            for (auto &inc : cfile.includes()) {
+                inc->match_includes_and_detect_main(m_cfiles);
+            }
+        }
+    }
+}
+
+void ascan::print_cfiles() const {
+    // Print cfiles and their includes
+    for (auto &cfile : m_cfiles) {
+        if (cfile.is_source()) {
+            try {
+                filesystem::path p1(cfile.filename());
+                print_debug("%s", filesystem::relative(p1).c_str());
+                if (cfile.have_main_func()) {
+                    print_debug_ex(" <----- [main]");
+                }
+                print_debug_ex("\n");
+                for (auto &inc : cfile.includes()) {
+                    try {
+                        filesystem::path p2(inc->filename());
+                        print_debug_ex("\t|%s|\n", filesystem::relative(p2).c_str());
+                    } catch (...) {
+                        print_debug_ex("\n");
+                    }
+                }
+            } catch (...) {
+                print_debug_ex("\n");
             }
         }
     }
 }
 
 void ascan::associate_header() {
-    for (auto file = m_cfiles.begin(); file != m_cfiles.end(); ++file) {
-        if (file->is_source()) {
-            file->associate_header(m_cfiles);
+    for (auto &cfile : m_cfiles) {
+        if (cfile.is_source()) {
+            cfile.associate_header(m_cfiles);
         }
     }
 }

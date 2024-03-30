@@ -23,8 +23,9 @@ class cfile {
 
   public:
     cfile(const std::string &filename, const std::string &name);
+    void set_have_main_func(bool have_main_func);
     void set_visited(bool visited);
-    void match_includes(std::vector<cfile> &files);
+    void match_includes_and_detect_main(std::vector<cfile> &files);
     void associate_header(std::vector<cfile> &files);
 
     // File name with extension.

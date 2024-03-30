@@ -3,7 +3,6 @@
 #include <cassert>
 #include <dirent.h>
 #include <fcntl.h>
-#include <iostream>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -48,11 +47,15 @@ cfile::cfile(const string &filename, const string &name)
     m_visited = false;
 }
 
+void cfile::set_have_main_func(bool have_main_func) {
+    m_have_main_func = have_main_func;
+}
+
 void cfile::set_visited(bool visited) {
     m_visited = visited;
 }
 
-void cfile::match_includes(vector<cfile> &files) {
+void cfile::match_includes_and_detect_main(vector<cfile> &files) {
     if (m_includes_matched) {
         return;
     }
