@@ -16,10 +16,11 @@ CLR_GREEN			= $(shell tput setaf 2)
 CLR_YELLOW			= $(shell tput setaf 3)
 CLR_RESET			= $(shell tput sgr0)
 
-# ==============================================================================
 # TARGETS
-
 TARGET = ascan
+
+# ==============================================================================
+# RULES
 
 default: debug
 
@@ -32,32 +33,34 @@ release: $(BUILD)/release.mode $(TARGET)
 # ==============================================================================
 # EXECUTABLE DETAILS
 
-SRC = ascan.cpp 	\
-	  options.cpp 	\
-	  parser.cpp 	\
-	  cfile.cpp 	\
-	  align.cpp 	\
-	  mfile.cpp 	\
-	  common.cpp 	\
-	  config.cpp
+SRCS = ascan.cpp 	\
+	   options.cpp 	\
+	   parser.cpp 	\
+	   cfile.cpp 	\
+	   align.cpp 	\
+	   mfile.cpp 	\
+	   common.cpp 	\
+	   config.cpp
 
-OBJ = $(addprefix $(BUILD)/, $(SRC:.cpp=.o))
+OBJS = $(addprefix $(BUILD)/, $(notdir $(SRCS:.cpp=.o)))
 
-$(TARGET): $(OBJ) # add any additional object files here #
+$(TARGET): $(OBJS) # add any additional object files here #
 	@printf "$(CLR_GREEN)Linking $@...\n$(CLR_RESET)"
 	@printf "$(CXX) $(CXXFLAGS) -o $@ ... $(LFLAGS)\n"
 	@$(CXX) $(CXXFLAGS) -o $@ $^ $(LFLAGS)
 
 # ==============================================================================
-# CLEAN AND PHONY
+# CLEAN, PHONY, SECONDARY
 
 clean:
-	$(RM) -rf "$(TARGET)" "$(BUILD)"
+	$(RM) -rf "$(BUILD)" "$(TARGET)"
 
 .PHONY: default 	\
 		debug 		\
 		release 	\
 		clean
+
+.SECONDARY: $(BUILD)/%.d $(BUILD)/%.o
 
 ################################################################################
 #         YOU PROBABLY DON'T WANT TO MODIFY ANYTHING BELOW THIS LINE		   #
@@ -76,7 +79,8 @@ $(BUILD)/%.mode:
 			printf "$(CLR_RESET)"; 										\
 			$(RM) -f "$(BUILD)"/*.mode;									\
 			touch $(MODE_FILE) "$@"; 									\
-			$(MAKE) -B $* --no-print-directory; 						\
+			$(MAKE) --no-print-directory -s depend; 					\
+			$(MAKE) --no-print-directory -B $* MAKE_NODEPS=1; 			\
 		else 															\
 			mkdir -p $(BUILD); 											\
 			touch $(MODE_FILE) "$@"; 									\
@@ -93,6 +97,12 @@ $(BUILD)/%.o: %.cpp
 # ==============================================================================
 # DEPENDENCIES
 
+DEPS = $(OBJ:%.o=%.d)
+
+.PHONY:
+depend: $(DEPS)
+
+ifndef MAKE_NODEPS
 $(BUILD)/%.d: %.cpp
 	@echo "> Build dependencies for $<..."
 	@mkdir -p $(BUILD)
@@ -100,6 +110,6 @@ $(BUILD)/%.d: %.cpp
 		sed 's/^\($*\)\.o/$$(BUILD)\/\1.o $$(BUILD)\/$*.d/' > $@;
 
 ifneq ("$(MAKECMDGOALS)", "clean")
--include $(OBJ:%.o=%.d)
+-include $(DEPS)
 endif
-
+endif
