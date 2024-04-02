@@ -1,66 +1,105 @@
+# ==============================================================================
+# VARIABLES
+
 # BUILD DETAILS
+CXX      			= g++
+CXXFLAGS 			= -W -Wall
+LFLAGS   			= -lm
+BUILD    			= build
 
-CXX      = g++
-CXXFLAGS = -W -Wall
-LFLAGS   = -lm
-BUILD    = build
+# RM
+RM 					= rm
 
+# COLORS
+CLR_RED				= $(shell tput setaf 1)
+CLR_GREEN			= $(shell tput setaf 2)
+CLR_YELLOW			= $(shell tput setaf 3)
+CLR_RESET			= $(shell tput sgr0)
+
+# ==============================================================================
 # TARGETS
 
-TARGET   = ascan
+TARGET = ascan
 
 default: debug
 
 debug: CXXFLAGS += -g -DDEBUG=1
 debug: $(BUILD)/debug.mode $(TARGET)
 
-release: CXXFLAGS += -O3 # -DNDEBUG=1
+release: CXXFLAGS += -O3# -DNDEBUG=1
 release: $(BUILD)/release.mode $(TARGET)
 
+# ==============================================================================
 # EXECUTABLE DETAILS
 
-OBJ      = ascan.o options.o parser.o cfile.o align.o mfile.o common.o config.o
+SRC = ascan.cpp 	\
+	  options.cpp 	\
+	  parser.cpp 	\
+	  cfile.cpp 	\
+	  align.cpp 	\
+	  mfile.cpp 	\
+	  common.cpp 	\
+	  config.cpp
 
-OBJBD    = $(OBJ:%=$(BUILD)/%)
+OBJ = $(addprefix $(BUILD)/, $(SRC:.cpp=.o))
 
-$(TARGET): $(OBJBD)
-	$(CXX) $(CXXFLAGS) -o $@ $^ $(LFLAGS)
+$(TARGET): $(OBJ) # add any additional object files here #
+	@printf "$(CLR_GREEN)Linking $@...\n$(CLR_RESET)"
+	@printf "$(CXX) $(CXXFLAGS) -o $@ ... $(LFLAGS)\n"
+	@$(CXX) $(CXXFLAGS) -o $@ $^ $(LFLAGS)
 
-# COMPILE TO OBJECTS
-
-$(BUILD)/%.o: %.cpp
-	@mkdir -p "$(BUILD)"
-	$(CXX) $(CXXFLAGS) -c -o $@ $<
-
-# MODE CONTROL
-
-$(BUILD)/%.mode:
-	@if [ ! -f "$@" ]; then \
-		if [ -d "$(BUILD)" ]; then \
-			echo "Switching to $* mode..."; \
-			$(MAKE) clean; \
-		fi; \
-		mkdir -p "$(BUILD)"; \
-		touch "$@"; \
-	fi
-
-# CLEAN UP
+# ==============================================================================
+# CLEAN AND PHONY
 
 clean:
-	rm -rf "$(TARGET)" "$(BUILD)"
+	$(RM) -rf "$(TARGET)" "$(BUILD)"
 
-# PHONY
+.PHONY: default 	\
+		debug 		\
+		release 	\
+		clean
 
-.PHONY: default debug release clean
+################################################################################
+#         YOU PROBABLY DON'T WANT TO MODIFY ANYTHING BELOW THIS LINE		   #
+################################################################################
 
+# ==============================================================================
+# MODE CONTROL
+
+MODE_FILE = $(BUILD)/mode.lock
+
+$(BUILD)/%.mode:
+	@if [ ! -f "$@" ]; then 											\
+		if [ -f $(MODE_FILE) ]; then 									\
+			printf "$(CLR_GREEN)"; 										\
+			printf "Switching to $* mode, rebuilding...\n"; 			\
+			printf "$(CLR_RESET)"; 										\
+			$(RM) -f "$(BUILD)"/*.mode;									\
+			touch $(MODE_FILE) "$@"; 									\
+			$(MAKE) -B $* --no-print-directory; 						\
+		else 															\
+			mkdir -p $(BUILD); 											\
+			touch $(MODE_FILE) "$@"; 									\
+		fi; 															\
+	fi
+
+# ==============================================================================
+# COMPILE OBJECT FILES
+
+$(BUILD)/%.o: %.cpp
+	@mkdir -p $(BUILD)
+	$(CXX) $(CXXFLAGS) -c -o $@ $<
+
+# ==============================================================================
 # DEPENDENCIES
 
-SRC = $(wildcard *.h *.hpp *.c *.cpp *.cc)
+$(BUILD)/%.d: %.cpp
+	@echo "> Build dependencies for $<..."
+	@mkdir -p $(BUILD)
+	@$(CXX) $(CXXFLAGS) -MM $< | 										\
+		sed 's/^\($*\)\.o/$$(BUILD)\/\1.o $$(BUILD)\/$*.d/' > $@;
 
-$(BUILD)/depend.mk: $(SRC)
-	@mkdir -p "$(BUILD)"
-	@rm -f "$@"
-	@$(CXX) $(CXXFLAGS) -MM *.cpp | sed 's/^\(.*\).o:/$$(BUILD)\/\1.o:/' >> $@
-
-include $(BUILD)/depend.mk
+ifneq ("$(MAKECMDGOALS)", "clean")
+-include $(OBJ:%.o=%.d)
+endif
 
