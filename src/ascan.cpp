@@ -135,7 +135,7 @@ int ascan::parse_cmd_args(int argc, char **argv) {
     int opt, long_ind;
     int err = 0;
     enum HELP_TYPE help = HT_NONE;
-    const options::as_option *option;
+    const options::as_option *option = nullptr;
 
     //* We need to use print_msgdump() or print_debug() before --debug
     //* option has been parsed! or we just parse it here.
@@ -159,7 +159,7 @@ int ascan::parse_cmd_args(int argc, char **argv) {
 
         stmt_debug(
             if (optarg) { print_debug_ex("optarg = |%s|\t\n", optarg); } else {
-                print_debug_ex("optarg = %s\t\n", optarg);
+                print_debug_ex("optarg = (null)\t\n");
             });
 
         // print_debug_ex("optind = %d\t\n", optind);
