@@ -17,7 +17,9 @@ CLR_YELLOW			= $(shell tput setaf 3)
 CLR_RESET			= $(shell tput sgr0)
 
 # TARGETS
-$(ASCAN_TARGETS)
+$(__ASCAN_SUB_TEMPLATE_TARGETS_DEFS_BEGIN__)
+$(TARGET$(__ASCAN_TARGET_INDEX__)) 			= $(__ASCAN_TARGET_NAME__)
+$(__ASCAN_SUB_TEMPLATE_TARGETS_DEFS_END__)
 
 # ==============================================================================
 # RULES
@@ -33,20 +35,22 @@ release: $(BUILD)/release.mode $(TARGET)
 # ==============================================================================
 # EXECUTABLE DETAILS
 
-SRCS =
+$(__ASCAN_SUB_TEMPLATE_TARGETS_DETAILS_BEGIN__)
+SRCS$(__ASCAN_TARGET_INDEX__) = $(__ASCAN_TARGET_SOURCES__)
 
-OBJS = $(addprefix $(BUILD)/, $(notdir $(SRCS:.cpp=.o)))
+OBJS$(__ASCAN_TARGET_INDEX__) = $(addprefix $(BUILD)/, $(notdir $(SRCS$(__ASCAN_TARGET_INDEX__):.cpp=.o)))
 
-$(TARGET): $(OBJS) # add any additional object files here #
+$(TARGET$(__ASCAN_TARGET_INDEX__)): $(OBJS) # add any additional object files here #
 	@printf "$(CLR_GREEN)Linking $@...\n$(CLR_RESET)"
 	@printf "$(CXX) $(CXXFLAGS) -o $@ ... $(LFLAGS)\n"
 	@$(CXX) $(CXXFLAGS) -o $@ $^ $(LFLAGS)
+$(__ASCAN_SUB_TEMPLATE_TARGETS_DETAILS_END__)
 
 # ==============================================================================
 # CLEAN, PHONY, SECONDARY
 
 clean:
-	$(RM) -rf "$(BUILD)" "$(TARGET)"
+	$(RM) -rf "$(BUILD)" $(__ASCAN_TARGETS__)
 
 .PHONY: default 	\
 		debug 		\
