@@ -6,7 +6,7 @@
             "type": "shell",
             "command": [
                 "cd src || exit 1; ",
-                "make"
+                "make tlexer"
             ]
         }
     ]

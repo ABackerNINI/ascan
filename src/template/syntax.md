@@ -3,15 +3,17 @@
 template -> compound
 compound -> (plain-text | block)*
 plain-text -> .*
-block -> "__ASCAN_BEGIN__" (statement)* "__ASCAN_END__"
+block -> "__ASCAN_BEGIN__" (block | statement)* "__ASCAN_END__"
 
-statement -> if-stmt | shell-stmt
+statement -> if-stmt | shell-stmt | comment
 
 if-stmt -> "if" expression ":" compound ["elif" expression ":" compound]* ["else" ":" compound] "fi"
 
-shell-stmt -> shell-command (shell-args)*
+shell-stmt -> shell-command (shell-args)* "\n"
 shell-command -> .*
 shell-args -> expression | plain-text
+
+comment -> ^"#" .*
 
 expression -> conditional-expression
 conditional-expression -> logical-or-expression ["?" expression ":" expression]

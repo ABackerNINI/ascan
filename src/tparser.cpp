@@ -1,4 +1,5 @@
 #include "tparser.h"
+#include <fstream>
 #include <iostream>
 #include <string>
 
@@ -10,15 +11,17 @@ using namespace std;
 template -> compound
 compound -> (plain-text | block)*
 plain-text -> .*
-block -> "__ASCAN_BEGIN__" (statement)* "__ASCAN_END__"
+block -> "__ASCAN_BEGIN__" (block | statement)* "__ASCAN_END__"
 
-statement -> if-stmt | shell-stmt
+statement -> if-stmt | shell-stmt | comment
 
 if-stmt -> "if" expression ":" compound ["elif" expression ":" compound]* ["else" ":" compound] "fi"
 
-shell-stmt -> shell-command (shell-args)*
+shell-stmt -> shell-command (shell-args)* "\n"
 shell-command -> .*
 shell-args -> expression | plain-text
+
+comment -> ^"#" .*
 
 expression -> conditional-expression
 conditional-expression -> logical-or-expression ["?" expression ":" expression]
@@ -72,12 +75,18 @@ class CmdArgs;
 class Identifier;
 class Number;
 
+std::string next_token(std::istream &in) {
+}
+
 class Compound : public Template {
   public:
-    Compound();
-    virtual bool parse(std::istream &in) override;
-    virtual void execute(AscanInfo &ainfo) override;
-    virtual ~Compound();
+    Compound() {}
+
+    virtual bool parse(std::istream &in) override {}
+
+    virtual bool execute(AscanInfo &ainfo) override {}
+
+    virtual ~Compound() {}
 
   private:
     std::vector<Template *> plain_texts_or_blocks;
@@ -85,10 +94,13 @@ class Compound : public Template {
 
 class PlainText : public Template {
   public:
-    PlainText();
-    virtual bool parse(std::istream &in) override;
-    virtual void execute(AscanInfo &ainfo) override;
-    virtual ~PlainText();
+    PlainText() {}
+
+    virtual bool parse(std::istream &in) override {}
+
+    virtual bool execute(AscanInfo &ainfo) override {}
+
+    virtual ~PlainText() {}
 
   private:
     std::string text;
@@ -96,10 +108,13 @@ class PlainText : public Template {
 
 class Block : public Template {
   public:
-    Block();
-    virtual bool parse(std::istream &in) override;
-    virtual void execute(AscanInfo &ainfo) override;
-    virtual ~Block();
+    Block() {}
+
+    virtual bool parse(std::istream &in) override {}
+
+    virtual bool execute(AscanInfo &ainfo) override {}
+
+    virtual ~Block() {}
 
   private:
     std::vector<Statement *> statements;
@@ -107,10 +122,13 @@ class Block : public Template {
 
 class Statement : public Template {
   public:
-    Statement();
-    virtual bool parse(std::istream &in) override;
-    virtual void execute(AscanInfo &ainfo) override;
-    virtual ~Statement();
+    Statement() {}
+
+    virtual bool parse(std::istream &in) override {}
+
+    virtual bool execute(AscanInfo &ainfo) override {}
+
+    virtual ~Statement() {}
 
   private:
     IfStmt *if_stmt = nullptr;
@@ -119,47 +137,60 @@ class Statement : public Template {
 
 class IfStmt : public Template {
   public:
-    IfStmt();
-    virtual bool parse(std::istream &in) override;
-    virtual void execute(AscanInfo &ainfo) override;
-    virtual ~IfStmt();
+    IfStmt() {}
+
+    virtual bool parse(std::istream &in) override {}
+
+    virtual bool execute(AscanInfo &ainfo) override {}
+
+    virtual ~IfStmt() {}
 
   private:
     Expression *expression = nullptr;
     Compound *compound = nullptr;
     std::vector<Expression *> elif_expressions;
     std::vector<Compound *> elif_compounds;
-    Compound *else_compound= nullptr;
+    Compound *else_compound = nullptr;
 };
 
 class ShellStmt : public Template {
   public:
-    ShellStmt();
-    virtual bool parse(std::istream &in) override;
-    virtual void execute(AscanInfo &ainfo) override;
-    virtual ~ShellStmt();
+    ShellStmt() {}
+
+    virtual bool parse(std::istream &in) override {}
+
+    virtual bool execute(AscanInfo &ainfo) override {}
+
+    virtual ~ShellStmt() {}
 
   private:
     std::string shell_command;
-    std::vector<Template*> shell_args;
+    std::vector<Template *> shell_args;
 };
 
 class Expression : public Template {
   public:
-    Expression();
-    virtual bool parse(std::istream &in) override;
-    virtual void execute(AscanInfo &ainfo) override;
+    Expression() {}
+
+    virtual bool parse(std::istream &in) override {}
+
+    virtual bool execute(AscanInfo &ainfo) override {}
+
     virtual std::string evaluate(AscanInfo &ainfo) = 0;
-    virtual ~Expression();
+    virtual ~Expression() {}
 };
 
 class ConditionalExpression : public Expression {
   public:
-    ConditionalExpression();
-    virtual bool parse(std::istream &in) override;
-    virtual void execute(AscanInfo &ainfo) override;
-    virtual std::string evaluate(AscanInfo &ainfo) override;
-    virtual ~ConditionalExpression();
+    ConditionalExpression() {}
+
+    virtual bool parse(std::istream &in) override {}
+
+    virtual bool execute(AscanInfo &ainfo) override {}
+
+    virtual std::string evaluate(AscanInfo &ainfo) override {}
+
+    virtual ~ConditionalExpression() {}
 
   private:
     LogicalOrExpression *logical_or_expression = nullptr;
@@ -169,24 +200,32 @@ class ConditionalExpression : public Expression {
 
 class LogicalOrExpression : public Expression {
   public:
-    LogicalOrExpression();
-    virtual bool parse(std::istream &in) override;
-    virtual void execute(AscanInfo &ainfo) override;
-    virtual std::string evaluate(AscanInfo &ainfo) override;
-    virtual ~LogicalOrExpression();
+    LogicalOrExpression() {}
+
+    virtual bool parse(std::istream &in) override {}
+
+    virtual bool execute(AscanInfo &ainfo) override {}
+
+    virtual std::string evaluate(AscanInfo &ainfo) override {}
+
+    virtual ~LogicalOrExpression() {}
 
   private:
     LogicalOrExpression *logical_or_expression = nullptr;
-    LogicalAndExpression * logical_and_expressions;
+    LogicalAndExpression *logical_and_expressions;
 };
 
 class LogicalAndExpression : public Expression {
   public:
-    LogicalAndExpression();
-    virtual bool parse(std::istream &in) override;
-    virtual void execute(AscanInfo &ainfo) override;
-    virtual std::string evaluate(AscanInfo &ainfo) override;
-    virtual ~LogicalAndExpression();
+    LogicalAndExpression() {}
+
+    virtual bool parse(std::istream &in) override {}
+
+    virtual bool execute(AscanInfo &ainfo) override {}
+
+    virtual std::string evaluate(AscanInfo &ainfo) override {}
+
+    virtual ~LogicalAndExpression() {}
 
   private:
     LogicalAndExpression *logical_and_expression = nullptr;
@@ -195,11 +234,15 @@ class LogicalAndExpression : public Expression {
 
 class InclusiveOrExpression : public Expression {
   public:
-    InclusiveOrExpression();
-    virtual bool parse(std::istream &in) override;
-    virtual void execute(AscanInfo &ainfo) override;
-    virtual std::string evaluate(AscanInfo &ainfo) override;
-    virtual ~InclusiveOrExpression();
+    InclusiveOrExpression() {}
+
+    virtual bool parse(std::istream &in) override {}
+
+    virtual bool execute(AscanInfo &ainfo) override {}
+
+    virtual std::string evaluate(AscanInfo &ainfo) override {}
+
+    virtual ~InclusiveOrExpression() {}
 
   private:
     InclusiveOrExpression *inclusive_or_expression = nullptr;
@@ -208,11 +251,15 @@ class InclusiveOrExpression : public Expression {
 
 class ExclusiveOrExpression : public Expression {
   public:
-    ExclusiveOrExpression();
-    virtual bool parse(std::istream &in) override;
-    virtual void execute(AscanInfo &ainfo) override;
-    virtual std::string evaluate(AscanInfo &ainfo) override;
-    virtual ~ExclusiveOrExpression();
+    ExclusiveOrExpression() {}
+
+    virtual bool parse(std::istream &in) override {}
+
+    virtual bool execute(AscanInfo &ainfo) override {}
+
+    virtual std::string evaluate(AscanInfo &ainfo) override {}
+
+    virtual ~ExclusiveOrExpression() {}
 
   private:
     ExclusiveOrExpression *exclusive_or_expression = nullptr;
@@ -221,11 +268,15 @@ class ExclusiveOrExpression : public Expression {
 
 class AndExpression : public Expression {
   public:
-    AndExpression();
-    virtual bool parse(std::istream &in) override;
-    virtual void execute(AscanInfo &ainfo) override;
-    virtual std::string evaluate(AscanInfo &ainfo) override;
-    virtual ~AndExpression();
+    AndExpression() {}
+
+    virtual bool parse(std::istream &in) override {}
+
+    virtual bool execute(AscanInfo &ainfo) override {}
+
+    virtual std::string evaluate(AscanInfo &ainfo) override {}
+
+    virtual ~AndExpression() {}
 
   private:
     AndExpression *and_expression = nullptr;
@@ -234,11 +285,15 @@ class AndExpression : public Expression {
 
 class EqualityExpression : public Expression {
   public:
-    EqualityExpression();
-    virtual bool parse(std::istream &in) override;
-    virtual void execute(AscanInfo &ainfo) override;
-    virtual std::string evaluate(AscanInfo &ainfo) override;
-    virtual ~EqualityExpression();
+    EqualityExpression() {}
+
+    virtual bool parse(std::istream &in) override {}
+
+    virtual bool execute(AscanInfo &ainfo) override {}
+
+    virtual std::string evaluate(AscanInfo &ainfo) override {}
+
+    virtual ~EqualityExpression() {}
 
   private:
     EqualityExpression *equality_expression = nullptr;
@@ -247,11 +302,15 @@ class EqualityExpression : public Expression {
 
 class RelationalExpression : public Expression {
   public:
-    RelationalExpression();
-    virtual bool parse(std::istream &in) override;
-    virtual void execute(AscanInfo &ainfo) override;
-    virtual std::string evaluate(AscanInfo &ainfo) override;
-    virtual ~RelationalExpression();
+    RelationalExpression() {}
+
+    virtual bool parse(std::istream &in) override {}
+
+    virtual bool execute(AscanInfo &ainfo) override {}
+
+    virtual std::string evaluate(AscanInfo &ainfo) override {}
+
+    virtual ~RelationalExpression() {}
 
   private:
     RelationalExpression *relational_expression = nullptr;
@@ -260,11 +319,15 @@ class RelationalExpression : public Expression {
 
 class ShiftExpression : public Expression {
   public:
-    ShiftExpression();
-    virtual bool parse(std::istream &in) override;
-    virtual void execute(AscanInfo &ainfo) override;
-    virtual std::string evaluate(AscanInfo &ainfo) override;
-    virtual ~ShiftExpression();
+    ShiftExpression() {}
+
+    virtual bool parse(std::istream &in) override {}
+
+    virtual bool execute(AscanInfo &ainfo) override {}
+
+    virtual std::string evaluate(AscanInfo &ainfo) override {}
+
+    virtual ~ShiftExpression() {}
 
   private:
     ShiftExpression *shift_expression = nullptr;
@@ -273,11 +336,15 @@ class ShiftExpression : public Expression {
 
 class AdditiveExpression : public Expression {
   public:
-    AdditiveExpression();
-    virtual bool parse(std::istream &in) override;
-    virtual void execute(AscanInfo &ainfo) override;
-    virtual std::string evaluate(AscanInfo &ainfo) override;
-    virtual ~AdditiveExpression();
+    AdditiveExpression() {}
+
+    virtual bool parse(std::istream &in) override {}
+
+    virtual bool execute(AscanInfo &ainfo) override {}
+
+    virtual std::string evaluate(AscanInfo &ainfo) override {}
+
+    virtual ~AdditiveExpression() {}
 
   private:
     AdditiveExpression *additive_expression = nullptr;
@@ -286,11 +353,15 @@ class AdditiveExpression : public Expression {
 
 class MultiplicativeExpression : public Expression {
   public:
-    MultiplicativeExpression();
-    virtual bool parse(std::istream &in) override;
-    virtual void execute(AscanInfo &ainfo) override;
-    virtual std::string evaluate(AscanInfo &ainfo) override;
-    virtual ~MultiplicativeExpression();
+    MultiplicativeExpression() {}
+
+    virtual bool parse(std::istream &in) override {}
+
+    virtual bool execute(AscanInfo &ainfo) override {}
+
+    virtual std::string evaluate(AscanInfo &ainfo) override {}
+
+    virtual ~MultiplicativeExpression() {}
 
   private:
     MultiplicativeExpression *multiplicative_expression = nullptr;
@@ -299,11 +370,15 @@ class MultiplicativeExpression : public Expression {
 
 class UnaryExpression : public Expression {
   public:
-    UnaryExpression();
-    virtual bool parse(std::istream &in) override;
-    virtual void execute(AscanInfo &ainfo) override;
-    virtual std::string evaluate(AscanInfo &ainfo) override;
-    virtual ~UnaryExpression();
+    UnaryExpression() {}
+
+    virtual bool parse(std::istream &in) override {}
+
+    virtual bool execute(AscanInfo &ainfo) override {}
+
+    virtual std::string evaluate(AscanInfo &ainfo) override {}
+
+    virtual ~UnaryExpression() {}
 
   private:
     std::string op;
@@ -312,11 +387,15 @@ class UnaryExpression : public Expression {
 
 class PostfixExpression : public Expression {
   public:
-    PostfixExpression();
-    virtual bool parse(std::istream &in) override;
-    virtual void execute(AscanInfo &ainfo) override;
-    virtual std::string evaluate(AscanInfo &ainfo) override;
-    virtual ~PostfixExpression();
+    PostfixExpression() {}
+
+    virtual bool parse(std::istream &in) override {}
+
+    virtual bool execute(AscanInfo &ainfo) override {}
+
+    virtual std::string evaluate(AscanInfo &ainfo) override {}
+
+    virtual ~PostfixExpression() {}
 
   private:
     PrimaryExpression *primary_expression = nullptr;
@@ -324,11 +403,15 @@ class PostfixExpression : public Expression {
 
 class PrimaryExpression : public Expression {
   public:
-    PrimaryExpression();
-    virtual bool parse(std::istream &in) override;
-    virtual void execute(AscanInfo &ainfo) override;
-    virtual std::string evaluate(AscanInfo &ainfo) override;
-    virtual ~PrimaryExpression();
+    PrimaryExpression() {}
+
+    virtual bool parse(std::istream &in) override {}
+
+    virtual bool execute(AscanInfo &ainfo) override {}
+
+    virtual std::string evaluate(AscanInfo &ainfo) override {}
+
+    virtual ~PrimaryExpression() {}
 
   private:
     Literal *literal = nullptr;
@@ -339,11 +422,15 @@ class PrimaryExpression : public Expression {
 
 class Literal : public Expression {
   public:
-    Literal();
-    virtual bool parse(std::istream &in) override;
-    virtual void execute(AscanInfo &ainfo) override;
-    virtual std::string evaluate(AscanInfo &ainfo) override;
-    virtual ~Literal();
+    Literal() {}
+
+    virtual bool parse(std::istream &in) override {}
+
+    virtual bool execute(AscanInfo &ainfo) override {}
+
+    virtual std::string evaluate(AscanInfo &ainfo) override {}
+
+    virtual ~Literal() {}
 
   private:
     Number *number = nullptr;
@@ -352,11 +439,15 @@ class Literal : public Expression {
 
 class Variable : public Expression {
   public:
-    Variable();
-    virtual bool parse(std::istream &in) override;
-    virtual void execute(AscanInfo &ainfo) override;
-    virtual std::string evaluate(AscanInfo &ainfo) override;
-    virtual ~Variable();
+    Variable() {}
+
+    virtual bool parse(std::istream &in) override {}
+
+    virtual bool execute(AscanInfo &ainfo) override {}
+
+    virtual std::string evaluate(AscanInfo &ainfo) override {}
+
+    virtual ~Variable() {}
 
   private:
     Identifier *identifier = nullptr;
@@ -364,11 +455,15 @@ class Variable : public Expression {
 
 class CmdArgs : public Expression {
   public:
-    CmdArgs();
-    virtual bool parse(std::istream &in) override;
-    virtual void execute(AscanInfo &ainfo) override;
-    virtual std::string evaluate(AscanInfo &ainfo) override;
-    virtual ~CmdArgs();
+    CmdArgs() {}
+
+    virtual bool parse(std::istream &in) override {}
+
+    virtual bool execute(AscanInfo &ainfo) override {}
+
+    virtual std::string evaluate(AscanInfo &ainfo) override {}
+
+    virtual ~CmdArgs() {}
 
   private:
     Identifier *identifier = nullptr;
@@ -376,11 +471,15 @@ class CmdArgs : public Expression {
 
 class Identifier : public Expression {
   public:
-    Identifier();
-    virtual bool parse(std::istream &in) override;
-    virtual void execute(AscanInfo &ainfo) override;
-    virtual std::string evaluate(AscanInfo &ainfo) override;
-    virtual ~Identifier();
+    Identifier() {}
+
+    virtual bool parse(std::istream &in) override {}
+
+    virtual bool execute(AscanInfo &ainfo) override {}
+
+    virtual std::string evaluate(AscanInfo &ainfo) override {}
+
+    virtual ~Identifier() {}
 
   private:
     std::string id;
@@ -388,20 +487,38 @@ class Identifier : public Expression {
 
 class Number : public Expression {
   public:
-    Number();
-    virtual bool parse(std::istream &in) override;
-    virtual void execute(AscanInfo &ainfo) override;
-    virtual std::string evaluate(AscanInfo &ainfo) override;
-    virtual ~Number();
+    Number() {}
+
+    virtual bool parse(std::istream &in) override {}
+
+    virtual bool execute(AscanInfo &ainfo) override {}
+
+    virtual std::string evaluate(AscanInfo &ainfo) override {}
+
+    virtual ~Number() {}
 
   private:
     int num;
 };
 
+bool TemplateParser::parse() {
+}
 
+bool TemplateParser::execute(AscanInfo) {
+}
 
 int main(int argc, char **argv) {
+    std::ifstream in("template/v2/template.mk");
+    if (!in.is_open()) {
+        std::cerr << "Failed to open file" << std::endl;
+        return 1;
+    }
 
+    TemplateParser tparser(in);
+    tparser.parse();
+
+    AscanInfo ainfo;
+    tparser.execute(ainfo);
 
     return 0;
 }

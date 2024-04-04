@@ -1,115 +1,78 @@
-# ==============================================================================
-# VARIABLES
-
 # BUILD DETAILS
-CXX      			= g++
-CXXFLAGS 			= -W -Wall
-LFLAGS   			= -lm
-BUILD    			= build
 
-# RM
-RM 					= rm
-
-# COLORS
-CLR_RED				= $(shell tput setaf 1)
-CLR_GREEN			= $(shell tput setaf 2)
-CLR_YELLOW			= $(shell tput setaf 3)
-CLR_RESET			= $(shell tput sgr0)
+CXX      = g++
+CXXFLAGS = -W -Wall -g
+LFLAGS   = -lm
+BUILD    = build
 
 # TARGETS
-TARGET = ascan
 
-# ==============================================================================
-# RULES
+TARGET1  = ascan
+TARGET2  = tlexer
+TARGET3  = tparser
 
 default: debug
 
 debug: CXXFLAGS += -g -DDEBUG=1
-debug: $(BUILD)/debug.mode $(TARGET)
+debug: $(BUILD)/debug.mode $(TARGET1) $(TARGET2) $(TARGET3)
 
-release: CXXFLAGS += -O3# -DNDEBUG=1
-release: $(BUILD)/release.mode $(TARGET)
+release: CXXFLAGS += -O3 # -DNDEBUG=1
+release: $(BUILD)/release.mode $(TARGET1) $(TARGET2) $(TARGET3)
 
-# ==============================================================================
 # EXECUTABLE DETAILS
 
-SRCS = ascan.cpp 	\
-	   options.cpp 	\
-	   parser.cpp 	\
-	   cfile.cpp 	\
-	   align.cpp 	\
-	   mfile.cpp 	\
-	   common.cpp 	\
-	   config.cpp
+OBJ1     = ascan.o options.o parser.o cfile.o align.o mfile.o common.o config.o
+OBJ2     = tlexer.o
+OBJ3     = tparser.o tlexer.o
 
-OBJS = $(addprefix $(BUILD)/, $(notdir $(SRCS:.cpp=.o)))
+OBJ1BD   = $(OBJ1:%=$(BUILD)/%)
+OBJ2BD   = $(OBJ2:%=$(BUILD)/%)
+OBJ3BD   = $(OBJ3:%=$(BUILD)/%)
 
-$(TARGET): $(OBJS) # add any additional object files here #
-	@printf "$(CLR_GREEN)Linking $@...\n$(CLR_RESET)"
-	@printf "$(CXX) $(CXXFLAGS) -o $@ ... $(LFLAGS)\n"
-	@$(CXX) $(CXXFLAGS) -o $@ $^ $(LFLAGS)
+$(TARGET1): $(OBJ1BD)
+	$(CXX) $(CXXFLAGS) -o $@ $^ $(LFLAGS)
 
-# ==============================================================================
-# CLEAN, PHONY, SECONDARY
+$(TARGET2): $(OBJ2BD)
+	$(CXX) $(CXXFLAGS) -o $@ $^ $(LFLAGS)
 
-clean:
-	$(RM) -rf "$(BUILD)" "$(TARGET)"
+$(TARGET3): $(OBJ3BD)
+	$(CXX) $(CXXFLAGS) -o $@ $^ $(LFLAGS)
 
-.PHONY: default 	\
-		debug 		\
-		release 	\
-		clean
-
-.SECONDARY: $(BUILD)/%.d $(BUILD)/%.o
-
-################################################################################
-#         YOU PROBABLY DON'T WANT TO MODIFY ANYTHING BELOW THIS LINE		   #
-################################################################################
-
-# ==============================================================================
-# MODE CONTROL
-
-MODE_FILE = $(BUILD)/mode.lock
-
-$(BUILD)/%.mode:
-	@if [ ! -f "$@" ]; then 											\
-		if [ -f $(MODE_FILE) ]; then 									\
-			printf "$(CLR_GREEN)"; 										\
-			printf "Switching to $* mode, rebuilding...\n"; 			\
-			printf "$(CLR_RESET)"; 										\
-			$(RM) -f "$(BUILD)"/*.mode;									\
-			touch $(MODE_FILE) "$@"; 									\
-			$(MAKE) --no-print-directory -s depend; 					\
-			$(MAKE) --no-print-directory -B $* MAKE_NODEPS=1; 			\
-		else 															\
-			mkdir -p $(BUILD); 											\
-			touch $(MODE_FILE) "$@"; 									\
-		fi; 															\
-	fi
-
-# ==============================================================================
-# COMPILE OBJECT FILES
+# COMPILE TO OBJECTS
 
 $(BUILD)/%.o: %.cpp
-	@mkdir -p $(BUILD)
+	@mkdir -p "$(BUILD)"
 	$(CXX) $(CXXFLAGS) -c -o $@ $<
 
-# ==============================================================================
+# MODE CONTROL
+
+$(BUILD)/%.mode:
+	@if [ ! -f "$@" ]; then \
+		if [ -d "$(BUILD)" ]; then \
+			echo "Switching to $* mode..."; \
+			$(MAKE) clean; \
+		fi; \
+		mkdir -p "$(BUILD)"; \
+		touch "$@"; \
+	fi
+
+# CLEAN UP
+
+clean:
+	rm -rf "$(TARGET1)" "$(TARGET2)" "$(TARGET3)" "$(BUILD)"
+
+# PHONY
+
+.PHONY: default debug release clean
+
 # DEPENDENCIES
 
-DEPS = $(OBJ:%.o=%.d)
+SRC = $(wildcard *.h *.hpp *.c *.cpp *.cc)
 
-.PHONY:
-depend: $(DEPS)
+$(BUILD)/depend.mk: $(SRC)
+	@mkdir -p "$(BUILD)"
+	@rm -f "$@"
+	@$(CXX) $(CXXFLAGS) -MM *.cpp | sed 's/^\(.*\).o:/$$(BUILD)\/\1.o:/' >> $@
 
-ifndef MAKE_NODEPS
-$(BUILD)/%.d: %.cpp
-	@echo "> Build dependencies for $<..."
-	@mkdir -p $(BUILD)
-	@$(CXX) $(CXXFLAGS) -MM $< | 										\
-		sed 's/^\($*\)\.o/$$(BUILD)\/\1.o $$(BUILD)\/$*.d/' > $@;
+include $(BUILD)/depend.mk
 
-ifneq ("$(MAKECMDGOALS)", "clean")
--include $(DEPS)
-endif
-endif

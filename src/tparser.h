@@ -1,6 +1,7 @@
 #ifndef __TEMPLATE_PARSER_H__
 #define __TEMPLATE_PARSER_H__
 
+#include "tlexer.h"
 #include <string>
 #include <vector>
 
@@ -10,15 +11,17 @@
 template -> compound
 compound -> (plain-text | block)*
 plain-text -> .*
-block -> "__ASCAN_BEGIN__" (statement)* "__ASCAN_END__"
+block -> "__ASCAN_BEGIN__" (block | statement)* "__ASCAN_END__"
 
-statement -> if-stmt | shell-stmt
+statement -> if-stmt | shell-stmt | comment
 
 if-stmt -> "if" expression ":" compound ["elif" expression ":" compound]* ["else" ":" compound] "fi"
 
-shell-stmt -> shell-command (shell-args)*
+shell-stmt -> shell-command (shell-args)* "\n"
 shell-command -> .*
 shell-args -> expression | plain-text
+
+comment -> ^"#" .*
 
 expression -> conditional-expression
 conditional-expression -> logical-or-expression ["?" expression ":" expression]
@@ -47,16 +50,16 @@ string -> '"' .* '"'
 
 class AscanInfo {
   public:
-    AscanInfo();
-    ~AscanInfo();
+    AscanInfo() {}
+    ~AscanInfo() {}
 
-    void output();
-    void add_output(const std::string &output);
-    void add_output(const char *output);
-    void add_output(int output);
-    void add_output(const std::vector<std::string> &output);
-    void add_output(const std::vector<char *> &output);
-    void add_output(const std::vector<int> &output);
+    // void output();
+    // void add_output(const std::string &output);
+    // void add_output(const char *output);
+    // void add_output(int output);
+    // void add_output(const std::vector<std::string> &output);
+    // void add_output(const std::vector<char *> &output);
+    // void add_output(const std::vector<int> &output);
 
   private:
     std::vector<std::string> outputs;
@@ -65,17 +68,19 @@ class AscanInfo {
 class Template {
   public:
     virtual bool parse(std::istream &in) = 0;
-    virtual void execute(AscanInfo &ainfo) = 0;
+    virtual bool execute(AscanInfo &ainfo) = 0;
     virtual ~Template() {}
 };
 
 class TemplateParser {
   public:
-    TemplateParser(const std::string &template_file);
-    ~TemplateParser();
+    TemplateParser(std::istream &in) : lexer(in) {}
 
-    void parse();
-    void output();
+    bool parse();
+    bool execute(AscanInfo);
+
+  private:
+    TLexer lexer;
 };
 
 #endif // __TEMPLATE_PARSER_H__

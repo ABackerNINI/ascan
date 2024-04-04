@@ -13,12 +13,15 @@
         "DNDEBUG",
         "DQUOTE",
         "elif",
+        "llexer",
+        "LTOK",
         "mfile",
         "msgdump",
         "OBJBD",
         "sdepend",
         "sfile",
-        "SQUOTE"
+        "SQUOTE",
+        "tparser"
     ],
 	"C_Cpp.intelliSenseEngine": "Disabled",
 	"C_Cpp.intelliSenseEngineFallback": "Disabled",
