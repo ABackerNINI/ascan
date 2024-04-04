@@ -18,6 +18,8 @@ CLR_RESET			= $(shell tput sgr0)
 
 # TARGETS
 __ASCAN_BEGIN__
+# TARGET1 = ascan
+# TARGET2 = xxx
 python3 targets.py targets_def $(ascan.targets)
 __ASCAN_END__
 
@@ -34,17 +36,6 @@ release: $(BUILD)/release.mode __ASCAN_BEGIN__ python3 targets.py list $(ascan.t
 
 # ==============================================================================
 # EXECUTABLE DETAILS
-
-$(__ASCAN_SUB_TEMPLATE_TARGETS_DETAILS_BEGIN__)
-SRCS$(__ASCAN_TARGET_INDEX__) = $(__ASCAN_TARGET_SOURCES__)
-
-OBJS$(__ASCAN_TARGET_INDEX__) = $(addprefix $(BUILD)/, $(notdir $(SRCS$(__ASCAN_TARGET_INDEX__):.cpp=.o)))
-
-$(TARGET$(__ASCAN_TARGET_INDEX__)): $(OBJS) # add any additional object files here #
-	@printf "$(CLR_GREEN)Linking $@...\n$(CLR_RESET)"
-	@printf "$(CXX) $(CXXFLAGS) -o $@ ... $(LFLAGS)\n"
-	@$(CXX) $(CXXFLAGS) -o $@ $^ $(LFLAGS)
-$(__ASCAN_SUB_TEMPLATE_TARGETS_DETAILS_END__)
 
 __ASCAN_BEGIN__
 # SRCS = ascan.cpp 	\
