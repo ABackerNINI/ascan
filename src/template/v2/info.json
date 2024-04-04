@@ -1,0 +1,45 @@
+{
+    "name": "Ascan Template V2",
+    "author": "Ascan",
+    "description": "A simple makefile template for Ascan including features like: Mode Control, Auto Dependencies and Colorized Output.",
+    "selector": "python3 selector.py $(ascan.args)",
+    "default-arguments": "-bcm",
+    "arguments": [
+        {
+            "short": "b",
+            "long": "build",
+            "argument": "none",
+            "description": "Put all the build files in a separate directory."
+        },
+        {
+            "short": "c",
+            "long": "color",
+            "argument": "none",
+            "description": "Colorize the output."
+        },
+        {
+            "short": "m",
+            "long": "mode-control",
+            "argument": "none",
+            "description": "Enable mode control."
+        },
+        {
+            "short": "B",
+            "long": "no-build-directory",
+            "argument": "none",
+            "description": "Do not put all the build files in a separate directory."
+        },
+        {
+            "short": "C",
+            "long": "no-color",
+            "argument": "none",
+            "description": "Do not colorize the output."
+        },
+        {
+            "short": "M",
+            "long": "no-mode-control",
+            "argument": "none",
+            "description": "Disable mode control."
+        }
+    ]
+}
