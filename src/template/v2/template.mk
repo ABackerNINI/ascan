@@ -11,7 +11,7 @@ BUILD    			= build
 RM 					= rm
 
 __ASCAN_BEGIN__
-ascan-if --color and no --no-color:
+ascan-if --color && ! --no-color:
 # COLORS
 CLR_RED				= $(shell tput setaf 1)
 CLR_GREEN			= $(shell tput setaf 2)
@@ -30,7 +30,7 @@ __ASCAN_END__
 # ==============================================================================
 # RULES
 __ASCAN_BEGIN__
-ascan-if --mode-control and no --no-mode-control:
+ascan-if --mode-control && ! --no-mode-control:
 default: debug
 
 debug: CXXFLAGS += -g -DDEBUG=1
@@ -72,7 +72,7 @@ clean:
 	$(RM) -rf "$(BUILD)" __ASCAN_BEGIN__ python3 targets.py list $(ascan.targets) __ASCAN_END__
 
 __ASCAN_BEGIN__
-ascan-if --mode-control and no --no-mode-control:
+ascan-if --mode-control && ! --no-mode-control:
 .PHONY: default 	\
 		debug 		\
 		release 	\
@@ -89,7 +89,7 @@ __ASCAN_END__
 ################################################################################
 
 __ASCAN_BEGIN__
-ascan-if --mode-control and no --no-mode-control:
+ascan-if --mode-control && ! --no-mode-control:
 # ==============================================================================
 # MODE CONTROL
 
@@ -98,11 +98,11 @@ MODE_FILE = $(BUILD)/mode.lock
 $(BUILD)/%.mode:
 	@if [ ! -f "$@" ]; then 											\
 		if [ -f $(MODE_FILE) ]; then 									\
-		ascan-if --color and no --no-color:
+		ascan-if --color && ! --no-color:
 			printf "$(CLR_GREEN)"; 										\
 		ascan-fi
 			printf "Switching to $* mode, rebuilding...\n"; 			\
-		ascan-if --color and no --no-color:
+		ascan-if --color && ! --no-color:
 			printf "$(CLR_RESET)"; 										\
 		ascan-fi
 			$(RM) -f "$(BUILD)"/*.mode;									\
