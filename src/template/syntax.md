@@ -3,15 +3,15 @@
 template -> compound
 compound -> (plain-text | block)*
 plain-text -> .*
-block -> "__ASCAN_BEGIN__" statements "__ASCAN_END__"
+block -> "__ASCAN_BEGIN__" (statement)* "__ASCAN_END__"
 
-statements -> (if-stmt | shell-stmt)*
+statement -> if-stmt | shell-stmt
 
-if-stmt -> "if" expression ":" compound ["elif" expression ":" compound] ["else" ":" compound] "fi"
+if-stmt -> "if" expression ":" compound ["elif" expression ":" compound]* ["else" ":" compound] "fi"
 
 shell-stmt -> shell-command (shell-args)*
 shell-command -> .*
-shell-args -> .* | variable
+shell-args -> expression | plain-text
 
 expression -> conditional-expression
 conditional-expression -> logical-or-expression ["?" expression ":" expression]
@@ -29,9 +29,10 @@ unary-expression -> [("+" | "-" | "!" | "~")] postfix-expression
 postfix-expression -> primary-expression
 primary-expression -> literal | variable | cmd-args | "(" expression ")"
 
-literal -> number
+literal -> number | string
 variable -> "$" "(" identifier ")"
 cmd-args -> "--" identifier
 
 identifier -> [a-zA-Z_][a-zA-Z0-9_.]*
 number -> [0-9]+
+string -> '"' .* '"'
