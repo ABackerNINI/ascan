@@ -11,6 +11,7 @@
         "DDEBUG",
         "DNDEBUG",
         "DQUOTE",
+        "elif",
         "mfile",
         "msgdump",
         "OBJBD",
