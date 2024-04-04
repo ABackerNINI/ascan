@@ -17,9 +17,9 @@ CLR_YELLOW			= $(shell tput setaf 3)
 CLR_RESET			= $(shell tput sgr0)
 
 # TARGETS
-$(__ASCAN_SUB_TEMPLATE_TARGETS_DEFS_BEGIN__)
-$(TARGET$(__ASCAN_TARGET_INDEX__)) 			= $(__ASCAN_TARGET_NAME__)
-$(__ASCAN_SUB_TEMPLATE_TARGETS_DEFS_END__)
+__ASCAN_BEGIN__
+python3 targets.py targets_def $(ascan.targets)
+__ASCAN_END__
 
 # ==============================================================================
 # RULES
@@ -27,10 +27,10 @@ $(__ASCAN_SUB_TEMPLATE_TARGETS_DEFS_END__)
 default: debug
 
 debug: CXXFLAGS += -g -DDEBUG=1
-debug: $(BUILD)/debug.mode $(TARGET)
+debug: $(BUILD)/debug.mode __ASCAN_BEGIN__ python3 targets.py list $(ascan.targets) __ASCAN_END__
 
 release: CXXFLAGS += -O3# -DNDEBUG=1
-release: $(BUILD)/release.mode $(TARGET)
+release: $(BUILD)/release.mode __ASCAN_BEGIN__ python3 targets.py list $(ascan.targets) __ASCAN_END__
 
 # ==============================================================================
 # EXECUTABLE DETAILS
@@ -46,11 +46,30 @@ $(TARGET$(__ASCAN_TARGET_INDEX__)): $(OBJS) # add any additional object files he
 	@$(CXX) $(CXXFLAGS) -o $@ $^ $(LFLAGS)
 $(__ASCAN_SUB_TEMPLATE_TARGETS_DETAILS_END__)
 
+__ASCAN_BEGIN__
+# SRCS = ascan.cpp 	\
+# 	   options.cpp 	\
+# 	   parser.cpp 	\
+# 	   cfile.cpp 	\
+# 	   align.cpp 	\
+# 	   mfile.cpp 	\
+# 	   common.cpp 	\
+# 	   config.cpp
+#
+# OBJS = $(addprefix $(BUILD)/, $(notdir $(SRCS:.cpp=.o)))
+#
+# $(TARGET): $(OBJS) # add any additional object files here #
+# 	@printf "$(CLR_GREEN)Linking $@...\n$(CLR_RESET)"
+# 	@printf "$(CXX) $(CXXFLAGS) -o $@ ... $(LFLAGS)\n"
+# 	@$(CXX) $(CXXFLAGS) -o $@ $^ $(LFLAGS)
+python3 executable.py $(ascan.targets) ; $(ascan.sources)
+__ASCAN_END__
+
 # ==============================================================================
 # CLEAN, PHONY, SECONDARY
 
 clean:
-	$(RM) -rf "$(BUILD)" $(__ASCAN_TARGETS__)
+	$(RM) -rf "$(BUILD)" __ASCAN_BEGIN__ python3 targets.py list $(ascan.targets) __ASCAN_END__
 
 .PHONY: default 	\
 		debug 		\
