@@ -20,7 +20,7 @@ Run the following commands to install:
 
 ```bash
 git clone git@github.com:ABackerNINI/ascan.git
-cd ascan
+cd ascan/src
 chmod +x install.sh
 ./install.sh
 ```
@@ -28,8 +28,7 @@ chmod +x install.sh
 ## Future Work
 
 1. Support multi-directory projects.
-2. Support files with other extension, such as `.hpp`.
-3. Support files that contain spaces in their names.
+2. Support files that contain spaces in their names.
 
 ## LICENSE
 

@@ -1,4 +1,5 @@
 #!/bin/bash
 
-make rebuild
+make clean
+make
 sudo cp ./ascan /usr/local/bin/ascan
