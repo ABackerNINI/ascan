@@ -43,4 +43,9 @@ class mfile {
     vector<cfile *> m_executable;
 };
 
+class MComponent{};
+class MRule{};
+class MComment{};
+class MBlankLine{};
+
 #endif  //_AUTO_SCAN_MFILE_H_
