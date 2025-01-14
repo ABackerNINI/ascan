@@ -1,0 +1,53 @@
+#ifndef _AUTO_SCAN_MFILE_H_
+#define _AUTO_SCAN_MFILE_H_
+
+#include "align.h"
+#include "cfile.h"
+#include "config.h"
+#include "debug.h"
+#include <cstdio>
+#include <fstream>
+#include <string>
+#include <vector>
+
+class mfile {
+  public:
+    mfile(std::vector<cfile> &cfiles, Config &cfg, uint32_t flags);
+    int output();
+
+  private:
+    void prepare();
+    void output_build_details();
+    void output_targets();
+    void output_compile_to_objects();
+    void output_executable_details();
+    void output_mode_control();
+    void output_clean_up();
+    void output_phony();
+
+    // Output dependencies using gcc -MM.
+    void output_mm_dependencies();
+
+    void output_mk_build_if_option_b();
+
+    void output_part();
+
+    void output_gitignore();
+
+  private:
+    std::vector<cfile> &m_cfiles;
+    Config &m_cfg;
+    // bool m_flag_a;
+    uint32_t m_flags;
+    std::ofstream m_fout;
+    std::vector<cfile *> m_executable;
+    std::vector<std::string> m_binaries; // files to be added to gitignore
+    Align m_align;
+
+    bool m_c;
+    bool m_cc;
+    bool m_cpp;
+    std::string m_build_path; // = "$(BUILD)/" iff OPTION_B is set
+};
+
+#endif //_AUTO_SCAN_MFILE_H_

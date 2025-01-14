@@ -1,0 +1,531 @@
+#include "mfile.h"
+#include "options.h"
+#include <algorithm>
+#include <cassert>
+#include <cstddef>
+#include <fstream>
+#include <unistd.h>
+
+using namespace std;
+
+/*==========================================================================*/
+
+mfile::mfile(vector<cfile> &cfiles, Config &cfg, uint32_t flags) : m_cfiles(cfiles), m_cfg(cfg), m_flags(flags) {
+    m_c = m_cc = m_cpp = false;
+    for (auto &cfile : m_cfiles) {
+        if (cfile.file_type() == cfile::FILE_TYPE_C) {
+            m_c = true;
+        } else if (cfile.file_type() == cfile::FILE_TYPE_CPP) {
+            m_cpp = true;
+        } else if (cfile.file_type() == cfile::FILE_TYPE_CC) {
+            m_cc = true;
+        }
+    }
+
+    if (!m_c && !m_cpp && !m_cc) {
+        m_c = m_cpp = m_cc = true;
+    }
+
+    if (m_flags & OPTION_B) {
+        m_build_path = string("$(") + CONFIG_BD + ")/";
+    }
+}
+
+int mfile::output() {
+#ifdef DISABLE_WRITE
+    print_warning("DISABLE_WRITE enabled\n");
+
+    return EXIT_FAILURE;
+#else
+
+    // First write output to the temporary file, then rename it to the actual
+    // output file in case exiting on error during output stage.
+    string tmp = "ascan_tmp.mf";
+
+    m_fout.open(tmp, ios::out | ios::trunc);
+    if (!m_fout.is_open()) {
+        print_error("Can't open file \"%s\"\n", m_cfg.output.c_str());
+        return EXIT_FAILURE;
+    }
+
+    if (m_flags & OPTION_A) {
+        prepare();
+
+        // output_header_comments();
+        output_build_details();
+        output_targets();
+        output_executable_details();
+        output_compile_to_objects();
+        output_mode_control();
+        output_clean_up();
+        output_phony();
+        output_mm_dependencies();
+
+        output_gitignore();
+    } else {
+        // TODO:
+        output_part();
+    }
+
+    m_fout.close();
+
+    string cmd = "mv \"" + tmp + "\" \"" + m_cfg.output + "\"";
+    print_debug("%s\n", cmd.c_str());
+    if (system(cmd.c_str()) != 0) {
+        print_error("unkown error!");
+        return EXIT_FAILURE;
+    }
+
+    return EXIT_SUCCESS;
+#endif
+}
+
+/*==========================================================================*/
+
+void mfile::prepare() {
+    // Find all executable
+    for (auto cfile = m_cfiles.begin(); cfile != m_cfiles.end(); ++cfile) {
+        if (cfile->have_main_func() && cfile->is_source()) {
+            m_executable.push_back(&(*cfile));
+        }
+    }
+
+    // Sort executables by name
+    sort(m_executable.begin(), m_executable.end(),
+         [](const cfile *a, const cfile *b) { return a->name() < b->name(); });
+
+    if (m_c) {
+        m_align.add(CONFIG_CC);
+        m_align.add(CONFIG_CFLAGS);
+    }
+
+    if (m_cpp || m_cc) {
+        m_align.add(CONFIG_CXX);
+        m_align.add(CONFIG_CXXFLAGS);
+    }
+
+    m_align.add(CONFIG_LFLAGS);
+    m_align.add(CONFIG_BD);
+
+    if (m_executable.size() <= 1) {
+        m_align.add(m_cfg.make_bin(-1));
+        m_align.add(m_cfg.make_obj(-1));
+        m_align.add(m_cfg.make_obj_bd(-1));
+    } else {
+        m_align.add(m_cfg.make_bin(m_executable.size()));
+        m_align.add(m_cfg.make_obj(m_executable.size()));
+        m_align.add(m_cfg.make_obj_bd(m_executable.size()));
+    }
+}
+
+void mfile::output_build_details() {
+    m_fout << "# BUILD DETAILS\n" << endl;
+
+    const char *flag_g = (m_flags & OPTION_G) ? " -g" : "";
+
+    // OUT: CC = gcc
+    if (m_c) {
+        m_fout << m_align(CONFIG_CC) << " = " << m_cfg.get_config_value(CONFIG_CC) << endl;
+    }
+    // OUT: CXX = g++
+    if (m_cpp || m_cc) {
+        m_fout << m_align(CONFIG_CXX) << " = " << m_cfg.get_config_value(CONFIG_CXX) << endl;
+    }
+    // OUT: CFLAGS = -W -Wall -lm -g
+    if (m_c) {
+        m_fout << m_align(CONFIG_CFLAGS) << " = " << m_cfg.get_config_value(CONFIG_CFLAGS) << flag_g << endl;
+    }
+    // OUT: CXXFLAGS = -W -Wall -g
+    if (m_cpp || m_cc) {
+        m_fout << m_align(CONFIG_CXXFLAGS) << " = " << m_cfg.get_config_value(CONFIG_CXXFLAGS) << flag_g << endl;
+    }
+    // OUT: LFLAGS = -lm
+    m_fout << m_align(CONFIG_LFLAGS) << " = " << m_cfg.get_config_value(CONFIG_LFLAGS) << endl;
+
+    // OUT: BUILD = build
+    if (m_flags & OPTION_B) {
+        m_fout << m_align(CONFIG_BD) << " = " << m_cfg.get_config_value(CONFIG_BD) << endl;
+    }
+
+    m_fout << endl;
+}
+
+void mfile::output_targets() {
+    m_fout << "# TARGETS\n" << endl;
+
+    // OUT: TARGET1 = xxx
+    // OUT: TARGET2 = xxx
+    int idx = m_executable.size() == 1 ? -1 : 1;
+    for (auto &exec : m_executable) {
+        m_fout << m_align(m_cfg.make_bin(idx)) << " = " << exec->name() << endl;
+        ++idx;
+    }
+    m_fout << endl;
+
+    /*
+        OUT:
+            default: debug
+
+            debug: CXXFLAGS += -g -DDEBUG=1
+            debug: $(BUILD)/debug.mode $(TARGET1) $(TARGET2)
+
+            release: CXXFLAGS += -O3 # -DNDEBUG=1
+            release: $(BUILD)/release.mode $(TARGET1) $(TARGET2)
+     */
+    m_fout << "default: debug\n" << endl;
+
+    if (m_c) {
+        m_fout << "debug: CFLAGS += -g -DDEBUG=1\n";
+    }
+    if (m_cpp || m_cc) {
+        m_fout << "debug: CXXFLAGS += -g -DDEBUG=1\n";
+    }
+    m_fout << "debug: " << m_build_path << "debug.mode";
+    idx = m_executable.size() == 1 ? -1 : 1;
+    for (size_t i = 0; i < m_executable.size(); ++i) {
+        m_fout << " $(" << m_cfg.make_bin(idx) << ")";
+        ++idx;
+    }
+    m_fout << "\n\n";
+
+    if (m_c) {
+        m_fout << "release: CFLAGS += -O3 # -DNDEBUG=1\n";
+    }
+    if (m_cpp || m_cc) {
+        m_fout << "release: CXXFLAGS += -O3 # -DNDEBUG=1\n";
+    }
+    m_fout << "release: " << m_build_path << "release.mode";
+    idx = m_executable.size() == 1 ? -1 : 1;
+    for (size_t i = 0; i < m_executable.size(); ++i) {
+        m_fout << " $(" << m_cfg.make_bin(idx) << ")";
+        ++idx;
+    }
+    m_fout << "\n\n";
+}
+
+static void find_all_headers(vector<cfile> &files, cfile *file) {
+    file->set_visited(true);
+    for (auto include = file->includes().begin(); include != file->includes().end(); ++include) {
+        if (!(*include)->visited()) {
+            find_all_headers(files, *include);
+            if ((*include)->associate() && !(*include)->associate()->visited()) {
+                find_all_headers(files, (*include)->associate());
+            }
+        }
+    }
+}
+
+void mfile::output_executable_details() {
+    m_fout << "# EXECUTABLE DETAILS\n" << endl;
+
+    // Print executable
+    // TODO: add new flag to disable "hide the index number"
+
+    // OUT: OBJ1 = xxx.o
+    //      OBJ2 = xxx.o
+    int idx = m_executable.size() == 1 ? -1 : 1;
+    for (auto &exec : m_executable) {
+        // if only one executable, hide the index number
+
+        // OUT: OBJ1 = xxx.o
+        m_fout << m_align(m_cfg.make_obj(idx)) << " = " << exec->name() << ".o";
+
+        // OUT: all objects dependency.
+        find_all_headers(m_cfiles, exec);
+        for (auto cfile = m_cfiles.begin(); cfile != m_cfiles.end(); ++cfile) {
+            if (cfile->visited()) {
+                if (cfile->associate() != NULL && cfile->is_source() && &(*cfile) != exec) {
+                    // OUT: xxx.o
+                    m_fout << " " << cfile->associate()->name() << ".o";
+                }
+                cfile->set_visited(false);
+            }
+        }
+
+        m_fout << endl;
+
+        ++idx;
+    }
+
+    m_fout << endl;
+
+    // OUT: OBJ1BD = $(OBJ1:%=$(BUILD)/%)
+    //      OBJ2BD = $(OBJ2:%=$(BUILD)/%)
+    if (m_flags & OPTION_B) {
+        idx = m_executable.size() == 1 ? -1 : 1;
+        for (size_t i = 0; i < m_executable.size(); ++i) {
+            // OUT: OBJ1BD = $(OBJ1:%=$(BUILD)/%)
+            m_fout << m_align(m_cfg.make_obj_bd(idx)) << " = $(" << m_cfg.make_obj(idx) << ":%=$(" << CONFIG_BD
+                   << ")/%)\n";
+            ++idx;
+        }
+
+        m_fout << endl;
+    }
+
+    // OUT: $(TARGET1): $(OBJ1BD)
+    //          $(CC) $(CFLAGS) -o $@ $^ $(LFLAGS)
+    //      $(TARGET2): $(OBJ2BD)
+    //          $(CC) $(CFLAGS) -o $@ $^ $(LFLAGS)
+    idx = m_executable.size() == 1 ? -1 : 1;
+    for (auto &exec : m_executable) {
+        if (m_flags & OPTION_B) {
+            // OUT: $(TARGET1): $(OBJ1BD)
+            m_fout << "$(" << m_cfg.make_bin(idx) << "): $(" << m_cfg.make_obj_bd(idx) << ")\n";
+        } else {
+            // OUT: $(TARGET1): $(OBJ1)
+            m_fout << "$(" << m_cfg.make_bin(idx) << "): $(" << m_cfg.make_obj(idx) << ")\n";
+        }
+
+        //! CXXFLAGS may contain dynamic libs such as -lm, this should be
+        //! put behind the objects which use them.
+        if (exec->is_c_source()) {
+            // OUT: $(CC) $(CFLAGS) -o $@ $^ $(LFLAGS)
+            m_fout << "\t$(" << CONFIG_CC << ") $(" << CONFIG_CFLAGS << ") -o $@ $^ $(" << CONFIG_LFLAGS << ")\n";
+        } else if (exec->is_cxx_source()) {
+            // OUT: $(CXX) $(CXXFLAGS) -o $@ $^ $(LFLAGS)
+            m_fout << "\t$(" << CONFIG_CXX << ") $(" << CONFIG_CXXFLAGS << ") -o $@ $^ $(" << CONFIG_LFLAGS << ")\n";
+        } else {
+            // TODO error handle
+            assert(0);
+        }
+
+        m_fout << endl;
+
+        ++idx;
+    }
+}
+
+void mfile::output_compile_to_objects() {
+    m_fout << "# COMPILE TO OBJECTS\n" << endl;
+
+    if (m_c) {
+        // OUT: $(BUILD)/%.o: %.c
+        m_fout << m_build_path << "%.o: %.c\n";
+
+        output_mk_build_if_option_b();
+
+        // OUT: $(CC) $(CFLAGS) -c -o $@ $<
+        m_fout << "\t$(" << CONFIG_CC << ") $(" << CONFIG_CFLAGS << ") -c -o $@ $<\n\n";
+    }
+    if (m_cpp) {
+        // OUT: $(BUILD)/%.o: %.cpp
+        m_fout << m_build_path << "%.o: %.cpp\n";
+
+        output_mk_build_if_option_b();
+
+        // OUT: $(CXX) $(CXXFLAGS) -c -o $@ $<
+        m_fout << "\t$(" << CONFIG_CXX << ") $(" << CONFIG_CXXFLAGS << ") -c -o $@ $<\n\n";
+    }
+    if (m_cc) {
+        // OUT: $(BUILD)/%.o: %.cc
+        m_fout << m_build_path << "%.o: %.cc\n";
+
+        output_mk_build_if_option_b();
+
+        // OUT: $(CXX) $(CXXFLAGS) -c -o $@ $<
+        m_fout << "\t$(" << CONFIG_CXX << ") $(" << CONFIG_CXXFLAGS << ") -c -o $@ $<\n\n";
+    }
+}
+
+void mfile::output_mode_control() {
+    // OUT:
+    //    # MODE CONTROL
+    //
+    //    $(BUILD)/%.mode:
+    //        @if [ ! -f "$@" ]; then
+    //            if [ -d "$(BUILD)" ]; then
+    //                echo "Switching to $* mode...";
+    //                $(MAKE) clean;
+    //            fi;
+    //            mkdir -p "$(BUILD)";
+    //            touch "$@";
+    //        fi
+
+    m_fout << "# MODE CONTROL\n" << endl;
+
+    m_fout << m_build_path << "%.mode:\n";
+    m_fout << "\t@if [ ! -f \"$@\" ]; then \\" << endl;
+
+    if (m_flags & OPTION_B) {
+        // If build directory exists, then switch to another mode.
+        // If not, then "make clean" is not needed.
+        m_fout << "\t\tif [ -d \"$(" << CONFIG_BD << ")\" ]; then \\" << endl;
+        m_fout << "\t\t\techo \"Switching to $* mode...\"; \\" << endl;
+        m_fout << "\t\t\t$(MAKE) clean; \\" << endl;
+        m_fout << "\t\tfi; \\" << endl;
+        m_fout << "\t\tmkdir -p \"$(" << CONFIG_BD << ")\"; \\" << endl;
+    } else {
+        // "make clean" anyway
+        m_fout << "\t\t$(MAKE) clean; \\" << endl;
+    }
+
+    m_fout << "\t\ttouch \"$@\"; \\" << endl;
+    m_fout << "\tfi\n" << endl;
+}
+
+void mfile::output_clean_up() {
+    m_fout << "# CLEAN UP\n" << endl;
+
+    m_fout << "clean:\n";
+
+    // if only one executable, hide the index number
+    if (m_flags & OPTION_B) {
+        // OUT: rm -f "$(TARGET1)" "$(TARGET2)" $(BUILD)
+
+        m_fout << "\trm -rf";
+
+        int idx = m_executable.size() == 1 ? -1 : 1;
+        for (size_t i = 0; i < m_executable.size(); ++i) {
+            // OUT: "$(TARGET1)"
+            m_fout << " \"$(" << m_cfg.make_bin(idx) << ")\"";
+            ++idx;
+        }
+
+        // OUT: $(BUILD)
+        m_fout << " \"$(" << CONFIG_BD << ")\"\n";
+    } else {
+        //? Why not "rm -f *.o"?
+        //* Because sometimes we may compile with other pre-compiled .o files
+        //* This is not a problem if option -b.
+
+        // OUT rm -f depend.mk "$(TARGET1)" "$(TARGET2)" $(OBJ1) $(OBJ2)
+
+        // OUT("\trm -f");
+        m_fout << "\trm -f";
+
+        // OUT: depend.mk
+        m_fout << " " << m_build_path << CONFIG_DEPENDENCIES_FILENAME;
+
+        int idx = m_executable.size() == 1 ? -1 : 1;
+        for (size_t i = 0; i < m_executable.size(); ++i) {
+            // OUT: "$(TARGET1)"
+            m_fout << " \"$(" << m_cfg.make_bin(idx++) << ")\"";
+        }
+        idx = m_executable.size() == 1 ? -1 : 1;
+        for (size_t i = 0; i < m_executable.size(); ++i) {
+            // OUT: $(OBJ1)
+            m_fout << " $(" << m_cfg.make_obj(idx++) << ")";
+        }
+        m_fout << endl;
+    }
+
+    m_fout << endl;
+}
+
+void mfile::output_phony() {
+    m_fout << "# PHONY\n" << endl;
+    m_fout << ".PHONY: default debug release clean\n" << endl;
+}
+
+void mfile::output_mm_dependencies() {
+    string c_types, cxx_types;
+
+    if (m_c) {
+        c_types += " *.c";
+    }
+
+    if (m_cc) {
+        cxx_types += " *.cc";
+    }
+
+    if (m_cpp) {
+        cxx_types += " *.cpp";
+    }
+
+    m_fout << "# DEPENDENCIES\n" << endl;
+
+    // OUT: SRC = $(wildcard *.h *.hpp *.c *.cpp *.cc)
+    m_fout << "SRC = $(wildcard *.h *.hpp *.c *.cpp *.cc)\n";
+
+    m_fout << endl;
+
+    // OUT: $(BUILD)/depend.mk: $(SRC)
+    m_fout << m_build_path << CONFIG_DEPENDENCIES_FILENAME << ": $(SRC)\n";
+
+    output_mk_build_if_option_b();
+
+    // OUT: @rm -f "$@"
+    m_fout << "\t@rm -f \"$@\"\n";
+    if (m_flags & OPTION_B) {
+        if (m_c) {
+            // OUT: @$(CC) $(CFLAGS) -MM *.c | sed 's/^\\(.*\\).o:/$$(BUILD)\/\1.o:/' >> $@
+            m_fout << "\t@$(" << CONFIG_CC << ") $(" << CONFIG_CFLAGS << ") -MM" << c_types
+                   << " | sed 's/^\\(.*\\).o:/$$(" << CONFIG_BD << ")\\/\\1.o:/' >> $@\n";
+        }
+
+        if (m_cc || m_cpp) {
+            // OUT: @$(CXX) $(CXXFLAGS) -MM *.cpp *.cc | sed 's/^\\(.*\\).o:/$$(BUILD)\/\1.o:/' > $@
+            m_fout << "\t@$(" << CONFIG_CXX << ") $(" << CONFIG_CXXFLAGS << ") -MM" << cxx_types
+                   << " | sed 's/^\\(.*\\).o:/$$(" << CONFIG_BD << ")\\/\\1.o:/' >> $@\n";
+        }
+    } else {
+        if (m_c) {
+            // OUT: @$(CC) $(CFLAGS) -MM *.c >> $@
+            m_fout << "\t@$(" << CONFIG_CC << ") $(" << CONFIG_CFLAGS << ") -MM" << c_types << " >> $@\n";
+        }
+        if (m_cc || m_cpp) {
+            // OUT: @$(CXX) $(CXXFLAGS) -MM *.cpp *.cc >> $@
+            m_fout << "\t@$(" << CONFIG_CXX << ") $(" << CONFIG_CXXFLAGS << ") -MM" << cxx_types << " >> $@\n";
+        }
+    }
+
+    m_fout << endl;
+
+    // OUT: include $(BUILD)/depend.mk
+    m_fout << "include " << m_build_path << CONFIG_DEPENDENCIES_FILENAME << endl;
+
+    m_fout << endl;
+}
+
+/*==========================================================================*/
+
+void mfile::output_part() {
+}
+
+void mfile::output_gitignore() {
+    /*
+    if (m_flags & OPTION_B) {
+        m_binaries.push_back("build/");
+    } else {
+        m_binaries.push_back("*.o");
+    }
+
+    // TODO
+    vector<string> ignores;
+    read_file_by_line(ignores, ".gitignore");
+
+    size_t n = ignores.size();
+    for (size_t i = 0; i < n; ++i) {
+        if (ignores[i].length() && ignores[i].back() == '/') {
+            ignores.push_back(ignores[i].substr(0, ignores[i].length()));
+        }
+    }
+
+    for (auto &binary : m_binaries) {
+        for (auto &ignore : ignores) {
+            if (binary == ignore) {
+                binary = "";
+                break;
+            }
+        }
+    }
+
+    append_file_by_line(".gitignore", m_binaries);
+
+    append_file_by_line("", m_binaries);
+    */
+}
+
+/*==========================================================================*/
+
+void mfile::output_mk_build_if_option_b() {
+    // Character before command:
+    //   '@': turn off echo.
+    //   '-': ignore error, make will exit when error occurs.
+    //   '+': ignore make's -n -t -q options.
+    if (m_flags & OPTION_B) {
+        // OUT @mkdir -p "$(BUILD)"
+        m_fout << "\t@mkdir -p \"$(" << CONFIG_BD << ")\"" << endl;
+    }
+}
