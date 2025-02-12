@@ -19,6 +19,9 @@ void testMFile() {
     rule->add_dependency(new MVariable("TARGET1"));
     rule->add_dependency(new MVariable("TARGET2"));
     rule->add_command(new MCommand("echo \"Switching to $* mode...\""));
+    MCommand *cmd = new MCommand();
+    (*cmd) << new MVariable("CC") << new MVariable("CFLAGS") << "-o $@ $^" << new MVariable("LFLAGS");
+    rule->add_command(cmd);
 
     mfile.add_component(rule);
 

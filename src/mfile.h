@@ -56,11 +56,7 @@ class MComponent {
   public:
     MComponent(const std::string &name = "MComponent") : m_name(name) {}
     virtual ~MComponent() = default;
-    virtual std::string to_string(const std::string &delim = "") const {
-        (void)delim;
-
-        return m_name;
-    }
+    virtual std::string to_string() const { return m_name; }
 
   protected:
     std::string m_name;
@@ -69,7 +65,8 @@ class MComponent {
 // Compound component of a Makefile.
 class MCompComponent : public MComponent {
   public:
-    MCompComponent(const std::string &name = "MCompComponent") : MComponent(name) {}
+    MCompComponent(const std::string &name = "MCompComponent", const std::string &separator = "")
+        : MComponent(name), separator(separator) {}
 
     virtual ~MCompComponent() {
         for (auto &sub_component : m_sub_components) {
@@ -84,17 +81,23 @@ class MCompComponent : public MComponent {
         return *this;
     }
 
-    virtual std::string to_string(const std::string &delim = " ") const {
-        (void)delim;
+    MCompComponent &operator<<(const std::string &str_sub_component) {
+        add_sub_component(new MComponent(str_sub_component));
+        return *this;
+    }
 
+    void set_separator(const std::string &separator) { this->separator = separator; }
+
+    virtual std::string to_string() const {
         std::string str;
         for (const auto &sub_component : m_sub_components) {
-            str += sub_component->to_string() + delim;
+            str += sub_component->to_string() + separator;
         }
         return str;
     }
 
   protected:
+    std::string separator;
     std::vector<MComponent *> m_sub_components;
 };
 
@@ -107,19 +110,14 @@ class MComment : public MComponent {
         return *this;
     }
 
-    virtual std::string to_string(const std::string &delim = "") const {
-        (void)delim;
-
-        return "# " + m_name;
-    }
+    virtual std::string to_string() const { return "# " + m_name; }
 };
 
 class MFilename : public MComponent {
   public:
     MFilename(const std::string &name) : MComponent(name) {}
 
-    virtual std::string to_string(const std::string &delim = "") const {
-        (void)delim;
+    virtual std::string to_string() const {
 
         for (auto &c : m_name) {
             if (std::isspace(c)) {
@@ -134,22 +132,14 @@ class MVariable : public MComponent {
   public:
     MVariable(const std::string &name) : MComponent(name) {}
 
-    virtual std::string to_string(const std::string &delim = "") const {
-        (void)delim;
-
-        return "$(" + m_name + ")";
-    }
+    virtual std::string to_string() const { return "$(" + m_name + ")"; }
 };
 
 class MSimpleVariableDef : public MComponent {
   public:
     MSimpleVariableDef(const std::string &name, const std::string &value) : MComponent(name), m_value(value) {}
 
-    virtual std::string to_string(const std::string &delim = "") const {
-        (void)delim;
-
-        return m_name + " = " + m_value;
-    }
+    virtual std::string to_string() const { return m_name + " = " + m_value; }
 
   protected:
     std::string m_value;
@@ -157,23 +147,16 @@ class MSimpleVariableDef : public MComponent {
 
 class MVariableDef : public MCompComponent {
   public:
-    MVariableDef(const std::string &name) : MCompComponent(name) {}
+    MVariableDef(const std::string &name) : MCompComponent(name, " ") {}
 
-    virtual std::string to_string(const std::string &delim = "") const {
-        (void)delim;
-
-        return m_name + " = " + MCompComponent::to_string();
-    }
+    virtual std::string to_string() const { return m_name + " = " + MCompComponent::to_string(); }
 };
 
 class MBlankLine : public MComponent {
   public:
     MBlankLine() : MComponent("MBlankLine") {}
 
-    virtual std::string to_string(const std::string &delim = "") const {
-        (void)delim;
-        return "";
-    }
+    virtual std::string to_string() const { return ""; }
 };
 
 //   '@': turn off echo.
@@ -188,15 +171,17 @@ enum MCommandPrefix {
 
 class MCommand : public MCompComponent {
   public:
-    MCommand(const std::string &command = "MCommand") : MCompComponent(command), m_prefix(M_COMMAND_PREFIX_NONE) {}
-
-    virtual std::string to_string(const std::string &delim = "") const {
-        (void)delim;
-
-        if (m_prefix == M_COMMAND_PREFIX_NONE) {
-            return std::string("\t") + m_name + MCompComponent::to_string(delim);
+    MCommand(const std::string &command = "") : MCompComponent("MCommand", " "), m_prefix(M_COMMAND_PREFIX_NONE) {
+        if (!command.empty()) {
+            add_sub_component(new MComponent(command));
         }
-        return std::string("\t") + char(m_prefix) + m_name + MCompComponent::to_string(delim);
+    }
+
+    virtual std::string to_string() const {
+        if (m_prefix == M_COMMAND_PREFIX_NONE) {
+            return std::string("\t") + MCompComponent::to_string();
+        }
+        return std::string("\t") + char(m_prefix) + MCompComponent::to_string();
     }
 
     void set_prefix(MCommandPrefix prefix) { m_prefix = prefix; }
@@ -222,8 +207,7 @@ class MRule : public MComponent {
 
     void add_command(MComponent *command) { m_commands.push_back(command); }
 
-    virtual std::string to_string(const std::string &delim = "") const {
-        (void)delim;
+    virtual std::string to_string() const {
 
         std::string dependencies;
         for (const auto &dependency : m_dependencies) {
