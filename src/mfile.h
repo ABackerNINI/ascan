@@ -80,27 +80,19 @@ class MCompComponent : public MComponent {
 
     void add_sub_component(MComponent *sub_component) { m_sub_components.push_back(sub_component); }
 
-    friend MCompComponent &operator<<(MCompComponent &mcc, const char *cstr_sub_component) {
-        mcc.add_sub_component(new MComponent(cstr_sub_component));
-        return mcc;
-    }
+    template <typename T> friend MCompComponent &operator<<(MCompComponent &mcc, T sub_component) {
+        if constexpr (std::is_pointer_v<T> && is_mcomponent<std::remove_pointer_t<T>>::value) {
+            mcc.add_sub_component(sub_component);
+        } else if constexpr (is_mcomponent<T>::value) {
+            mcc.add_sub_component(new T(sub_component));
+        } else if constexpr (std::is_same_v<T, const char *>) {
+            mcc.add_sub_component(new MComponent(sub_component));
+        } else if constexpr (std::is_same_v<T, std::string>) {
+            mcc.add_sub_component(new MComponent(sub_component));
+        } else {
+            static_assert(is_mcomponent<T>::value, "T must be a subclass of MComponent");
+        }
 
-    friend MCompComponent &operator<<(MCompComponent &mcc, const std::string &str_sub_component) {
-        mcc.add_sub_component(new MComponent(str_sub_component));
-        return mcc;
-    }
-
-    template <typename T>
-    friend typename std::enable_if<is_mcomponent<T>::value, MCompComponent &>::type operator<<(MCompComponent &mcc,
-                                                                                               T sub_component) {
-        mcc.add_sub_component(new T(sub_component));
-        return mcc;
-    }
-
-    template <typename T>
-    friend typename std::enable_if<is_mcomponent<T>::value, MCompComponent &>::type operator<<(MCompComponent &mcc,
-                                                                                               T *sub_component) {
-        mcc.add_sub_component(sub_component);
         return mcc;
     }
 
@@ -270,27 +262,23 @@ class MFile {
         return str;
     }
 
-    friend MFile &operator<<(MFile &mfile, const std::string &component) {
-        mfile.add_component(new MComponent(component));
+    template <typename T> friend MFile &operator<<(MFile &mfile, T component) {
+        if constexpr (std::is_pointer_v<T> && is_mcomponent<std::remove_pointer_t<T>>::value) {
+            mfile.add_component(component);
+        } else if constexpr (is_mcomponent<T>::value) {
+            mfile.add_component(new T(component));
+        } else if constexpr (std::is_same_v<T, const char *>) {
+            mfile.add_component(new MComponent(component));
+        } else if constexpr (std::is_same_v<T, std::string>) {
+            mfile.add_component(new MComponent(component));
+        } else {
+            static_assert(is_mcomponent<T>::value, "T must be a subclass of MComponent");
+        }
+
         return mfile;
     }
 
-    friend MFile &operator<<(MFile &mfile, const char *component) {
-        mfile.add_component(new MComponent(component));
-        return mfile;
-    }
-
-    template <typename T>
-    friend typename std::enable_if<is_mcomponent<T>::value, MFile &>::type operator<<(MFile &mfile, T component) {
-        mfile.add_component(new T(component));
-        return mfile;
-    }
-
-    template <typename T>
-    friend typename std::enable_if<is_mcomponent<T>::value, MFile &>::type operator<<(MFile &mfile, T *component) {
-        mfile.add_component(component);
-        return mfile;
-    }
+    template <typename T> friend MFile &operator<<(MFile *mfile, T component) { return *mfile << component; }
 
   protected:
     std::vector<MComponent *> m_components;
