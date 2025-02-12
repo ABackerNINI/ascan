@@ -9,6 +9,7 @@
 #include <cstdio>
 #include <fstream>
 #include <string>
+#include <type_traits>
 #include <vector>
 
 class mfile {
@@ -62,6 +63,9 @@ class MComponent {
     std::string m_name;
 };
 
+// Check if a type is a subclass of MComponent.
+template <typename T> struct is_mcomponent : std::is_base_of<MComponent, T> {};
+
 // Compound component of a Makefile.
 class MCompComponent : public MComponent {
   public:
@@ -76,14 +80,28 @@ class MCompComponent : public MComponent {
 
     void add_sub_component(MComponent *sub_component) { m_sub_components.push_back(sub_component); }
 
-    MCompComponent &operator<<(MComponent *sub_component) {
-        add_sub_component(sub_component);
-        return *this;
+    friend MCompComponent &operator<<(MCompComponent &mcc, const char *cstr_sub_component) {
+        mcc.add_sub_component(new MComponent(cstr_sub_component));
+        return mcc;
     }
 
-    MCompComponent &operator<<(const std::string &str_sub_component) {
-        add_sub_component(new MComponent(str_sub_component));
-        return *this;
+    friend MCompComponent &operator<<(MCompComponent &mcc, const std::string &str_sub_component) {
+        mcc.add_sub_component(new MComponent(str_sub_component));
+        return mcc;
+    }
+
+    template <typename T>
+    friend typename std::enable_if<is_mcomponent<T>::value, MCompComponent &>::type operator<<(MCompComponent &mcc,
+                                                                                               T sub_component) {
+        mcc.add_sub_component(new T(sub_component));
+        return mcc;
+    }
+
+    template <typename T>
+    friend typename std::enable_if<is_mcomponent<T>::value, MCompComponent &>::type operator<<(MCompComponent &mcc,
+                                                                                               T *sub_component) {
+        mcc.add_sub_component(sub_component);
+        return mcc;
     }
 
     void set_separator(const std::string &separator) { this->separator = separator; }
@@ -105,9 +123,14 @@ class MComment : public MComponent {
   public:
     MComment(const std::string &comment = "") : MComponent(comment) {}
 
-    MComment &operator<<(const std::string &comment) {
-        m_name += comment;
-        return *this;
+    friend MComment &operator<<(MComment &mc, const std::string &comment) {
+        mc.m_name += comment;
+        return mc;
+    }
+
+    friend MComment &operator<<(MComment &mc, const char *comment) {
+        mc.m_name += comment;
+        return mc;
     }
 
     virtual std::string to_string() const { return "# " + m_name; }
@@ -247,9 +270,26 @@ class MFile {
         return str;
     }
 
-    MFile &operator<<(MComponent *component) {
-        add_component(component);
-        return *this;
+    friend MFile &operator<<(MFile &mfile, const std::string &component) {
+        mfile.add_component(new MComponent(component));
+        return mfile;
+    }
+
+    friend MFile &operator<<(MFile &mfile, const char *component) {
+        mfile.add_component(new MComponent(component));
+        return mfile;
+    }
+
+    template <typename T>
+    friend typename std::enable_if<is_mcomponent<T>::value, MFile &>::type operator<<(MFile &mfile, T component) {
+        mfile.add_component(new T(component));
+        return mfile;
+    }
+
+    template <typename T>
+    friend typename std::enable_if<is_mcomponent<T>::value, MFile &>::type operator<<(MFile &mfile, T *component) {
+        mfile.add_component(component);
+        return mfile;
     }
 
   protected:
