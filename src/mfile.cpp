@@ -8,26 +8,6 @@
 
 using namespace std;
 
-// void testMFile() {
-//     MFile mfile;
-//
-//     mfile.add_component(new MComment("BUILD DETAILS"));
-//     mfile.add_component(new MBlankLine());
-//     mfile.add_component(new MSimpleVariableDef("CXX", "g++"));
-//
-//     MRule *rule = new MRule("default");
-//     rule->add_dependency(new MVariable("TARGET1"));
-//     rule->add_dependency(new MVariable("TARGET2"));
-//     rule->add_command(new MCommand("echo \"Switching to $* mode...\""));
-//     MCommand *cmd = new MCommand();
-//     *cmd << new MVariable("CC") << MVariable("CFLAGS") << "-o $@ $^" << MVariable("LFLAGS");
-//     rule->add_command(cmd);
-//
-//     mfile.add_component(rule);
-//
-//     cout << mfile.to_string() << endl;
-// }
-
 /*==========================================================================*/
 
 MFile::MFile(std::vector<cfile> &cfiles, Config &cfg, uint32_t flags) : m_cfiles(cfiles), m_cfg(cfg), m_flags(flags) {
@@ -47,7 +27,7 @@ MFile::MFile(std::vector<cfile> &cfiles, Config &cfg, uint32_t flags) : m_cfiles
     }
 
     if (m_flags & OPTION_B) {
-        m_build_path = string("$(") + CONFIG_BD + ")/";
+        m_build_path = MSimpleVariable(CONFIG_BD).to_string() + "/";
     }
 }
 
@@ -541,14 +521,12 @@ void MFile::output_mm_dependencies() {
     add_component(new MBlankLine());
 
     // OUT: $(BUILD)/depend.mk: $(SRC)
-    // m_fout << m_build_path << CONFIG_DEPENDENCIES_FILENAME << ": $(SRC)\n";
     MRule *depend_rule = new MRule(MFilename(m_build_path + CONFIG_DEPENDENCIES_FILENAME));
     depend_rule->add_dependency(new MSimpleVariable("SRC"));
 
     add_mkdir_build_cmd_if_option_b(depend_rule);
 
     // OUT: @rm -f "$@"
-    // m_fout << "\t@rm -f \"$@\"\n";
     depend_rule->add_command(new MCommand("rm -f \"$@\"", M_COMMAND_PREFIX_ECHO_OFF));
     if (m_flags & OPTION_B) {
         if (m_c) {
@@ -561,9 +539,7 @@ void MFile::output_mm_dependencies() {
         }
 
         if (m_cc || m_cpp) {
-            // OUT: @$(CXX) $(CXXFLAGS) -MM *.cpp *.cc | sed 's/^\\(.*\\).o:/$$(BUILD)\/\1.o:/' > $@
-            // m_fout << "\t@$(" << CONFIG_CXX << ") $(" << CONFIG_CXXFLAGS << ") -MM" << cxx_types
-            //        << " | sed 's/^\\(.*\\).o:/$$(" << CONFIG_BD << ")\\/\\1.o:/' >> $@\n";
+            // OUT: @$(CXX) $(CXXFLAGS) -MM *.cpp *.cc | sed 's/^\\(.*\\).o:/$$(BUILD)\/\1.o:/' >> $@
             MCommand *cmd = new MCommand(M_COMMAND_PREFIX_ECHO_OFF);
             cmd->set_separator("");
             *cmd << MSimpleVariable(CONFIG_CXX) << " " << MSimpleVariable(CONFIG_CXXFLAGS) << " -MM" << cxx_types
@@ -573,7 +549,6 @@ void MFile::output_mm_dependencies() {
     } else {
         if (m_c) {
             // OUT: @$(CC) $(CFLAGS) -MM *.c >> $@
-            // m_fout << "\t@$(" << CONFIG_CC << ") $(" << CONFIG_CFLAGS << ") -MM" << c_types << " >> $@\n";
             MCommand *cmd = new MCommand(M_COMMAND_PREFIX_ECHO_OFF);
             cmd->set_separator("");
             *cmd << MSimpleVariable(CONFIG_CC) << " " << MSimpleVariable(CONFIG_CFLAGS) << " -MM" << c_types
@@ -582,7 +557,6 @@ void MFile::output_mm_dependencies() {
         }
         if (m_cc || m_cpp) {
             // OUT: @$(CXX) $(CXXFLAGS) -MM *.cpp *.cc >> $@
-            // m_fout << "\t@$(" << CONFIG_CXX << ") $(" << CONFIG_CXXFLAGS << ") -MM" << cxx_types << " >> $@\n";
             MCommand *cmd = new MCommand(M_COMMAND_PREFIX_ECHO_OFF);
             cmd->set_separator("");
             *cmd << MSimpleVariable(CONFIG_CXX) << " " << MSimpleVariable(CONFIG_CXXFLAGS) << " -MM" << cxx_types
