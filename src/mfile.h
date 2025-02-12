@@ -100,9 +100,14 @@ class MCompComponent : public MComponent {
 
     virtual std::string to_string() const {
         std::string str;
-        for (const auto &sub_component : m_sub_components) {
-            str += sub_component->to_string() + separator;
+
+        if (!m_sub_components.empty()) {
+            str += m_sub_components[0]->to_string();
+            for (size_t i = 1; i < m_sub_components.size(); ++i) {
+                str += separator + m_sub_components[i]->to_string();
+            }
         }
+
         return str;
     }
 
@@ -227,21 +232,35 @@ class MRule : public MComponent {
 
     virtual std::string to_string() const {
         std::string dependencies;
-        for (const auto &dependency : m_dependencies) {
-            dependencies += dependency->to_string() + " ";
+        if (!m_dependencies.empty()) {
+            dependencies = m_dependencies[0]->to_string();
+            for (size_t i = 1; i < m_dependencies.size(); ++i) {
+                dependencies += " " + m_dependencies[i]->to_string();
+            }
         }
 
         std::string commands;
-        for (const auto &command : m_commands) {
-            commands += command->to_string() + "\n";
+        if (!m_commands.empty()) {
+            commands = m_commands[0]->to_string();
+            for (size_t i = 1; i < m_commands.size(); ++i) {
+                commands += "\n" + m_commands[i]->to_string();
+            }
         }
 
-        return m_name + ": " + dependencies + "\n" + commands;
+        return m_name + ": " + dependencies + (commands.empty() ? "" : "\n" + commands);
     }
 
   protected:
     std::vector<MComponent *> m_dependencies;
     std::vector<MComponent *> m_commands;
+};
+
+class MQuoted : public MComponent {
+  public:
+    MQuoted(const std::string &name) : MComponent(name) {}
+    MQuoted(const MComponent &name) : MComponent(name.to_string()) {}
+
+    virtual std::string to_string() const { return "\"" + m_name + "\""; }
 };
 
 class MFile {

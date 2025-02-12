@@ -203,12 +203,13 @@ void MFile::output_targets() {
      */
     if (m_c) {
         MRule *debug_rule = new MRule("debug");
-        debug_rule->add_command(new MCommand("CFLAGS += -g -DDEBUG=1")); // TODO
+        debug_rule->add_dependency(new MComponent("CFLAGS += -g -DDEBUG=1")); // TODO
         add_component(debug_rule);
     }
     if (m_cpp || m_cc) {
         MRule *debug_rule = new MRule("debug");
-        debug_rule->add_command(new MCommand("CXXFLAGS += -g -DDEBUG=1")); // TODO
+        debug_rule->add_dependency(new MComponent("CXXFLAGS += -g -DDEBUG=1")); // TODO
+        add_component(debug_rule);
     }
     MRule *debug_rule = new MRule("debug");
     debug_rule->add_dependency(new MFilename(m_build_path + "debug.mode"));
@@ -228,12 +229,12 @@ void MFile::output_targets() {
      */
     if (m_c) {
         MRule *release_rule = new MRule("release");
-        release_rule->add_command(new MCommand("CFLAGS += -O3 # -DNDEBUG=1")); // TODO
+        release_rule->add_dependency(new MComponent("CFLAGS += -O3 # -DNDEBUG=1")); // TODO
         add_component(release_rule);
     }
     if (m_cpp || m_cc) {
         MRule *release_rule = new MRule("release");
-        release_rule->add_command(new MCommand("CXXFLAGS += -O3 # -DNDEBUG=1")); // TODO
+        release_rule->add_dependency(new MComponent("CXXFLAGS += -O3 # -DNDEBUG=1")); // TODO
         add_component(release_rule);
     }
     MRule *release_rule = new MRule("release");
@@ -261,6 +262,7 @@ static void find_all_headers(vector<cfile> &files, cfile *file) {
 
 void MFile::output_executable_details() {
     add_component(new MComment("EXECUTABLE DETAILS"));
+    add_component(new MBlankLine());
 
     // Print executable
     // TODO: add new flag to disable "hide the index number"
@@ -352,6 +354,7 @@ void MFile::output_executable_details() {
 
 void MFile::output_compile_to_objects() {
     add_component(new MComment("COMPILE TO OBJECTS"));
+    add_component(new MBlankLine());
 
     if (m_c) {
         // OUT: $(BUILD)/%.o: %.c
@@ -395,6 +398,8 @@ void MFile::output_compile_to_objects() {
 
         add_component(rule);
     }
+
+    add_component(new MBlankLine());
 }
 
 void MFile::output_mode_control() {
@@ -412,6 +417,7 @@ void MFile::output_mode_control() {
     //        fi
 
     add_component(new MComment("MODE CONTROL"));
+    add_component(new MBlankLine());
 
     MRule *rule = new MRule(MFilename(m_build_path + "%.mode"));
 
@@ -435,7 +441,7 @@ void MFile::output_mode_control() {
     }
 
     *cmd << "\t\ttouch \"$@\"; \\\n";
-    *cmd << "\tfi\n\n";
+    *cmd << "\tfi\n";
 
     rule->add_command(cmd);
 
@@ -444,6 +450,7 @@ void MFile::output_mode_control() {
 
 void MFile::output_clean_up() {
     add_component(new MComment("CLEAN UP"));
+    add_component(new MBlankLine());
 
     MRule *clean_rule = new MRule("clean");
 
@@ -457,12 +464,12 @@ void MFile::output_clean_up() {
         int idx = m_executable.size() == 1 ? -1 : 1;
         for (size_t i = 0; i < m_executable.size(); ++i) {
             // OUT: "$(TARGET1)"
-            *cmd << "\"" << MSimpleVariable(m_cfg.make_bin(idx)) << "\"";
+            *cmd << MQuoted(MSimpleVariable(m_cfg.make_bin(idx)));
             ++idx;
         }
 
         // OUT: $(BUILD)
-        *cmd << " \"" << MSimpleVariable(CONFIG_BD) << "\"";
+        *cmd << MQuoted(MSimpleVariable(CONFIG_BD));
 
         clean_rule->add_command(cmd);
     } else {
@@ -477,17 +484,17 @@ void MFile::output_clean_up() {
         *cmd << "rm -f";
 
         // OUT: depend.mk
-        *cmd << " \"" << MFilename(m_build_path + CONFIG_DEPENDENCIES_FILENAME) << "\"";
+        *cmd << MQuoted(m_build_path + CONFIG_DEPENDENCIES_FILENAME);
 
         int idx = m_executable.size() == 1 ? -1 : 1;
         for (size_t i = 0; i < m_executable.size(); ++i) {
             // OUT: "$(TARGET1)"
-            *cmd << " \"" << MSimpleVariable(m_cfg.make_bin(idx)) << "\"";
+            *cmd << MQuoted(MSimpleVariable(m_cfg.make_bin(idx)));
         }
         idx = m_executable.size() == 1 ? -1 : 1;
         for (size_t i = 0; i < m_executable.size(); ++i) {
             // OUT: $(OBJ1)
-            *cmd << " " << MSimpleVariable(m_cfg.make_obj(idx++));
+            *cmd << MSimpleVariable(m_cfg.make_obj(idx++));
         }
     }
 
@@ -499,6 +506,7 @@ void MFile::output_phony() {
     // OUT: # PHONY
     // OUT: .PHONY: default debug release clean
     add_component(new MComment("PHONY"));
+    add_component(new MBlankLine());
 
     MRule *rule = new MRule(".PHONY");
     rule->add_dependency(new MComponent("default"));
@@ -507,6 +515,7 @@ void MFile::output_phony() {
     rule->add_dependency(new MComponent("clean"));
 
     add_component(rule);
+    add_component(new MBlankLine());
 }
 
 void MFile::output_mm_dependencies() {
@@ -525,6 +534,7 @@ void MFile::output_mm_dependencies() {
     }
 
     add_component(new MComment("DEPENDENCIES"));
+    add_component(new MBlankLine());
 
     // OUT: SRC = $(wildcard *.h *.hpp *.c *.cpp *.cc)
     add_component(new MSimpleVariableDef("SRC", "$(wildcard *.h *.hpp *.c *.cpp *.cc)"));
@@ -544,8 +554,9 @@ void MFile::output_mm_dependencies() {
         if (m_c) {
             // OUT: @$(CC) $(CFLAGS) -MM *.c | sed 's/^\\(.*\\).o:/$$(BUILD)\/\1.o:/' >> $@
             MCommand *cmd = new MCommand(M_COMMAND_PREFIX_ECHO_OFF);
-            *cmd << MSimpleVariable(CONFIG_CC) << MSimpleVariable(CONFIG_CFLAGS) << "-MM" << c_types
-                 << " | sed 's/^\\(.*\\).o:/$$(" << CONFIG_BD << ")\\/\\1.o:/' >> $@"; // TODO
+            cmd->set_separator("");
+            *cmd << MSimpleVariable(CONFIG_CC) << " " << MSimpleVariable(CONFIG_CFLAGS) << " -MM" << c_types
+                 << " | sed 's/^\\(.*\\).o:/$" << MSimpleVariable(CONFIG_BD) << "\\/\\1.o:/' >> $@"; // TODO
             depend_rule->add_command(cmd);
         }
 
@@ -554,8 +565,9 @@ void MFile::output_mm_dependencies() {
             // m_fout << "\t@$(" << CONFIG_CXX << ") $(" << CONFIG_CXXFLAGS << ") -MM" << cxx_types
             //        << " | sed 's/^\\(.*\\).o:/$$(" << CONFIG_BD << ")\\/\\1.o:/' >> $@\n";
             MCommand *cmd = new MCommand(M_COMMAND_PREFIX_ECHO_OFF);
-            *cmd << MSimpleVariable(CONFIG_CXX) << MSimpleVariable(CONFIG_CXXFLAGS) << "-MM" << cxx_types
-                 << " | sed 's/^\\(.*\\).o:/$$(" << CONFIG_BD << ")\\/\\1.o:/' >> $@"; // TODO
+            cmd->set_separator("");
+            *cmd << MSimpleVariable(CONFIG_CXX) << " " << MSimpleVariable(CONFIG_CXXFLAGS) << " -MM" << cxx_types
+                 << " | sed 's/^\\(.*\\).o:/$" << MSimpleVariable(CONFIG_BD) << "\\/\\1.o:/' >> $@"; // TODO
             depend_rule->add_command(cmd);
         }
     } else {
@@ -563,7 +575,8 @@ void MFile::output_mm_dependencies() {
             // OUT: @$(CC) $(CFLAGS) -MM *.c >> $@
             // m_fout << "\t@$(" << CONFIG_CC << ") $(" << CONFIG_CFLAGS << ") -MM" << c_types << " >> $@\n";
             MCommand *cmd = new MCommand(M_COMMAND_PREFIX_ECHO_OFF);
-            *cmd << MSimpleVariable(CONFIG_CC) << MSimpleVariable(CONFIG_CFLAGS) << "-MM" << c_types
+            cmd->set_separator("");
+            *cmd << MSimpleVariable(CONFIG_CC) << " " << MSimpleVariable(CONFIG_CFLAGS) << " -MM" << c_types
                  << " >> $@"; // TODO
             depend_rule->add_command(cmd);
         }
@@ -571,17 +584,19 @@ void MFile::output_mm_dependencies() {
             // OUT: @$(CXX) $(CXXFLAGS) -MM *.cpp *.cc >> $@
             // m_fout << "\t@$(" << CONFIG_CXX << ") $(" << CONFIG_CXXFLAGS << ") -MM" << cxx_types << " >> $@\n";
             MCommand *cmd = new MCommand(M_COMMAND_PREFIX_ECHO_OFF);
-            *cmd << MSimpleVariable(CONFIG_CXX) << MSimpleVariable(CONFIG_CXXFLAGS) << "-MM" << cxx_types
+            cmd->set_separator("");
+            *cmd << MSimpleVariable(CONFIG_CXX) << " " << MSimpleVariable(CONFIG_CXXFLAGS) << " -MM" << cxx_types
                  << " >> $@"; // TODO
             depend_rule->add_command(cmd);
         }
     }
     add_component(depend_rule);
+    add_component(new MBlankLine());
 
     // OUT: include $(BUILD)/depend.mk
-    // m_fout << "include " << m_build_path << CONFIG_DEPENDENCIES_FILENAME << endl;
     MCompComponent *comp = new MCompComponent();
-    *comp << "include " << MFilename(m_build_path + CONFIG_DEPENDENCIES_FILENAME); // TODO
+    comp->set_separator(" ");
+    *comp << "include" << MFilename(m_build_path + CONFIG_DEPENDENCIES_FILENAME); // TODO
     add_component(comp);
 }
 
@@ -635,7 +650,7 @@ void MFile::add_mkdir_build_cmd_if_option_b(MRule *rule) {
         // OUT @mkdir -p "$(BUILD)"
         MCommand *cmd = new MCommand();
         cmd->set_prefix(M_COMMAND_PREFIX_ECHO_OFF);
-        *cmd << "mkdir -p \"" << MSimpleVariable(CONFIG_BD) << "\"";
+        *cmd << "mkdir -p" << MQuoted(MSimpleVariable(CONFIG_BD));
         rule->add_command(cmd);
     }
 }
