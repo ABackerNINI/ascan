@@ -8,9 +8,28 @@
 
 using namespace std;
 
+void testMFile() {
+    MFile mfile;
+
+    mfile.add_component(new MComment("BUILD DETAILS"));
+    mfile.add_component(new MBlankLine());
+    mfile.add_component(new MSimpleVariableDef("CXX", "g++"));
+
+    MRule *rule = new MRule("default");
+    rule->add_dependency(new MVariable("TARGET1"));
+    rule->add_dependency(new MVariable("TARGET2"));
+    rule->add_command(new MCommand("echo \"Switching to $* mode...\""));
+
+    mfile.add_component(rule);
+
+    cout << mfile.to_string() << endl;
+}
+
 /*==========================================================================*/
 
 mfile::mfile(vector<cfile> &cfiles, Config &cfg, uint32_t flags) : m_cfiles(cfiles), m_cfg(cfg), m_flags(flags) {
+    testMFile();
+
     m_c = m_cc = m_cpp = false;
     for (auto &cfile : m_cfiles) {
         if (cfile.file_type() == cfile::FILE_TYPE_C) {

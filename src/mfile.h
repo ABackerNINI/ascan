@@ -56,7 +56,11 @@ class MComponent {
   public:
     MComponent(const std::string &name = "MComponent") : m_name(name) {}
     virtual ~MComponent() = default;
-    virtual std::string to_string(const std::string &delim = "") const { return m_name; }
+    virtual std::string to_string(const std::string &delim = "") const {
+        (void)delim;
+
+        return m_name;
+    }
 
   protected:
     std::string m_name;
@@ -81,6 +85,8 @@ class MCompComponent : public MComponent {
     }
 
     virtual std::string to_string(const std::string &delim = " ") const {
+        (void)delim;
+
         std::string str;
         for (const auto &sub_component : m_sub_components) {
             str += sub_component->to_string() + delim;
@@ -166,7 +172,7 @@ class MBlankLine : public MComponent {
 
     virtual std::string to_string(const std::string &delim = "") const {
         (void)delim;
-        return "\n";
+        return "";
     }
 };
 
@@ -182,12 +188,15 @@ enum MCommandPrefix {
 
 class MCommand : public MCompComponent {
   public:
-    MCommand(const std::string &name = "MCommand") : MCompComponent(name), m_prefix(M_COMMAND_PREFIX_NONE) {}
+    MCommand(const std::string &command = "MCommand") : MCompComponent(command), m_prefix(M_COMMAND_PREFIX_NONE) {}
 
     virtual std::string to_string(const std::string &delim = "") const {
         (void)delim;
 
-        return std::string("\t") + char(m_prefix) + MCompComponent::to_string(delim);
+        if (m_prefix == M_COMMAND_PREFIX_NONE) {
+            return std::string("\t") + m_name + MCompComponent::to_string(delim);
+        }
+        return std::string("\t") + char(m_prefix) + m_name + MCompComponent::to_string(delim);
     }
 
     void set_prefix(MCommandPrefix prefix) { m_prefix = prefix; }
@@ -199,6 +208,19 @@ class MCommand : public MCompComponent {
 class MRule : public MComponent {
   public:
     MRule(const std::string &name = "MRule") : MComponent(name) {}
+
+    virtual ~MRule() {
+        for (auto &dependency : m_dependencies) {
+            delete dependency;
+        }
+        for (auto &command : m_commands) {
+            delete command;
+        }
+    }
+
+    void add_dependency(MComponent *dependency) { m_dependencies.push_back(dependency); }
+
+    void add_command(MComponent *command) { m_commands.push_back(command); }
 
     virtual std::string to_string(const std::string &delim = "") const {
         (void)delim;

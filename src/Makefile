@@ -14,10 +14,10 @@ TARGET3  = tparser
 default: debug
 
 debug: CXXFLAGS += -g -DDEBUG=1
-debug: $(BUILD)/debug.mode $(TARGET1) $(TARGET2) $(TARGET3)
+debug: $(BUILD)/debug.mode $(TARGET1)
 
 release: CXXFLAGS += -O3 # -DNDEBUG=1
-release: $(BUILD)/release.mode $(TARGET1) $(TARGET2) $(TARGET3)
+release: $(BUILD)/release.mode $(TARGET1)
 
 # EXECUTABLE DETAILS
 
