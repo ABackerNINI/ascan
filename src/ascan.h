@@ -4,6 +4,7 @@
 #include "cfile.h"
 #include "config.h"
 #include "options.h"
+#include <cstdint>
 #include <iostream>
 #include <string>
 #include <vector>
