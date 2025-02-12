@@ -8,31 +8,29 @@
 
 using namespace std;
 
-void testMFile() {
-    MFile mfile;
-
-    mfile.add_component(new MComment("BUILD DETAILS"));
-    mfile.add_component(new MBlankLine());
-    mfile.add_component(new MSimpleVariableDef("CXX", "g++"));
-
-    MRule *rule = new MRule("default");
-    rule->add_dependency(new MVariable("TARGET1"));
-    rule->add_dependency(new MVariable("TARGET2"));
-    rule->add_command(new MCommand("echo \"Switching to $* mode...\""));
-    MCommand *cmd = new MCommand();
-    *cmd << new MVariable("CC") << MVariable("CFLAGS") << "-o $@ $^" << MVariable("LFLAGS");
-    rule->add_command(cmd);
-
-    mfile.add_component(rule);
-
-    cout << mfile.to_string() << endl;
-}
+// void testMFile() {
+//     MFile mfile;
+//
+//     mfile.add_component(new MComment("BUILD DETAILS"));
+//     mfile.add_component(new MBlankLine());
+//     mfile.add_component(new MSimpleVariableDef("CXX", "g++"));
+//
+//     MRule *rule = new MRule("default");
+//     rule->add_dependency(new MVariable("TARGET1"));
+//     rule->add_dependency(new MVariable("TARGET2"));
+//     rule->add_command(new MCommand("echo \"Switching to $* mode...\""));
+//     MCommand *cmd = new MCommand();
+//     *cmd << new MVariable("CC") << MVariable("CFLAGS") << "-o $@ $^" << MVariable("LFLAGS");
+//     rule->add_command(cmd);
+//
+//     mfile.add_component(rule);
+//
+//     cout << mfile.to_string() << endl;
+// }
 
 /*==========================================================================*/
 
-mfile::mfile(vector<cfile> &cfiles, Config &cfg, uint32_t flags) : m_cfiles(cfiles), m_cfg(cfg), m_flags(flags) {
-    testMFile();
-
+MFile::MFile(std::vector<cfile> &cfiles, Config &cfg, uint32_t flags) : m_cfiles(cfiles), m_cfg(cfg), m_flags(flags) {
     m_c = m_cc = m_cpp = false;
     for (auto &cfile : m_cfiles) {
         if (cfile.file_type() == cfile::FILE_TYPE_C) {
@@ -53,7 +51,7 @@ mfile::mfile(vector<cfile> &cfiles, Config &cfg, uint32_t flags) : m_cfiles(cfil
     }
 }
 
-int mfile::output() {
+int MFile::output() {
 #ifdef DISABLE_WRITE
     print_warning("DISABLE_WRITE enabled\n");
 
@@ -84,6 +82,8 @@ int mfile::output() {
         output_mm_dependencies();
 
         output_gitignore();
+
+        m_fout << to_string();
     } else {
         // TODO:
         output_part();
@@ -104,7 +104,7 @@ int mfile::output() {
 
 /*==========================================================================*/
 
-void mfile::prepare() {
+void MFile::prepare() {
     // Find all executable
     for (auto cfile = m_cfiles.begin(); cfile != m_cfiles.end(); ++cfile) {
         if (cfile->have_main_func() && cfile->is_source()) {
@@ -140,89 +140,111 @@ void mfile::prepare() {
     }
 }
 
-void mfile::output_build_details() {
-    m_fout << "# BUILD DETAILS\n" << endl;
-
+void MFile::output_build_details() {
     const char *flag_g = (m_flags & OPTION_G) ? " -g" : "";
+
+    add_component(new MComment("BUILD DETAILS"));
+    add_component(new MBlankLine());
 
     // OUT: CC = gcc
     if (m_c) {
-        m_fout << m_align(CONFIG_CC) << " = " << m_cfg.get_config_value(CONFIG_CC) << endl;
+        add_component(new MSimpleVariableDef(CONFIG_CC, m_cfg.get_config_value(CONFIG_CC)));
     }
     // OUT: CXX = g++
     if (m_cpp || m_cc) {
-        m_fout << m_align(CONFIG_CXX) << " = " << m_cfg.get_config_value(CONFIG_CXX) << endl;
+        add_component(new MSimpleVariableDef(CONFIG_CXX, m_cfg.get_config_value(CONFIG_CXX)));
     }
     // OUT: CFLAGS = -W -Wall -lm -g
     if (m_c) {
-        m_fout << m_align(CONFIG_CFLAGS) << " = " << m_cfg.get_config_value(CONFIG_CFLAGS) << flag_g << endl;
+        add_component(new MSimpleVariableDef(CONFIG_CFLAGS, m_cfg.get_config_value(CONFIG_CFLAGS) + flag_g));
     }
     // OUT: CXXFLAGS = -W -Wall -g
     if (m_cpp || m_cc) {
-        m_fout << m_align(CONFIG_CXXFLAGS) << " = " << m_cfg.get_config_value(CONFIG_CXXFLAGS) << flag_g << endl;
+        add_component(new MSimpleVariableDef(CONFIG_CXXFLAGS, m_cfg.get_config_value(CONFIG_CXXFLAGS) + flag_g));
     }
     // OUT: LFLAGS = -lm
-    m_fout << m_align(CONFIG_LFLAGS) << " = " << m_cfg.get_config_value(CONFIG_LFLAGS) << endl;
-
+    add_component(new MSimpleVariableDef(CONFIG_LFLAGS, m_cfg.get_config_value(CONFIG_LFLAGS)));
     // OUT: BUILD = build
     if (m_flags & OPTION_B) {
-        m_fout << m_align(CONFIG_BD) << " = " << m_cfg.get_config_value(CONFIG_BD) << endl;
+        add_component(new MSimpleVariableDef(CONFIG_BD, m_cfg.get_config_value(CONFIG_BD)));
     }
-
-    m_fout << endl;
+    add_component(new MBlankLine());
 }
 
-void mfile::output_targets() {
-    m_fout << "# TARGETS\n" << endl;
+void MFile::output_targets() {
+    add_component(new MComment("TARGETS"));
+    add_component(new MBlankLine());
 
     // OUT: TARGET1 = xxx
     // OUT: TARGET2 = xxx
     int idx = m_executable.size() == 1 ? -1 : 1;
     for (auto &exec : m_executable) {
-        m_fout << m_align(m_cfg.make_bin(idx)) << " = " << exec->name() << endl;
+        MVariableDef *target = new MVariableDef(m_cfg.make_bin(idx));
+        target->add_sub_component(new MFilename(exec->name()));
+        add_component(target);
         ++idx;
     }
-    m_fout << endl;
+    add_component(new MBlankLine());
 
     /*
         OUT:
             default: debug
+     */
+    MRule *default_rule = new MRule("default");
+    default_rule->add_dependency(new MComponent("debug"));
 
+    add_component(default_rule);
+    add_component(new MBlankLine());
+
+    /*
+        OUT:
             debug: CXXFLAGS += -g -DDEBUG=1
             debug: $(BUILD)/debug.mode $(TARGET1) $(TARGET2)
+     */
+    if (m_c) {
+        MRule *debug_rule = new MRule("debug");
+        debug_rule->add_command(new MCommand("CFLAGS += -g -DDEBUG=1")); // TODO
+        add_component(debug_rule);
+    }
+    if (m_cpp || m_cc) {
+        MRule *debug_rule = new MRule("debug");
+        debug_rule->add_command(new MCommand("CXXFLAGS += -g -DDEBUG=1")); // TODO
+    }
+    MRule *debug_rule = new MRule("debug");
+    debug_rule->add_dependency(new MFilename(m_build_path + "debug.mode"));
 
+    idx = m_executable.size() == 1 ? -1 : 1;
+    for (size_t i = 0; i < m_executable.size(); ++i) {
+        debug_rule->add_dependency(new MSimpleVariable(m_cfg.make_bin(idx)));
+        ++idx;
+    }
+    add_component(debug_rule);
+    add_component(new MBlankLine());
+
+    /*
+        OUT:
             release: CXXFLAGS += -O3 # -DNDEBUG=1
             release: $(BUILD)/release.mode $(TARGET1) $(TARGET2)
      */
-    m_fout << "default: debug\n" << endl;
-
     if (m_c) {
-        m_fout << "debug: CFLAGS += -g -DDEBUG=1\n";
+        MRule *release_rule = new MRule("release");
+        release_rule->add_command(new MCommand("CFLAGS += -O3 # -DNDEBUG=1")); // TODO
+        add_component(release_rule);
     }
     if (m_cpp || m_cc) {
-        m_fout << "debug: CXXFLAGS += -g -DDEBUG=1\n";
+        MRule *release_rule = new MRule("release");
+        release_rule->add_command(new MCommand("CXXFLAGS += -O3 # -DNDEBUG=1")); // TODO
+        add_component(release_rule);
     }
-    m_fout << "debug: " << m_build_path << "debug.mode";
+    MRule *release_rule = new MRule("release");
+    release_rule->add_dependency(new MFilename(m_build_path + "release.mode"));
     idx = m_executable.size() == 1 ? -1 : 1;
     for (size_t i = 0; i < m_executable.size(); ++i) {
-        m_fout << " $(" << m_cfg.make_bin(idx) << ")";
+        release_rule->add_dependency(new MSimpleVariable(m_cfg.make_bin(idx)));
         ++idx;
     }
-    m_fout << "\n\n";
-
-    if (m_c) {
-        m_fout << "release: CFLAGS += -O3 # -DNDEBUG=1\n";
-    }
-    if (m_cpp || m_cc) {
-        m_fout << "release: CXXFLAGS += -O3 # -DNDEBUG=1\n";
-    }
-    m_fout << "release: " << m_build_path << "release.mode";
-    idx = m_executable.size() == 1 ? -1 : 1;
-    for (size_t i = 0; i < m_executable.size(); ++i) {
-        m_fout << " $(" << m_cfg.make_bin(idx) << ")";
-        ++idx;
-    }
-    m_fout << "\n\n";
+    add_component(release_rule);
+    add_component(new MBlankLine());
 }
 
 static void find_all_headers(vector<cfile> &files, cfile *file) {
@@ -237,8 +259,8 @@ static void find_all_headers(vector<cfile> &files, cfile *file) {
     }
 }
 
-void mfile::output_executable_details() {
-    m_fout << "# EXECUTABLE DETAILS\n" << endl;
+void MFile::output_executable_details() {
+    add_component(new MComment("EXECUTABLE DETAILS"));
 
     // Print executable
     // TODO: add new flag to disable "hide the index number"
@@ -250,7 +272,8 @@ void mfile::output_executable_details() {
         // if only one executable, hide the index number
 
         // OUT: OBJ1 = xxx.o
-        m_fout << m_align(m_cfg.make_obj(idx)) << " = " << exec->name() << ".o";
+        MVariableDef *obj = new MVariableDef(m_cfg.make_obj(idx));
+        obj->add_sub_component(new MFilename(exec->name() + ".o"));
 
         // OUT: all objects dependency.
         find_all_headers(m_cfiles, exec);
@@ -258,18 +281,18 @@ void mfile::output_executable_details() {
             if (cfile->visited()) {
                 if (cfile->associate() != NULL && cfile->is_source() && &(*cfile) != exec) {
                     // OUT: xxx.o
-                    m_fout << " " << cfile->associate()->name() << ".o";
+                    obj->add_sub_component(new MFilename(cfile->associate()->name() + ".o"));
                 }
                 cfile->set_visited(false);
             }
         }
 
-        m_fout << endl;
+        add_component(obj);
 
         ++idx;
     }
 
-    m_fout << endl;
+    add_component(new MBlankLine());
 
     // OUT: OBJ1BD = $(OBJ1:%=$(BUILD)/%)
     //      OBJ2BD = $(OBJ2:%=$(BUILD)/%)
@@ -277,12 +300,13 @@ void mfile::output_executable_details() {
         idx = m_executable.size() == 1 ? -1 : 1;
         for (size_t i = 0; i < m_executable.size(); ++i) {
             // OUT: OBJ1BD = $(OBJ1:%=$(BUILD)/%)
-            m_fout << m_align(m_cfg.make_obj_bd(idx)) << " = $(" << m_cfg.make_obj(idx) << ":%=$(" << CONFIG_BD
-                   << ")/%)\n";
+            MVariableDef *obj_bd = new MVariableDef(m_cfg.make_obj_bd(idx));
+            obj_bd->add_sub_component(new MSimpleVariable(m_cfg.make_obj(idx) + string(":%=$(") + CONFIG_BD + ")/%"));
+            add_component(obj_bd);
             ++idx;
         }
 
-        m_fout << endl;
+        add_component(new MBlankLine());
     }
 
     // OUT: $(TARGET1): $(OBJ1BD)
@@ -291,66 +315,89 @@ void mfile::output_executable_details() {
     //          $(CC) $(CFLAGS) -o $@ $^ $(LFLAGS)
     idx = m_executable.size() == 1 ? -1 : 1;
     for (auto &exec : m_executable) {
+        MRule *rule = new MRule(MSimpleVariable(m_cfg.make_bin(idx)));
         if (m_flags & OPTION_B) {
             // OUT: $(TARGET1): $(OBJ1BD)
-            m_fout << "$(" << m_cfg.make_bin(idx) << "): $(" << m_cfg.make_obj_bd(idx) << ")\n";
+            rule->add_dependency(new MSimpleVariable(m_cfg.make_obj_bd(idx)));
         } else {
             // OUT: $(TARGET1): $(OBJ1)
-            m_fout << "$(" << m_cfg.make_bin(idx) << "): $(" << m_cfg.make_obj(idx) << ")\n";
+            rule->add_dependency(new MSimpleVariable(m_cfg.make_obj(idx)));
         }
 
         //! CXXFLAGS may contain dynamic libs such as -lm, this should be
-        //! put behind the objects which use them.
+        //! put behind the objects which uses them.
         if (exec->is_c_source()) {
             // OUT: $(CC) $(CFLAGS) -o $@ $^ $(LFLAGS)
-            m_fout << "\t$(" << CONFIG_CC << ") $(" << CONFIG_CFLAGS << ") -o $@ $^ $(" << CONFIG_LFLAGS << ")\n";
+            MCommand *cmd = new MCommand();
+            *cmd << MSimpleVariable(CONFIG_CC) << MSimpleVariable(CONFIG_CFLAGS) << "-o $@ $^"
+                 << MSimpleVariable(CONFIG_LFLAGS);
+            rule->add_command(cmd);
         } else if (exec->is_cxx_source()) {
             // OUT: $(CXX) $(CXXFLAGS) -o $@ $^ $(LFLAGS)
-            m_fout << "\t$(" << CONFIG_CXX << ") $(" << CONFIG_CXXFLAGS << ") -o $@ $^ $(" << CONFIG_LFLAGS << ")\n";
+            MCommand *cmd = new MCommand();
+            *cmd << MSimpleVariable(CONFIG_CXX) << MSimpleVariable(CONFIG_CXXFLAGS) << "-o $@ $^"
+                 << MSimpleVariable(CONFIG_LFLAGS);
+            rule->add_command(cmd);
         } else {
             // TODO error handle
             assert(0);
         }
 
-        m_fout << endl;
+        add_component(rule);
+        add_component(new MBlankLine());
 
         ++idx;
     }
 }
 
-void mfile::output_compile_to_objects() {
-    m_fout << "# COMPILE TO OBJECTS\n" << endl;
+void MFile::output_compile_to_objects() {
+    add_component(new MComment("COMPILE TO OBJECTS"));
 
     if (m_c) {
         // OUT: $(BUILD)/%.o: %.c
-        m_fout << m_build_path << "%.o: %.c\n";
+        // OUT:     @mkdir -p "$(BUILD)"
+        // OUT:     $(CC) $(CFLAGS) -c -o $@ $<
+        MRule *rule = new MRule(MFilename(m_build_path + "%.o"));
+        rule->add_dependency(new MFilename("%.c"));
+        add_mkdir_build_cmd_if_option_b(rule);
 
-        output_mk_build_if_option_b();
+        MCommand *cmd = new MCommand();
+        *cmd << MSimpleVariable(CONFIG_CC) << MSimpleVariable(CONFIG_CFLAGS) << "-c -o $@ $<";
+        rule->add_command(cmd);
 
-        // OUT: $(CC) $(CFLAGS) -c -o $@ $<
-        m_fout << "\t$(" << CONFIG_CC << ") $(" << CONFIG_CFLAGS << ") -c -o $@ $<\n\n";
+        add_component(rule);
     }
     if (m_cpp) {
         // OUT: $(BUILD)/%.o: %.cpp
-        m_fout << m_build_path << "%.o: %.cpp\n";
+        // OUT:     @mkdir -p "$(BUILD)"
+        // OUT:     $(CXX) $(CXXFLAGS) -c -o $@ $<
+        MRule *rule = new MRule(MFilename(m_build_path + "%.o"));
+        rule->add_dependency(new MFilename("%.cpp"));
+        add_mkdir_build_cmd_if_option_b(rule);
 
-        output_mk_build_if_option_b();
+        MCommand *cmd = new MCommand();
+        *cmd << MSimpleVariable(CONFIG_CXX) << MSimpleVariable(CONFIG_CXXFLAGS) << "-c -o $@ $<";
+        rule->add_command(cmd);
 
-        // OUT: $(CXX) $(CXXFLAGS) -c -o $@ $<
-        m_fout << "\t$(" << CONFIG_CXX << ") $(" << CONFIG_CXXFLAGS << ") -c -o $@ $<\n\n";
+        add_component(rule);
     }
     if (m_cc) {
         // OUT: $(BUILD)/%.o: %.cc
-        m_fout << m_build_path << "%.o: %.cc\n";
+        // OUT:     @mkdir -p "$(BUILD)"
+        // OUT:     $(CXX) $(CXXFLAGS) -c -o $@ $<
+        MRule *rule = new MRule(MFilename(m_build_path + "%.o"));
+        rule->add_dependency(new MFilename("%.cc"));
+        add_mkdir_build_cmd_if_option_b(rule);
 
-        output_mk_build_if_option_b();
+        MCommand *cmd = new MCommand();
+        *cmd << MSimpleVariable(CONFIG_CXX) << MSimpleVariable(CONFIG_CXXFLAGS) << "-c -o $@ $<";
+        rule->add_command(cmd);
 
-        // OUT: $(CXX) $(CXXFLAGS) -c -o $@ $<
-        m_fout << "\t$(" << CONFIG_CXX << ") $(" << CONFIG_CXXFLAGS << ") -c -o $@ $<\n\n";
+        add_component(rule);
     }
 }
 
-void mfile::output_mode_control() {
+void MFile::output_mode_control() {
     // OUT:
     //    # MODE CONTROL
     //
@@ -364,48 +411,60 @@ void mfile::output_mode_control() {
     //            touch "$@";
     //        fi
 
-    m_fout << "# MODE CONTROL\n" << endl;
+    add_component(new MComment("MODE CONTROL"));
 
-    m_fout << m_build_path << "%.mode:\n";
-    m_fout << "\t@if [ ! -f \"$@\" ]; then \\" << endl;
+    MRule *rule = new MRule(MFilename(m_build_path + "%.mode"));
+
+    MCommand *cmd = new MCommand();
+    cmd->set_separator("");
+    cmd->set_prefix(M_COMMAND_PREFIX_ECHO_OFF);
+
+    *cmd << "if [ ! -f \"$@\" ]; then \\\n";
 
     if (m_flags & OPTION_B) {
         // If build directory exists, then switch to another mode.
         // If not, then "make clean" is not needed.
-        m_fout << "\t\tif [ -d \"$(" << CONFIG_BD << ")\" ]; then \\" << endl;
-        m_fout << "\t\t\techo \"Switching to $* mode...\"; \\" << endl;
-        m_fout << "\t\t\t$(MAKE) clean; \\" << endl;
-        m_fout << "\t\tfi; \\" << endl;
-        m_fout << "\t\tmkdir -p \"$(" << CONFIG_BD << ")\"; \\" << endl;
+        *cmd << "\t\tif [ -d \"" << MSimpleVariable(CONFIG_BD) << "\" ]; then \\\n";
+        *cmd << "\t\t\techo \"Switching to $* mode...\"; \\\n";
+        *cmd << "\t\t\t" << MSimpleVariable(CONFIG_MAKE) << " clean; \\\n";
+        *cmd << "\t\tfi; \\\n";
+        *cmd << "\t\tmkdir -p \"" << MSimpleVariable(CONFIG_BD) << "\"; \\\n";
     } else {
         // "make clean" anyway
-        m_fout << "\t\t$(MAKE) clean; \\" << endl;
+        *cmd << "\t\t" << MSimpleVariable(CONFIG_MAKE) << " clean; \\\n";
     }
 
-    m_fout << "\t\ttouch \"$@\"; \\" << endl;
-    m_fout << "\tfi\n" << endl;
+    *cmd << "\t\ttouch \"$@\"; \\\n";
+    *cmd << "\tfi\n\n";
+
+    rule->add_command(cmd);
+
+    add_component(rule);
 }
 
-void mfile::output_clean_up() {
-    m_fout << "# CLEAN UP\n" << endl;
+void MFile::output_clean_up() {
+    add_component(new MComment("CLEAN UP"));
 
-    m_fout << "clean:\n";
+    MRule *clean_rule = new MRule("clean");
 
     // if only one executable, hide the index number
     if (m_flags & OPTION_B) {
         // OUT: rm -f "$(TARGET1)" "$(TARGET2)" $(BUILD)
 
-        m_fout << "\trm -rf";
+        MCommand *cmd = new MCommand();
+        *cmd << "rm -rf";
 
         int idx = m_executable.size() == 1 ? -1 : 1;
         for (size_t i = 0; i < m_executable.size(); ++i) {
             // OUT: "$(TARGET1)"
-            m_fout << " \"$(" << m_cfg.make_bin(idx) << ")\"";
+            *cmd << "\"" << MSimpleVariable(m_cfg.make_bin(idx)) << "\"";
             ++idx;
         }
 
         // OUT: $(BUILD)
-        m_fout << " \"$(" << CONFIG_BD << ")\"\n";
+        *cmd << " \"" << MSimpleVariable(CONFIG_BD) << "\"";
+
+        clean_rule->add_command(cmd);
     } else {
         //? Why not "rm -f *.o"?
         //* Because sometimes we may compile with other pre-compiled .o files
@@ -414,33 +473,43 @@ void mfile::output_clean_up() {
         // OUT rm -f depend.mk "$(TARGET1)" "$(TARGET2)" $(OBJ1) $(OBJ2)
 
         // OUT("\trm -f");
-        m_fout << "\trm -f";
+        MCommand *cmd = new MCommand();
+        *cmd << "rm -f";
 
         // OUT: depend.mk
-        m_fout << " " << m_build_path << CONFIG_DEPENDENCIES_FILENAME;
+        *cmd << " \"" << MFilename(m_build_path + CONFIG_DEPENDENCIES_FILENAME) << "\"";
 
         int idx = m_executable.size() == 1 ? -1 : 1;
         for (size_t i = 0; i < m_executable.size(); ++i) {
             // OUT: "$(TARGET1)"
-            m_fout << " \"$(" << m_cfg.make_bin(idx++) << ")\"";
+            *cmd << " \"" << MSimpleVariable(m_cfg.make_bin(idx)) << "\"";
         }
         idx = m_executable.size() == 1 ? -1 : 1;
         for (size_t i = 0; i < m_executable.size(); ++i) {
             // OUT: $(OBJ1)
-            m_fout << " $(" << m_cfg.make_obj(idx++) << ")";
+            *cmd << " " << MSimpleVariable(m_cfg.make_obj(idx++));
         }
-        m_fout << endl;
     }
 
-    m_fout << endl;
+    add_component(clean_rule);
+    add_component(new MBlankLine());
 }
 
-void mfile::output_phony() {
-    m_fout << "# PHONY\n" << endl;
-    m_fout << ".PHONY: default debug release clean\n" << endl;
+void MFile::output_phony() {
+    // OUT: # PHONY
+    // OUT: .PHONY: default debug release clean
+    add_component(new MComment("PHONY"));
+
+    MRule *rule = new MRule(".PHONY");
+    rule->add_dependency(new MComponent("default"));
+    rule->add_dependency(new MComponent("debug"));
+    rule->add_dependency(new MComponent("release"));
+    rule->add_dependency(new MComponent("clean"));
+
+    add_component(rule);
 }
 
-void mfile::output_mm_dependencies() {
+void MFile::output_mm_dependencies() {
     string c_types, cxx_types;
 
     if (m_c) {
@@ -455,57 +524,73 @@ void mfile::output_mm_dependencies() {
         cxx_types += " *.cpp";
     }
 
-    m_fout << "# DEPENDENCIES\n" << endl;
+    add_component(new MComment("DEPENDENCIES"));
 
     // OUT: SRC = $(wildcard *.h *.hpp *.c *.cpp *.cc)
-    m_fout << "SRC = $(wildcard *.h *.hpp *.c *.cpp *.cc)\n";
-
-    m_fout << endl;
+    add_component(new MSimpleVariableDef("SRC", "$(wildcard *.h *.hpp *.c *.cpp *.cc)"));
+    add_component(new MBlankLine());
 
     // OUT: $(BUILD)/depend.mk: $(SRC)
-    m_fout << m_build_path << CONFIG_DEPENDENCIES_FILENAME << ": $(SRC)\n";
+    // m_fout << m_build_path << CONFIG_DEPENDENCIES_FILENAME << ": $(SRC)\n";
+    MRule *depend_rule = new MRule(MFilename(m_build_path + CONFIG_DEPENDENCIES_FILENAME));
+    depend_rule->add_dependency(new MSimpleVariable("SRC"));
 
-    output_mk_build_if_option_b();
+    add_mkdir_build_cmd_if_option_b(depend_rule);
 
     // OUT: @rm -f "$@"
-    m_fout << "\t@rm -f \"$@\"\n";
+    // m_fout << "\t@rm -f \"$@\"\n";
+    depend_rule->add_command(new MCommand("rm -f \"$@\"", M_COMMAND_PREFIX_ECHO_OFF));
     if (m_flags & OPTION_B) {
         if (m_c) {
             // OUT: @$(CC) $(CFLAGS) -MM *.c | sed 's/^\\(.*\\).o:/$$(BUILD)\/\1.o:/' >> $@
-            m_fout << "\t@$(" << CONFIG_CC << ") $(" << CONFIG_CFLAGS << ") -MM" << c_types
-                   << " | sed 's/^\\(.*\\).o:/$$(" << CONFIG_BD << ")\\/\\1.o:/' >> $@\n";
+            MCommand *cmd = new MCommand(M_COMMAND_PREFIX_ECHO_OFF);
+            *cmd << MSimpleVariable(CONFIG_CC) << MSimpleVariable(CONFIG_CFLAGS) << "-MM" << c_types
+                 << " | sed 's/^\\(.*\\).o:/$$(" << CONFIG_BD << ")\\/\\1.o:/' >> $@"; // TODO
+            depend_rule->add_command(cmd);
         }
 
         if (m_cc || m_cpp) {
             // OUT: @$(CXX) $(CXXFLAGS) -MM *.cpp *.cc | sed 's/^\\(.*\\).o:/$$(BUILD)\/\1.o:/' > $@
-            m_fout << "\t@$(" << CONFIG_CXX << ") $(" << CONFIG_CXXFLAGS << ") -MM" << cxx_types
-                   << " | sed 's/^\\(.*\\).o:/$$(" << CONFIG_BD << ")\\/\\1.o:/' >> $@\n";
+            // m_fout << "\t@$(" << CONFIG_CXX << ") $(" << CONFIG_CXXFLAGS << ") -MM" << cxx_types
+            //        << " | sed 's/^\\(.*\\).o:/$$(" << CONFIG_BD << ")\\/\\1.o:/' >> $@\n";
+            MCommand *cmd = new MCommand(M_COMMAND_PREFIX_ECHO_OFF);
+            *cmd << MSimpleVariable(CONFIG_CXX) << MSimpleVariable(CONFIG_CXXFLAGS) << "-MM" << cxx_types
+                 << " | sed 's/^\\(.*\\).o:/$$(" << CONFIG_BD << ")\\/\\1.o:/' >> $@"; // TODO
+            depend_rule->add_command(cmd);
         }
     } else {
         if (m_c) {
             // OUT: @$(CC) $(CFLAGS) -MM *.c >> $@
-            m_fout << "\t@$(" << CONFIG_CC << ") $(" << CONFIG_CFLAGS << ") -MM" << c_types << " >> $@\n";
+            // m_fout << "\t@$(" << CONFIG_CC << ") $(" << CONFIG_CFLAGS << ") -MM" << c_types << " >> $@\n";
+            MCommand *cmd = new MCommand(M_COMMAND_PREFIX_ECHO_OFF);
+            *cmd << MSimpleVariable(CONFIG_CC) << MSimpleVariable(CONFIG_CFLAGS) << "-MM" << c_types
+                 << " >> $@"; // TODO
+            depend_rule->add_command(cmd);
         }
         if (m_cc || m_cpp) {
             // OUT: @$(CXX) $(CXXFLAGS) -MM *.cpp *.cc >> $@
-            m_fout << "\t@$(" << CONFIG_CXX << ") $(" << CONFIG_CXXFLAGS << ") -MM" << cxx_types << " >> $@\n";
+            // m_fout << "\t@$(" << CONFIG_CXX << ") $(" << CONFIG_CXXFLAGS << ") -MM" << cxx_types << " >> $@\n";
+            MCommand *cmd = new MCommand(M_COMMAND_PREFIX_ECHO_OFF);
+            *cmd << MSimpleVariable(CONFIG_CXX) << MSimpleVariable(CONFIG_CXXFLAGS) << "-MM" << cxx_types
+                 << " >> $@"; // TODO
+            depend_rule->add_command(cmd);
         }
     }
-
-    m_fout << endl;
+    add_component(depend_rule);
 
     // OUT: include $(BUILD)/depend.mk
-    m_fout << "include " << m_build_path << CONFIG_DEPENDENCIES_FILENAME << endl;
-
-    m_fout << endl;
+    // m_fout << "include " << m_build_path << CONFIG_DEPENDENCIES_FILENAME << endl;
+    MCompComponent *comp = new MCompComponent();
+    *comp << "include " << MFilename(m_build_path + CONFIG_DEPENDENCIES_FILENAME); // TODO
+    add_component(comp);
 }
 
 /*==========================================================================*/
 
-void mfile::output_part() {
+void MFile::output_part() {
 }
 
-void mfile::output_gitignore() {
+void MFile::output_gitignore() {
     /*
     if (m_flags & OPTION_B) {
         m_binaries.push_back("build/");
@@ -541,13 +626,16 @@ void mfile::output_gitignore() {
 
 /*==========================================================================*/
 
-void mfile::output_mk_build_if_option_b() {
+void MFile::add_mkdir_build_cmd_if_option_b(MRule *rule) {
     // Character before command:
     //   '@': turn off echo.
     //   '-': ignore error, make will exit when error occurs.
     //   '+': ignore make's -n -t -q options.
     if (m_flags & OPTION_B) {
         // OUT @mkdir -p "$(BUILD)"
-        m_fout << "\t@mkdir -p \"$(" << CONFIG_BD << ")\"" << endl;
+        MCommand *cmd = new MCommand();
+        cmd->set_prefix(M_COMMAND_PREFIX_ECHO_OFF);
+        *cmd << "mkdir -p \"" << MSimpleVariable(CONFIG_BD) << "\"";
+        rule->add_command(cmd);
     }
 }

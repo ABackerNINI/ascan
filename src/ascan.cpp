@@ -77,7 +77,7 @@ int ascan::start() {
     print_cfiles();
     associate_header();
 
-    mfile mf(m_cfiles, m_cfg, m_flags);
+    MFile mf(m_cfiles, m_cfg, m_flags);
 
     return mf.output();
 }

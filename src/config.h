@@ -43,6 +43,8 @@
 // Can NOT contain '/'.
 #define CONFIG_BD "BUILD"
 
+#define CONFIG_MAKE "MAKE"
+
 #define CONFIG_DEFAULT_V_CC "gcc"
 #define CONFIG_DEFAULT_V_CXX "g++"
 #define CONFIG_DEFAULT_V_CFLAGS "-W -Wall"

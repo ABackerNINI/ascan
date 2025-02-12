@@ -12,45 +12,45 @@
 #include <type_traits>
 #include <vector>
 
-class mfile {
-  public:
-    mfile(std::vector<cfile> &cfiles, Config &cfg, uint32_t flags);
-    int output();
-
-  private:
-    void prepare();
-    void output_build_details();
-    void output_targets();
-    void output_compile_to_objects();
-    void output_executable_details();
-    void output_mode_control();
-    void output_clean_up();
-    void output_phony();
-
-    // Output dependencies using gcc -MM.
-    void output_mm_dependencies();
-
-    void output_mk_build_if_option_b();
-
-    void output_part();
-
-    void output_gitignore();
-
-  private:
-    std::vector<cfile> &m_cfiles;
-    Config &m_cfg;
-    // bool m_flag_a;
-    uint32_t m_flags;
-    std::ofstream m_fout;
-    std::vector<cfile *> m_executable;
-    std::vector<std::string> m_binaries; // files to be added to gitignore
-    Align m_align;
-
-    bool m_c;
-    bool m_cc;
-    bool m_cpp;
-    std::string m_build_path; // = "$(BUILD)/" iff OPTION_B is set
-};
+// class mfile {
+//   public:
+//     mfile(std::vector<cfile> &cfiles, Config &cfg, uint32_t flags);
+//     int output();
+//
+//   private:
+//     void prepare();
+//     void output_build_details();
+//     void output_targets();
+//     void output_compile_to_objects();
+//     void output_executable_details();
+//     void output_mode_control();
+//     void output_clean_up();
+//     void output_phony();
+//
+//     // Output dependencies using gcc -MM.
+//     void output_mm_dependencies();
+//
+//     void output_mk_build_if_option_b();
+//
+//     void output_part();
+//
+//     void output_gitignore();
+//
+//   private:
+//     std::vector<cfile> &m_cfiles;
+//     Config &m_cfg;
+//     // bool m_flag_a;
+//     uint32_t m_flags;
+//     std::ofstream m_fout;
+//     std::vector<cfile *> m_executable;
+//     std::vector<std::string> m_binaries; // files to be added to gitignore
+//     Align m_align;
+//
+//     bool m_c;
+//     bool m_cc;
+//     bool m_cpp;
+//     std::string m_build_path; // = "$(BUILD)/" iff OPTION_B is set
+// };
 
 // Component of a Makefile.
 class MComponent {
@@ -133,7 +133,6 @@ class MFilename : public MComponent {
     MFilename(const std::string &name) : MComponent(name) {}
 
     virtual std::string to_string() const {
-
         for (auto &c : m_name) {
             if (std::isspace(c)) {
                 return "\"" + m_name + "\"";
@@ -143,9 +142,9 @@ class MFilename : public MComponent {
     }
 };
 
-class MVariable : public MComponent {
+class MSimpleVariable : public MComponent {
   public:
-    MVariable(const std::string &name) : MComponent(name) {}
+    MSimpleVariable(const std::string &name) : MComponent(name) {}
 
     virtual std::string to_string() const { return "$(" + m_name + ")"; }
 };
@@ -186,11 +185,14 @@ enum MCommandPrefix {
 
 class MCommand : public MCompComponent {
   public:
-    MCommand(const std::string &command = "") : MCompComponent("MCommand", " "), m_prefix(M_COMMAND_PREFIX_NONE) {
+    MCommand(const std::string &command = "", MCommandPrefix prefix = M_COMMAND_PREFIX_NONE)
+        : MCompComponent("MCommand", " "), m_prefix(prefix) {
         if (!command.empty()) {
             add_sub_component(new MComponent(command));
         }
     }
+
+    MCommand(MCommandPrefix prefix) : MCompComponent("MCommand", " "), m_prefix(prefix) {}
 
     virtual std::string to_string() const {
         if (m_prefix == M_COMMAND_PREFIX_NONE) {
@@ -208,6 +210,7 @@ class MCommand : public MCompComponent {
 class MRule : public MComponent {
   public:
     MRule(const std::string &name = "MRule") : MComponent(name) {}
+    MRule(const MComponent &name) : MComponent(name.to_string()) {}
 
     virtual ~MRule() {
         for (auto &dependency : m_dependencies) {
@@ -223,7 +226,6 @@ class MRule : public MComponent {
     void add_command(MComponent *command) { m_commands.push_back(command); }
 
     virtual std::string to_string() const {
-
         std::string dependencies;
         for (const auto &dependency : m_dependencies) {
             dependencies += dependency->to_string() + " ";
@@ -244,7 +246,7 @@ class MRule : public MComponent {
 
 class MFile {
   public:
-    MFile() {}
+    MFile(std::vector<cfile> &cfiles, Config &cfg, uint32_t flags);
 
     ~MFile() {
         for (auto &component : m_components) {
@@ -278,10 +280,44 @@ class MFile {
         return mfile;
     }
 
-    template <typename T> friend MFile &operator<<(MFile *mfile, T component) { return *mfile << component; }
+    int output();
+
+  protected:
+    void prepare();
+
+    void output_build_details();
+    void output_targets();
+    void output_compile_to_objects();
+    void output_executable_details();
+    void output_mode_control();
+    void output_clean_up();
+    void output_phony();
+
+    // Output dependencies using gcc -MM.
+    void output_mm_dependencies();
+
+    void add_mkdir_build_cmd_if_option_b(MRule *rule);
+
+    void output_part();
+
+    void output_gitignore();
 
   protected:
     std::vector<MComponent *> m_components;
+
+    std::vector<cfile> &m_cfiles;
+    Config &m_cfg;
+    // bool m_flag_a;
+    uint32_t m_flags;
+    std::ofstream m_fout;
+    std::vector<cfile *> m_executable;
+    std::vector<std::string> m_binaries; // files to be added to gitignore
+    Align m_align;
+
+    bool m_c;
+    bool m_cc;
+    bool m_cpp;
+    std::string m_build_path; // = "$(BUILD)/" iff OPTION_B is set
 };
 
 #endif //_AUTO_SCAN_MFILE_H_
