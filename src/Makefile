@@ -1,7 +1,7 @@
 # BUILD DETAILS
 
 CXX      = g++
-CXXFLAGS = -W -Wall -g
+CXXFLAGS = -W -Wall -g -std=c++20
 LFLAGS   = -lm
 BUILD    = build
 
