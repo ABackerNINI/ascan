@@ -142,9 +142,9 @@ class MBlankLine : public MComponent {
 //   '-': ignore error, make will exit when error occurs.
 //   '+': ignore make's -n -t -q options.
 enum MCommandPrefix {
-    M_COMMAND_PREFIX_NONE = ' ',
-    M_COMMAND_PREFIX_ECHO_OFF = '@',
-    M_COMMAND_PREFIX_IGNORE_ERROR = '-',
+    M_COMMAND_PREFIX_NONE                = ' ',
+    M_COMMAND_PREFIX_ECHO_OFF            = '@',
+    M_COMMAND_PREFIX_IGNORE_ERROR        = '-',
     M_COMMAND_PREFIX_IGNORE_MAKE_OPTIONS = '+'
 };
 

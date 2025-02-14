@@ -14,10 +14,10 @@
 
 using namespace std;
 
-const std::vector<std::string> cfile::file_type_ext = {".h", ".hpp", ".c", ".cpp", ".cc"};
-const std::vector<cfile::FILE_TYPE> cfile::c_header_types = {FILE_TYPE_H};
+const std::vector<std::string> cfile::file_type_ext         = {".h", ".hpp", ".c", ".cpp", ".cc"};
+const std::vector<cfile::FILE_TYPE> cfile::c_header_types   = {FILE_TYPE_H};
 const std::vector<cfile::FILE_TYPE> cfile::cxx_header_types = {FILE_TYPE_H, FILE_TYPE_HPP};
-const std::vector<cfile::FILE_TYPE> cfile::c_source_types = {FILE_TYPE_C};
+const std::vector<cfile::FILE_TYPE> cfile::c_source_types   = {FILE_TYPE_C};
 const std::vector<cfile::FILE_TYPE> cfile::cxx_source_types = {FILE_TYPE_CPP, FILE_TYPE_CC};
 
 /*==========================================================================*/
@@ -32,13 +32,13 @@ cfile::cfile(const string &filename, const string &name) : m_filename(filename),
 
     assert(ext);
 
-    m_have_main_func = false;
+    m_have_main_func   = false;
     m_includes_matched = false;
 
     m_file_type = determine_type(ext);
 
     m_associate = NULL;
-    m_visited = false;
+    m_visited   = false;
 }
 
 void cfile::set_have_main_func(bool have_main_func) {
@@ -77,7 +77,7 @@ void cfile::associate_header(vector<cfile> &files) {
     // TODO: multi-directory makefile
     for (auto file = files.begin(); file != files.end(); ++file) {
         if (file->is_header() && m_name == file->m_name) {
-            m_associate = &(*file);
+            m_associate       = &(*file);
             file->m_associate = this;
             print_debug("associated: %s <-> %s\n", m_filename.c_str(), file->m_filename.c_str());
             break;
@@ -172,7 +172,7 @@ bool is_concerned_file_type(const std::string &ext) {
 }
 
 static bool recursion_scan_dir_c_cxx_files_helper(char *dir, vector<cfile> &vec) {
-    DIR *p_dir = NULL;
+    DIR *p_dir             = NULL;
     struct dirent *p_entry = NULL;
     struct stat statbuf;
     bool ret = true;
@@ -183,7 +183,7 @@ static bool recursion_scan_dir_c_cxx_files_helper(char *dir, vector<cfile> &vec)
     }
 
     size_t len = strlen(dir);
-    dir[len] = '/';
+    dir[len]   = '/';
 
     while (NULL != (p_entry = readdir(p_dir))) {
         if (len + strlen(p_entry->d_name) + 1 <= FILENAME_MAX) {

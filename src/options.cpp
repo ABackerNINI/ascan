@@ -34,7 +34,7 @@ const size_t options::s_as_opt_size = (sizeof(s_as_opts) / sizeof(as_option));
 /*==========================================================================*/
 
 options::options() {
-    m_long_opts = make_long_opts();
+    m_long_opts  = make_long_opts();
     m_short_opts = make_short_opts();
 }
 
@@ -74,13 +74,13 @@ char *options::make_short_opts() const {
 
 struct option *options::make_long_opts() const {
     struct option *long_opts = new option[s_as_opt_size + 1];
-    int los = 0; // long options size
+    int los                  = 0; // long options size
     for (int i = 0, n = s_as_opt_size; i < n; ++i) {
         if (s_as_opts[i].long_opt) {
-            long_opts[los].name = s_as_opts[i].long_opt;
+            long_opts[los].name    = s_as_opts[i].long_opt;
             long_opts[los].has_arg = s_as_opts[i].arg ? required_argument : no_argument;
-            long_opts[los].flag = NULL;
-            long_opts[los].val = s_as_opts[i].type;
+            long_opts[los].flag    = NULL;
+            long_opts[los].val     = s_as_opts[i].type;
             ++los;
         }
     }
@@ -117,13 +117,13 @@ const options::as_option *options::find_similar_opt(const char *opt) const {
     }
 
     size_t min_dis = INT32_MAX;
-    int min_ind = -1;
+    int min_ind    = -1;
     for (int i = 0, n = s_as_opt_size; i < n; ++i) {
         size_t dis = INT32_MAX, len2;
 
         if (s_as_opts[i].long_opt) {
             len2 = strlen(s_as_opts[i].long_opt);
-            dis = edit_distance(opt, len1, s_as_opts[i].long_opt, len2);
+            dis  = edit_distance(opt, len1, s_as_opts[i].long_opt, len2);
             print_debug_ex("\t'%.*s' '%s' edit_distance: %d\n", (int)len1, opt, s_as_opts[i].long_opt, (int)dis);
             if (dis > len1 / 2 || dis > len2 / 2) {
                 dis = INT32_MAX;

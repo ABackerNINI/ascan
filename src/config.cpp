@@ -7,12 +7,12 @@
 using namespace std;
 
 Config::Config() : output(CONFIG_DEFAULT_OUTPUT), k_bin(CONFIG_BIN), k_obj(CONFIG_OBJ), k_obj_bd(CONFIG_OBJ_BD) {
-    configs[CONFIG_CC] = CONFIG_DEFAULT_V_CC;
-    configs[CONFIG_CXX] = CONFIG_DEFAULT_V_CXX;
-    configs[CONFIG_CFLAGS] = CONFIG_DEFAULT_V_CFLAGS;
+    configs[CONFIG_CC]       = CONFIG_DEFAULT_V_CC;
+    configs[CONFIG_CXX]      = CONFIG_DEFAULT_V_CXX;
+    configs[CONFIG_CFLAGS]   = CONFIG_DEFAULT_V_CFLAGS;
     configs[CONFIG_CXXFLAGS] = CONFIG_DEFAULT_V_CXXFLAGS;
-    configs[CONFIG_LDFLAGS] = CONFIG_DEFAULT_V_LFLAGS;
-    configs[CONFIG_BD] = CONFIG_DEFAULT_V_BD;
+    configs[CONFIG_LDFLAGS]  = CONFIG_DEFAULT_V_LFLAGS;
+    configs[CONFIG_BD]       = CONFIG_DEFAULT_V_BD;
 
     // These are variable names in the Makefile, thus can NOT contain spaces
     check_space(CONFIG_CC);
@@ -72,7 +72,7 @@ string Config::make(const string &s, int i) const {
     if (i == -1) {
         // do not show %d
         string k_bin2 = s;
-        auto it = k_bin2.find("%d");
+        auto it       = k_bin2.find("%d");
         assert(it != k_bin2.npos);
         k_bin2.erase(it, 2);
         sprintf(tmp, k_bin2.c_str(), i);

@@ -131,7 +131,7 @@ class Statement : public Template {
     virtual ~Statement() {}
 
   private:
-    IfStmt *if_stmt = nullptr;
+    IfStmt *if_stmt       = nullptr;
     ShellStmt *shell_stmt = nullptr;
 };
 
@@ -147,7 +147,7 @@ class IfStmt : public Template {
 
   private:
     Expression *expression = nullptr;
-    Compound *compound = nullptr;
+    Compound *compound     = nullptr;
     std::vector<Expression *> elif_expressions;
     std::vector<Compound *> elif_compounds;
     Compound *else_compound = nullptr;
@@ -194,8 +194,8 @@ class ConditionalExpression : public Expression {
 
   private:
     LogicalOrExpression *logical_or_expression = nullptr;
-    Expression *expression1 = nullptr;
-    Expression *expression2 = nullptr;
+    Expression *expression1                    = nullptr;
+    Expression *expression2                    = nullptr;
 };
 
 class LogicalOrExpression : public Expression {
@@ -228,7 +228,7 @@ class LogicalAndExpression : public Expression {
     virtual ~LogicalAndExpression() {}
 
   private:
-    LogicalAndExpression *logical_and_expression = nullptr;
+    LogicalAndExpression *logical_and_expression   = nullptr;
     InclusiveOrExpression *inclusive_or_expression = nullptr;
 };
 
@@ -263,7 +263,7 @@ class ExclusiveOrExpression : public Expression {
 
   private:
     ExclusiveOrExpression *exclusive_or_expression = nullptr;
-    AndExpression *and_expression = nullptr;
+    AndExpression *and_expression                  = nullptr;
 };
 
 class AndExpression : public Expression {
@@ -279,7 +279,7 @@ class AndExpression : public Expression {
     virtual ~AndExpression() {}
 
   private:
-    AndExpression *and_expression = nullptr;
+    AndExpression *and_expression           = nullptr;
     EqualityExpression *equality_expression = nullptr;
 };
 
@@ -296,7 +296,7 @@ class EqualityExpression : public Expression {
     virtual ~EqualityExpression() {}
 
   private:
-    EqualityExpression *equality_expression = nullptr;
+    EqualityExpression *equality_expression     = nullptr;
     RelationalExpression *relational_expression = nullptr;
 };
 
@@ -314,7 +314,7 @@ class RelationalExpression : public Expression {
 
   private:
     RelationalExpression *relational_expression = nullptr;
-    ShiftExpression *shift_expression = nullptr;
+    ShiftExpression *shift_expression           = nullptr;
 };
 
 class ShiftExpression : public Expression {
@@ -330,7 +330,7 @@ class ShiftExpression : public Expression {
     virtual ~ShiftExpression() {}
 
   private:
-    ShiftExpression *shift_expression = nullptr;
+    ShiftExpression *shift_expression       = nullptr;
     AdditiveExpression *additive_expression = nullptr;
 };
 
@@ -347,7 +347,7 @@ class AdditiveExpression : public Expression {
     virtual ~AdditiveExpression() {}
 
   private:
-    AdditiveExpression *additive_expression = nullptr;
+    AdditiveExpression *additive_expression             = nullptr;
     MultiplicativeExpression *multiplicative_expression = nullptr;
 };
 
@@ -365,7 +365,7 @@ class MultiplicativeExpression : public Expression {
 
   private:
     MultiplicativeExpression *multiplicative_expression = nullptr;
-    UnaryExpression *unary_expression = nullptr;
+    UnaryExpression *unary_expression                   = nullptr;
 };
 
 class UnaryExpression : public Expression {
@@ -414,9 +414,9 @@ class PrimaryExpression : public Expression {
     virtual ~PrimaryExpression() {}
 
   private:
-    Literal *literal = nullptr;
-    Variable *variable = nullptr;
-    CmdArgs *cmd_args = nullptr;
+    Literal *literal       = nullptr;
+    Variable *variable     = nullptr;
+    CmdArgs *cmd_args      = nullptr;
     Expression *expression = nullptr;
 };
 

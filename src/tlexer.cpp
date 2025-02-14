@@ -26,7 +26,7 @@ class LowLevelLexer {
 
     bool parse() {
         bool eof = false;
-        lineno = 0;
+        lineno   = 0;
         while (!eof) {
             LowLevelToken token = next_token();
 
@@ -62,7 +62,7 @@ class LowLevelLexer {
   private:
     size_t count(const std::string &str, const std::string &substr) {
         size_t count = 0;
-        size_t pos = 0;
+        size_t pos   = 0;
         while ((pos = str.find(substr, pos)) != std::string::npos) {
             count++;
             pos += substr.length();
@@ -101,7 +101,7 @@ class LowLevelLexer {
                     ascan_begin_count--;
                     if (ascan_begin_count == 0) {
                         ssize_t pos = ss.tellg();
-                        pos = pos == -1 ? line.size() : pos;
+                        pos         = pos == -1 ? line.size() : pos;
                         LowLevelToken token(lineno, colno, LTOK_ASCAN_BLOCK, line.substr(0, pos));
                         line.erase(0, pos);
                         colno += ss.tellg();
@@ -123,9 +123,9 @@ class LowLevelLexer {
   private:
     std::istream &in;
     std::vector<LowLevelToken> tokens;
-    int index = 0;
+    int index  = 0;
     int lineno = 0;
-    int colno = 1;
+    int colno  = 1;
     std::string line;
     int ascan_begin_count = 0;
 };

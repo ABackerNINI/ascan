@@ -127,14 +127,14 @@ int ascan::parse_cmd_args(int argc, char **argv) {
     // -cflags "": set c flags, default: -W -Wall -lm
     // -cxxflags "" set c++ flags, default: -W -Wall
 
-    const char *short_opts = m_options.get_short_opts();
+    const char *short_opts         = m_options.get_short_opts();
     const struct option *long_opts = m_options.get_long_opts();
 
     opterr = 0; // do NOT print error message
 
     int opt, long_ind;
-    int err = 0;
-    enum HELP_TYPE help = HT_NONE;
+    int err                          = 0;
+    enum HELP_TYPE help              = HT_NONE;
     const options::as_option *option = nullptr;
 
     //* We need to use print_msgdump() or print_debug() before --debug
@@ -227,7 +227,7 @@ int ascan::parse_cmd_args(int argc, char **argv) {
                     option = m_options.find_similar_opt(argv[optind - 1]);
                     if (option) {
                         printf("\tDo you mean \"");
-                        char short_opt = option->short_opt;
+                        char short_opt       = option->short_opt;
                         const char *long_opt = option->long_opt;
                         if (short_opt && long_opt) {
                             printf(CC_BEGIN(CC_BRIGHT) "-%c" CC_END ", " CC_BEGIN(CC_BRIGHT) "--%s" CC_END, short_opt,
@@ -269,7 +269,7 @@ END:
 
 ERROR_DEBUG_LEVEL:
     ++err;
-    help = HT_SPECIFIC;
+    help   = HT_SPECIFIC;
     option = m_options.find_opt(options::OT_DEBUG);
 
     goto END;
@@ -336,10 +336,10 @@ bool ascan::test_makefile() {
 
         if (is_exist(makefile1)) {
             m_cfg.output = makefile1;
-            exist = 1;
+            exist        = 1;
         } else if (is_exist(makefile2)) {
             m_cfg.output = makefile2;
-            exist = 2;
+            exist        = 2;
         }
     }
 

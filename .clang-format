@@ -16,7 +16,7 @@ AccessModifierOffset: -2
 AlignAfterOpenBracket: Align
 AlignConsecutiveMacros: false
 # 连续赋值时，对齐所有等号
-AlignConsecutiveAssignments: false
+AlignConsecutiveAssignments: true
 # 连续声明时，对齐所有声明的变量名
 AlignConsecutiveDeclarations: false
 # 左对齐逃脱换行(使用反斜杠换行)的反斜杠
@@ -185,9 +185,9 @@ ObjCSpaceBeforeProtocolList: true
 # Penalty ######################################################################
 
 # 在=后换行的penalty
-PenaltyBreakAssignment: 400
+PenaltyBreakAssignment: 30
 # 在call(后对函数调用换行的penalty
-PenaltyBreakBeforeFirstCallParameter: 19
+PenaltyBreakBeforeFirstCallParameter: 1100
 # 在一个注释中引入换行的penalty
 PenaltyBreakComment: 5
 # 第一次在<<前换行的penalty

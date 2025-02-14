@@ -17,15 +17,15 @@
 class options {
   public:
     enum OPT_TYPE {
-        OT_ALL_SECS = 'a', // -a
-        OT_BUILD = 'b', // -b
-        OT_FORCE = 'f', // -f
-        OT_G = 'g', // -g
-        OT_HELP = 'h', // -h, --help
-        OT_OUTPUT = 'o', // -o, --output
-        OT_VER = 'v', // -v, --ver
+        OT_ALL_SECS  = 'a', // -a
+        OT_BUILD     = 'b', // -b
+        OT_FORCE     = 'f', // -f
+        OT_G         = 'g', // -g
+        OT_HELP      = 'h', // -h, --help
+        OT_OUTPUT    = 'o', // -o, --output
+        OT_VER       = 'v', // -v, --ver
         OT_GITIGNORE = 'i', // -i, --gitignore
-        OT_DEBUG = 200, //     --debug
+        OT_DEBUG     = 200, //     --debug
         OT_CC, //     --cc
         OT_CXX, //     --cxx
         OT_CFLAGS, //     --cflags

@@ -67,7 +67,7 @@ class AscanInfo {
 
 class Template {
   public:
-    virtual bool parse(std::istream &in) = 0;
+    virtual bool parse(std::istream &in)   = 0;
     virtual bool execute(AscanInfo &ainfo) = 0;
     virtual ~Template() {}
 };
