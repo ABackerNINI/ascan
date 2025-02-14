@@ -238,7 +238,7 @@ SpacesInContainerLiterals: true
 SpacesInCStyleCastParentheses: false
 # 在圆括号的(后和)前添加空格
 SpacesInParentheses: false
-# 在方括号的[后和]前添加空格，lamda表达式和未指明大小的数组的声明不受影响
+# 在方括号的[后和]前添加空格，lambda表达式和未指明大小的数组的声明不受影响
 SpacesInSquareBrackets: false
 SpaceBeforeSquareBrackets: false
 
@@ -258,4 +258,4 @@ UseTab:          Never
 
 # https://clang.llvm.org/docs/ClangFormatStyleOptions.html
 
-# Possiable values: {Never/Empty/Always}
+# Possible values: {Never/Empty/Always}
