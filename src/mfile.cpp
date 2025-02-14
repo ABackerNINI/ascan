@@ -56,9 +56,9 @@ int MFile::output() {
         output_targets();
         output_executable_details();
         output_compile_to_objects();
-        output_mode_control();
         output_clean_up();
         output_phony();
+        output_mode_control();
         output_mm_dependencies();
 
         output_gitignore();

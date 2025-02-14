@@ -138,6 +138,7 @@ class MBlankLine : public MComponent {
     virtual std::string to_string() const { return ""; }
 };
 
+// Prefix of a command.
 //   '@': turn off echo.
 //   '-': ignore error, make will exit when error occurs.
 //   '+': ignore make's -n -t -q options.
