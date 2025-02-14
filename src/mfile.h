@@ -207,7 +207,7 @@ class MRule : public MComponent {
             }
         }
 
-        return m_name + ": " + dependencies + (commands.empty() ? "" : "\n" + commands);
+        return m_name + (dependencies.empty() ? ":" : ": " + dependencies) + (commands.empty() ? "" : "\n" + commands);
     }
 
   protected:

@@ -530,37 +530,39 @@ void MFile::output_mm_dependencies() {
     depend_rule->add_command(new MCommand("rm -f \"$@\"", M_COMMAND_PREFIX_ECHO_OFF));
     if (m_flags & OPTION_B) {
         if (m_c) {
-            // OUT: @$(CC) $(CFLAGS) -MM *.c | sed 's/^\\(.*\\).o:/$$(BUILD)\/\1.o:/' >> $@
+            // OUT: @$(CC) $(CFLAGS) -MM *.c $(LFLAGS) | sed 's/^\\(.*\\).o:/$$(BUILD)\/\1.o:/' >> $@
             MCommand *cmd = new MCommand(M_COMMAND_PREFIX_ECHO_OFF);
             cmd->set_separator("");
-            *cmd << MSimpleVariable(CONFIG_CC) << " " << MSimpleVariable(CONFIG_CFLAGS) << " -MM" << c_types
-                 << " | sed 's/^\\(.*\\).o:/$" << MSimpleVariable(CONFIG_BD) << "\\/\\1.o:/' >> $@"; // TODO
+            *cmd << MSimpleVariable(CONFIG_CC) << " " << MSimpleVariable(CONFIG_CFLAGS) << " -MM" << c_types << " "
+                 << MSimpleVariable(CONFIG_LFLAGS) << " | sed 's/^\\(.*\\).o:/$" << MSimpleVariable(CONFIG_BD)
+                 << "\\/\\1.o:/' >> $@"; // TODO
             depend_rule->add_command(cmd);
         }
 
         if (m_cc || m_cpp) {
-            // OUT: @$(CXX) $(CXXFLAGS) -MM *.cpp *.cc | sed 's/^\\(.*\\).o:/$$(BUILD)\/\1.o:/' >> $@
+            // OUT: @$(CXX) $(CXXFLAGS) -MM *.cpp *.cc $(LFLAGS) | sed 's/^\\(.*\\).o:/$$(BUILD)\/\1.o:/' >> $@
             MCommand *cmd = new MCommand(M_COMMAND_PREFIX_ECHO_OFF);
             cmd->set_separator("");
-            *cmd << MSimpleVariable(CONFIG_CXX) << " " << MSimpleVariable(CONFIG_CXXFLAGS) << " -MM" << cxx_types
-                 << " | sed 's/^\\(.*\\).o:/$" << MSimpleVariable(CONFIG_BD) << "\\/\\1.o:/' >> $@"; // TODO
+            *cmd << MSimpleVariable(CONFIG_CXX) << " " << MSimpleVariable(CONFIG_CXXFLAGS) << " -MM" << cxx_types << " "
+                 << MSimpleVariable(CONFIG_LFLAGS) << " | sed 's/^\\(.*\\).o:/$" << MSimpleVariable(CONFIG_BD)
+                 << "\\/\\1.o:/' >> $@"; // TODO
             depend_rule->add_command(cmd);
         }
     } else {
         if (m_c) {
-            // OUT: @$(CC) $(CFLAGS) -MM *.c >> $@
+            // OUT: @$(CC) $(CFLAGS) -MM *.c $(LFLAGS) >> $@
             MCommand *cmd = new MCommand(M_COMMAND_PREFIX_ECHO_OFF);
             cmd->set_separator("");
-            *cmd << MSimpleVariable(CONFIG_CC) << " " << MSimpleVariable(CONFIG_CFLAGS) << " -MM" << c_types
-                 << " >> $@"; // TODO
+            *cmd << MSimpleVariable(CONFIG_CC) << " " << MSimpleVariable(CONFIG_CFLAGS) << " -MM" << c_types << " "
+                 << MSimpleVariable(CONFIG_LFLAGS) << " >> $@"; // TODO
             depend_rule->add_command(cmd);
         }
         if (m_cc || m_cpp) {
-            // OUT: @$(CXX) $(CXXFLAGS) -MM *.cpp *.cc >> $@
+            // OUT: @$(CXX) $(CXXFLAGS) -MM *.cpp *.cc $(LFLAGS) >> $@
             MCommand *cmd = new MCommand(M_COMMAND_PREFIX_ECHO_OFF);
             cmd->set_separator("");
-            *cmd << MSimpleVariable(CONFIG_CXX) << " " << MSimpleVariable(CONFIG_CXXFLAGS) << " -MM" << cxx_types
-                 << " >> $@"; // TODO
+            *cmd << MSimpleVariable(CONFIG_CXX) << " " << MSimpleVariable(CONFIG_CXXFLAGS) << " -MM" << cxx_types << " "
+                 << MSimpleVariable(CONFIG_LFLAGS) << " >> $@"; // TODO
             depend_rule->add_command(cmd);
         }
     }
