@@ -54,10 +54,10 @@ int MFile::output() {
         // output_header_comments();
         output_build_details();
         output_targets();
+        output_phony();
+        output_clean_up();
         output_executable_details();
         output_compile_to_objects();
-        output_clean_up();
-        output_phony();
         output_mode_control();
         output_mm_dependencies();
 
@@ -431,9 +431,6 @@ void MFile::output_mode_control() {
 }
 
 void MFile::output_clean_up() {
-    add_component(new MComment("CLEAN UP"));
-    add_component(new MBlankLine());
-
     MRule *clean_rule = new MRule("clean");
 
     // if only one executable, hide the index number
@@ -485,11 +482,7 @@ void MFile::output_clean_up() {
 }
 
 void MFile::output_phony() {
-    // OUT: # PHONY
     // OUT: .PHONY: default debug release clean
-    add_component(new MComment("PHONY"));
-    add_component(new MBlankLine());
-
     MRule *rule = new MRule(".PHONY");
     rule->add_dependency(new MComponent("default"));
     rule->add_dependency(new MComponent("debug"));
