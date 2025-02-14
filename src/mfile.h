@@ -292,7 +292,6 @@ class MFile {
     std::ofstream m_fout;
     std::vector<cfile *> m_executable;
     std::vector<std::string> m_binaries; // files to be added to gitignore
-    Align m_align;
 
     bool m_c;
     bool m_cc;
