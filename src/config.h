@@ -38,7 +38,7 @@
 // Can NOT contain spaces.
 #define CONFIG_CXXFLAGS "CXXFLAGS"
 // Can NOT contain spaces.
-#define CONFIG_LFLAGS "LFLAGS"
+#define CONFIG_LDFLAGS "LDFLAGS"
 // Can NOT contain spaces.
 // Can NOT contain '/'.
 #define CONFIG_BD "BUILD"

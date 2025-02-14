@@ -106,7 +106,7 @@ void MFile::prepare() {
         m_align.add(CONFIG_CXXFLAGS);
     }
 
-    m_align.add(CONFIG_LFLAGS);
+    m_align.add(CONFIG_LDFLAGS);
     m_align.add(CONFIG_BD);
 
     if (m_executable.size() <= 1) {
@@ -145,7 +145,7 @@ void MFile::output_build_details() {
                                              m_cfg.get_config_value(CONFIG_CXXFLAGS) + flag_g));
     }
     // OUT: LFLAGS = -lm
-    add_component(new MSimpleVariableDef(m_align(CONFIG_LFLAGS).to_string(), m_cfg.get_config_value(CONFIG_LFLAGS)));
+    add_component(new MSimpleVariableDef(m_align(CONFIG_LDFLAGS).to_string(), m_cfg.get_config_value(CONFIG_LDFLAGS)));
     // OUT: BUILD = build
     if (m_flags & OPTION_B) {
         add_component(new MSimpleVariableDef(m_align(CONFIG_BD).to_string(), m_cfg.get_config_value(CONFIG_BD)));
@@ -314,13 +314,13 @@ void MFile::output_executable_details() {
             // OUT: $(CC) $(CFLAGS) -o $@ $^ $(LFLAGS)
             MCommand *cmd = new MCommand();
             *cmd << MSimpleVariable(CONFIG_CC) << MSimpleVariable(CONFIG_CFLAGS) << "-o $@ $^"
-                 << MSimpleVariable(CONFIG_LFLAGS);
+                 << MSimpleVariable(CONFIG_LDFLAGS);
             rule->add_command(cmd);
         } else if (exec->is_cxx_source()) {
             // OUT: $(CXX) $(CXXFLAGS) -o $@ $^ $(LFLAGS)
             MCommand *cmd = new MCommand();
             *cmd << MSimpleVariable(CONFIG_CXX) << MSimpleVariable(CONFIG_CXXFLAGS) << "-o $@ $^"
-                 << MSimpleVariable(CONFIG_LFLAGS);
+                 << MSimpleVariable(CONFIG_LDFLAGS);
             rule->add_command(cmd);
         } else {
             // TODO error handle
@@ -536,7 +536,7 @@ void MFile::output_mm_dependencies() {
             MCommand *cmd = new MCommand(M_COMMAND_PREFIX_ECHO_OFF);
             cmd->set_separator("");
             *cmd << MSimpleVariable(CONFIG_CC) << " " << MSimpleVariable(CONFIG_CFLAGS) << " -MM" << c_types << " "
-                 << MSimpleVariable(CONFIG_LFLAGS) << " | sed 's/^\\(.*\\).o:/$" << MSimpleVariable(CONFIG_BD)
+                 << MSimpleVariable(CONFIG_LDFLAGS) << " | sed 's/^\\(.*\\).o:/$" << MSimpleVariable(CONFIG_BD)
                  << "\\/\\1.o:/' >> $@"; // TODO
             depend_rule->add_command(cmd);
         }
@@ -546,7 +546,7 @@ void MFile::output_mm_dependencies() {
             MCommand *cmd = new MCommand(M_COMMAND_PREFIX_ECHO_OFF);
             cmd->set_separator("");
             *cmd << MSimpleVariable(CONFIG_CXX) << " " << MSimpleVariable(CONFIG_CXXFLAGS) << " -MM" << cxx_types << " "
-                 << MSimpleVariable(CONFIG_LFLAGS) << " | sed 's/^\\(.*\\).o:/$" << MSimpleVariable(CONFIG_BD)
+                 << MSimpleVariable(CONFIG_LDFLAGS) << " | sed 's/^\\(.*\\).o:/$" << MSimpleVariable(CONFIG_BD)
                  << "\\/\\1.o:/' >> $@"; // TODO
             depend_rule->add_command(cmd);
         }
@@ -556,7 +556,7 @@ void MFile::output_mm_dependencies() {
             MCommand *cmd = new MCommand(M_COMMAND_PREFIX_ECHO_OFF);
             cmd->set_separator("");
             *cmd << MSimpleVariable(CONFIG_CC) << " " << MSimpleVariable(CONFIG_CFLAGS) << " -MM" << c_types << " "
-                 << MSimpleVariable(CONFIG_LFLAGS) << " >> $@"; // TODO
+                 << MSimpleVariable(CONFIG_LDFLAGS) << " >> $@"; // TODO
             depend_rule->add_command(cmd);
         }
         if (m_cc || m_cpp) {
@@ -564,7 +564,7 @@ void MFile::output_mm_dependencies() {
             MCommand *cmd = new MCommand(M_COMMAND_PREFIX_ECHO_OFF);
             cmd->set_separator("");
             *cmd << MSimpleVariable(CONFIG_CXX) << " " << MSimpleVariable(CONFIG_CXXFLAGS) << " -MM" << cxx_types << " "
-                 << MSimpleVariable(CONFIG_LFLAGS) << " >> $@"; // TODO
+                 << MSimpleVariable(CONFIG_LDFLAGS) << " >> $@"; // TODO
             depend_rule->add_command(cmd);
         }
     }

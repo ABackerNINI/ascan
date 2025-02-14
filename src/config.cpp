@@ -11,7 +11,7 @@ Config::Config() : output(CONFIG_DEFAULT_OUTPUT), k_bin(CONFIG_BIN), k_obj(CONFI
     configs[CONFIG_CXX] = CONFIG_DEFAULT_V_CXX;
     configs[CONFIG_CFLAGS] = CONFIG_DEFAULT_V_CFLAGS;
     configs[CONFIG_CXXFLAGS] = CONFIG_DEFAULT_V_CXXFLAGS;
-    configs[CONFIG_LFLAGS] = CONFIG_DEFAULT_V_LFLAGS;
+    configs[CONFIG_LDFLAGS] = CONFIG_DEFAULT_V_LFLAGS;
     configs[CONFIG_BD] = CONFIG_DEFAULT_V_BD;
 
     // These are variable names in the Makefile, thus can NOT contain spaces
@@ -19,7 +19,7 @@ Config::Config() : output(CONFIG_DEFAULT_OUTPUT), k_bin(CONFIG_BIN), k_obj(CONFI
     check_space(CONFIG_CXX);
     check_space(CONFIG_CFLAGS);
     check_space(CONFIG_CXXFLAGS);
-    check_space(CONFIG_LFLAGS);
+    check_space(CONFIG_LDFLAGS);
 
     // These may show in the clean section of the Makefile, thus can NOT contain
     // spaces
