@@ -42,7 +42,7 @@ Config::Config() : output(CONFIG_DEFAULT_OUTPUT), k_bin(CONFIG_BIN), k_obj(CONFI
     check_slash(CONFIG_OBJ_BD);
 }
 
-const std::string &Config::get_config_value(const std::string &config_name) const {
+const std::string &Config::get(const std::string &config_name) const {
     auto config = configs.find(config_name);
     if (config == configs.end()) {
         print_error("no such config: \"%s\"", config_name.c_str());
@@ -51,7 +51,7 @@ const std::string &Config::get_config_value(const std::string &config_name) cons
     return config->second;
 }
 
-void Config::set_config(const std::string &config_name, const std::string &config_value) {
+void Config::set(const std::string &config_name, const std::string &config_value) {
     configs[config_name] = config_value;
 }
 

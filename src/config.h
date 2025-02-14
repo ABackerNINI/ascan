@@ -83,8 +83,11 @@ class Config {
   public:
     Config();
 
-    const std::string &get_config_value(const std::string &config_name) const;
-    void set_config(const std::string &config_name, const std::string &config_value);
+    // Get the value of the given configuration.
+    const std::string &get(const std::string &config_name) const;
+
+    // Set the value of the given configuration.
+    void set(const std::string &config_name, const std::string &config_value);
 
     // Make the i-th binary file name.
     // For example, if CONFIG_BIN is set to "TARGET%d", then
