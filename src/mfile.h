@@ -283,12 +283,12 @@ class MFile {
     void output_gitignore();
 
   protected:
-    std::vector<MComponent *> m_components;
-
     std::vector<cfile> &m_cfiles;
     Config &m_cfg;
-    // bool m_flag_a;
     uint32_t m_flags;
+
+    std::vector<MComponent *> m_components;
+
     std::ofstream m_fout;
     std::vector<cfile *> m_executable;
     std::vector<std::string> m_binaries; // files to be added to gitignore

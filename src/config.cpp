@@ -6,7 +6,7 @@
 
 using namespace std;
 
-Config::Config() : output(CONFIG_DEFAULT_OUTPUT), k_bin(CONFIG_BIN), k_obj(CONFIG_OBJ), k_obj_bd(CONFIG_OBJ_BD) {
+Config::Config() : output(CONFIG_DEFAULT_OUTPUT), k_bin(CONFIG_BIN), k_obj(CONFIG_OBJS), k_obj_bd(CONFIG_OBJS_BD) {
     configs[CONFIG_CC]       = CONFIG_DEFAULT_V_CC;
     configs[CONFIG_CXX]      = CONFIG_DEFAULT_V_CXX;
     configs[CONFIG_CFLAGS]   = CONFIG_DEFAULT_V_CFLAGS;
@@ -28,8 +28,8 @@ Config::Config() : output(CONFIG_DEFAULT_OUTPUT), k_bin(CONFIG_BIN), k_obj(CONFI
     check_space(CONFIG_DEFAULT_V_BD);
     check_space(CONFIG_BD);
     check_space(CONFIG_BIN);
-    check_space(CONFIG_OBJ);
-    check_space(CONFIG_OBJ_BD);
+    check_space(CONFIG_OBJS);
+    check_space(CONFIG_OBJS_BD);
 
     // These may show in the clean section of the Makefile, thus can NOT start
     // with '/'
@@ -38,8 +38,8 @@ Config::Config() : output(CONFIG_DEFAULT_OUTPUT), k_bin(CONFIG_BIN), k_obj(CONFI
     check_slash(CONFIG_DEFAULT_V_BD);
     check_slash(CONFIG_BD);
     check_slash(CONFIG_BIN);
-    check_slash(CONFIG_OBJ);
-    check_slash(CONFIG_OBJ_BD);
+    check_slash(CONFIG_OBJS);
+    check_slash(CONFIG_OBJS_BD);
 }
 
 const std::string &Config::get(const std::string &config_name) const {
@@ -59,11 +59,11 @@ string Config::make_bin(int i) const {
     return make(k_bin, i);
 }
 
-string Config::make_obj(int i) const {
+string Config::make_objs(int i) const {
     return make(k_obj, i);
 }
 
-string Config::make_obj_bd(int i) const {
+string Config::make_objs_bd(int i) const {
     return make(k_obj_bd, i);
 }
 

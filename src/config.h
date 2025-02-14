@@ -59,10 +59,10 @@
 #define CONFIG_BIN "TARGET%d"
 // Can NOT contain spaces.
 // Can NOT contain '/'.
-#define CONFIG_OBJ "OBJ%d"
+#define CONFIG_OBJS "OBJS%d"
 // Can NOT contain spaces.
 // Can NOT contain '/'.
-#define CONFIG_OBJ_BD "OBJ%dBD"
+#define CONFIG_OBJS_BD "OBJS%dBD"
 
 class Config {
   public:
@@ -99,13 +99,13 @@ class Config {
     // For example, if CONFIG_OBJ is set to "OBJ%d", then
     // make_obj(1) returns "OBJ1". However, if i == -1, then
     // make_obj(-1) returns "OBJ".
-    std::string make_obj(int i) const;
+    std::string make_objs(int i) const;
 
     // Make the i-th object file name with build directory.
     // For example, if CONFIG_OBJ_BD is set to "OBJ%dBD", then
     // make_obj_bd(1) returns "OBJ1BD". However, if i == -1, then
     // make_obj_bd(-1) returns "OBJBD".
-    std::string make_obj_bd(int i) const;
+    std::string make_objs_bd(int i) const;
 
   private:
     std::string make(const std::string &s, int i) const;
