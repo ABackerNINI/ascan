@@ -118,34 +118,36 @@ void MFile::output_build_details() {
     align.add(CONFIG_LDFLAGS);
     align.add(CONFIG_BD);
 
+    auto newSpVarDef = [&align](const string &name, const string &value) {
+        return new MSimpleVariableDef(align(name).to_string(), value);
+    };
+
     // OUT: CC = gcc
     if (m_c) {
-        add_component(new MSimpleVariableDef(align(CONFIG_CC).to_string(), m_cfg.get_config_value(CONFIG_CC)));
+        add_component(newSpVarDef(CONFIG_CC, m_cfg.get_config_value(CONFIG_CC)));
     }
 
     // OUT: CXX = g++
     if (m_cpp || m_cc) {
-        add_component(new MSimpleVariableDef(align(CONFIG_CXX).to_string(), m_cfg.get_config_value(CONFIG_CXX)));
+        add_component(newSpVarDef(CONFIG_CXX, m_cfg.get_config_value(CONFIG_CXX)));
     }
 
     // OUT: CFLAGS = -W -Wall -lm -g
     if (m_c) {
-        add_component(
-            new MSimpleVariableDef(align(CONFIG_CFLAGS).to_string(), m_cfg.get_config_value(CONFIG_CFLAGS) + flag_g));
+        add_component(newSpVarDef(CONFIG_CFLAGS, m_cfg.get_config_value(CONFIG_CFLAGS) + flag_g));
     }
 
     // OUT: CXXFLAGS = -W -Wall -g
     if (m_cpp || m_cc) {
-        add_component(new MSimpleVariableDef(align(CONFIG_CXXFLAGS).to_string(),
-                                             m_cfg.get_config_value(CONFIG_CXXFLAGS) + flag_g));
+        add_component(newSpVarDef(CONFIG_CXXFLAGS, m_cfg.get_config_value(CONFIG_CXXFLAGS) + flag_g));
     }
 
     // OUT: LDFLAGS = -lm
-    add_component(new MSimpleVariableDef(align(CONFIG_LDFLAGS).to_string(), m_cfg.get_config_value(CONFIG_LDFLAGS)));
+    add_component(newSpVarDef(CONFIG_LDFLAGS, m_cfg.get_config_value(CONFIG_LDFLAGS)));
 
     // OUT: BUILD = build
     if (m_flags & OPTION_B) {
-        add_component(new MSimpleVariableDef(align(CONFIG_BD).to_string(), m_cfg.get_config_value(CONFIG_BD)));
+        add_component(newSpVarDef(CONFIG_BD, m_cfg.get_config_value(CONFIG_BD)));
     }
 
     add_component(new MBlankLine());
