@@ -8,12 +8,14 @@ class Align {
   public:
     class AlignWrapper {
       public:
-        AlignWrapper(Align &align, const std::string &word) : align(align), word(word) {}
+        AlignWrapper(const Align &align, const std::string &word) : align(align), word(word) {}
+
+        std::string to_string() const;
 
         friend std::ostream &operator<<(std::ostream &os, const AlignWrapper &wrapper);
 
       private:
-        Align &align;
+        const Align &align;
         const std::string &word;
     };
 
@@ -21,7 +23,7 @@ class Align {
 
     size_t get_max_length() const;
 
-    AlignWrapper operator()(const std::string &word);
+    AlignWrapper operator()(const std::string &word) const;
 
   private:
     size_t max_length = 0;
