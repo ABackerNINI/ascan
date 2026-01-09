@@ -520,7 +520,7 @@ void MFile::output_mm_dependencies() {
 
     if (m_flags & OPTION_B) {
         if (m_c) {
-            // OUT: @$(CC) $(CFLAGS) -MM *.c $(LDFLAGS) | sed 's/^\\(.*\\).o:/$$(BUILD)\/\1.o:/' >> $@
+            // OUT: @$(CC) $(CFLAGS) -MM *.c $(LDFLAGS) | sed 's/^\\(.*\\).o:/$$(BUILD)\/\1.o:/' > $@
             MCommand *cmd = new MCommand(M_COMMAND_PREFIX_ECHO_OFF);
             cmd->set_separator("");
             *cmd << MSimpleVariable(CONFIG_CC) << " " << MSimpleVariable(CONFIG_CFLAGS) << " -MM" << c_types << " "
@@ -530,7 +530,7 @@ void MFile::output_mm_dependencies() {
         }
 
         if (m_cc || m_cpp) {
-            // OUT: @$(CXX) $(CXXFLAGS) -MM *.cpp *.cc $(LDFLAGS) | sed 's/^\\(.*\\).o:/$$(BUILD)\/\1.o:/' >> $@
+            // OUT: @$(CXX) $(CXXFLAGS) -MM *.cpp *.cc $(LDFLAGS) | sed 's/^\\(.*\\).o:/$$(BUILD)\/\1.o:/' > $@
             MCommand *cmd = new MCommand(M_COMMAND_PREFIX_ECHO_OFF);
             cmd->set_separator("");
             *cmd << MSimpleVariable(CONFIG_CXX) << " " << MSimpleVariable(CONFIG_CXXFLAGS) << " -MM" << cxx_types << " "
@@ -540,7 +540,7 @@ void MFile::output_mm_dependencies() {
         }
     } else {
         if (m_c) {
-            // OUT: @$(CC) $(CFLAGS) -MM *.c $(LDFLAGS) >> $@
+            // OUT: @$(CC) $(CFLAGS) -MM *.c $(LDFLAGS) > $@
             MCommand *cmd = new MCommand(M_COMMAND_PREFIX_ECHO_OFF);
             cmd->set_separator("");
             *cmd << MSimpleVariable(CONFIG_CC) << " " << MSimpleVariable(CONFIG_CFLAGS) << " -MM" << c_types << " "
@@ -548,7 +548,7 @@ void MFile::output_mm_dependencies() {
             depend_rule->add_command(cmd);
         }
         if (m_cc || m_cpp) {
-            // OUT: @$(CXX) $(CXXFLAGS) -MM *.cpp *.cc $(LDFLAGS) >> $@
+            // OUT: @$(CXX) $(CXXFLAGS) -MM *.cpp *.cc $(LDFLAGS) > $@
             MCommand *cmd = new MCommand(M_COMMAND_PREFIX_ECHO_OFF);
             cmd->set_separator("");
             *cmd << MSimpleVariable(CONFIG_CXX) << " " << MSimpleVariable(CONFIG_CXXFLAGS) << " -MM" << cxx_types << " "
