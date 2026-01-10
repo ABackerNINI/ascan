@@ -5,7 +5,6 @@
 #include <algorithm>
 #include <cassert>
 #include <cstddef>
-#include <fstream>
 #include <unistd.h>
 
 using namespace std;
@@ -14,55 +13,22 @@ using namespace std;
 
 MFileV3::MFileV3(std::vector<cfile> &cfiles, Config &cfg, uint32_t flags) : MFile(cfiles, cfg, flags) {}
 
-int MFileV3::output() {
-#ifdef DISABLE_WRITE
-    print_warning("DISABLE_WRITE enabled\n");
+int MFileV3::build() {
+    prepare();
 
-    return EXIT_FAILURE;
-#else
+    // output_header_comments();
+    output_build_details();
+    output_targets();
+    output_phony();
+    output_clean_up();
+    output_executable_details();
+    output_compile_to_objects();
+    output_mode_control();
+    output_mm_dependencies();
 
-    // First write output to the temporary file, then rename it to the actual
-    // output file in case exiting on error during output stage.
-    string tmp = "ascan_tmp.mf";
-
-    m_fout.open(tmp, ios::out | ios::trunc);
-    if (!m_fout.is_open()) {
-        print_error("Can't open file \"%s\"\n", m_cfg.output.c_str());
-        return EXIT_FAILURE;
-    }
-
-    if (m_flags & OPTION_A) {
-        prepare();
-
-        // output_header_comments();
-        output_build_details();
-        output_targets();
-        output_phony();
-        output_clean_up();
-        output_executable_details();
-        output_compile_to_objects();
-        output_mode_control();
-        output_mm_dependencies();
-
-        output_gitignore();
-
-        m_fout << to_string();
-    } else {
-        // TODO:
-        output_part();
-    }
-
-    m_fout.close();
-
-    string cmd = "mv \"" + tmp + "\" \"" + m_cfg.output + "\"";
-    print_debug("%s\n", cmd.c_str());
-    if (system(cmd.c_str()) != 0) {
-        print_error("unkown error!");
-        return EXIT_FAILURE;
-    }
+    output_gitignore();
 
     return EXIT_SUCCESS;
-#endif
 }
 
 /*==========================================================================*/
@@ -123,36 +89,36 @@ void MFileV3::output_build_details() {
     align.add(CONFIG_LDFLAGS);
     align.add(CONFIG_BD);
 
-    auto newSpVarDef = [&align](const string &name, const string &value) {
+    auto new_spvar_def = [&align](const string &name, const string &value) {
         return new MSimpleVariableDef(align(name).to_string(), value);
     };
 
     // OUT: CC = gcc
     if (m_c) {
-        add_component(newSpVarDef(CONFIG_CC, m_cfg.get(CONFIG_CC)));
+        add_component(new_spvar_def(CONFIG_CC, m_cfg.get(CONFIG_CC)));
     }
 
     // OUT: CXX = g++
     if (m_cpp || m_cc) {
-        add_component(newSpVarDef(CONFIG_CXX, m_cfg.get(CONFIG_CXX)));
+        add_component(new_spvar_def(CONFIG_CXX, m_cfg.get(CONFIG_CXX)));
     }
 
     // OUT: CFLAGS = -W -Wall -lm -g
     if (m_c) {
-        add_component(newSpVarDef(CONFIG_CFLAGS, m_cfg.get(CONFIG_CFLAGS) + flag_g));
+        add_component(new_spvar_def(CONFIG_CFLAGS, m_cfg.get(CONFIG_CFLAGS) + flag_g));
     }
 
     // OUT: CXXFLAGS = -W -Wall -g
     if (m_cpp || m_cc) {
-        add_component(newSpVarDef(CONFIG_CXXFLAGS, m_cfg.get(CONFIG_CXXFLAGS) + flag_g));
+        add_component(new_spvar_def(CONFIG_CXXFLAGS, m_cfg.get(CONFIG_CXXFLAGS) + flag_g));
     }
 
     // OUT: LDFLAGS = -lm
-    add_component(newSpVarDef(CONFIG_LDFLAGS, m_cfg.get(CONFIG_LDFLAGS)));
+    add_component(new_spvar_def(CONFIG_LDFLAGS, m_cfg.get(CONFIG_LDFLAGS)));
 
     // OUT: BUILD = build
     if (m_flags & OPTION_B) {
-        add_component(newSpVarDef(CONFIG_BD, m_cfg.get(CONFIG_BD)));
+        add_component(new_spvar_def(CONFIG_BD, m_cfg.get(CONFIG_BD)));
     }
 
     add_component(new MBlankLine());
@@ -177,7 +143,7 @@ void MFileV3::output_targets() {
             default: debug
      */
     MRule *default_rule = new MRule("default");
-    default_rule->add_prerequisite(new MText("debug"));
+    default_rule->add_prerequisite("debug");
     add_component(default_rule);
     add_component(new MBlankLine());
 
@@ -311,13 +277,13 @@ void MFileV3::output_executable_details() {
         //! put behind the objects which uses them.
         if (exec->is_c_source()) {
             // OUT: $(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS)
-            MCommand *cmd = new MCommand();
+            MRecipe *cmd = new MRecipe();
             *cmd << MSimpleVariable(CONFIG_CC) << MSimpleVariable(CONFIG_CFLAGS) << "-o $@ $^"
                  << MSimpleVariable(CONFIG_LDFLAGS);
             rule->add_recipe(cmd);
         } else if (exec->is_cxx_source()) {
             // OUT: $(CXX) $(CXXFLAGS) -o $@ $^ $(LDFLAGS)
-            MCommand *cmd = new MCommand();
+            MRecipe *cmd = new MRecipe();
             *cmd << MSimpleVariable(CONFIG_CXX) << MSimpleVariable(CONFIG_CXXFLAGS) << "-o $@ $^"
                  << MSimpleVariable(CONFIG_LDFLAGS);
             rule->add_recipe(cmd);
@@ -345,7 +311,7 @@ void MFileV3::output_compile_to_objects() {
         rule->add_prerequisite(new MFilename("%.c"));
         add_mkdir_build_cmd_if_option_b(rule);
 
-        MCommand *cmd = new MCommand();
+        MRecipe *cmd = new MRecipe();
         *cmd << MSimpleVariable(CONFIG_CC) << MSimpleVariable(CONFIG_CFLAGS) << "-c -o $@ $<";
         rule->add_recipe(cmd);
 
@@ -359,7 +325,7 @@ void MFileV3::output_compile_to_objects() {
         rule->add_prerequisite(new MFilename("%.cpp"));
         add_mkdir_build_cmd_if_option_b(rule);
 
-        MCommand *cmd = new MCommand();
+        MRecipe *cmd = new MRecipe();
         *cmd << MSimpleVariable(CONFIG_CXX) << MSimpleVariable(CONFIG_CXXFLAGS) << "-c -o $@ $<";
         rule->add_recipe(cmd);
 
@@ -373,7 +339,7 @@ void MFileV3::output_compile_to_objects() {
         rule->add_prerequisite(new MFilename("%.cc"));
         add_mkdir_build_cmd_if_option_b(rule);
 
-        MCommand *cmd = new MCommand();
+        MRecipe *cmd = new MRecipe();
         *cmd << MSimpleVariable(CONFIG_CXX) << MSimpleVariable(CONFIG_CXXFLAGS) << "-c -o $@ $<";
         rule->add_recipe(cmd);
 
@@ -402,7 +368,7 @@ void MFileV3::output_mode_control() {
 
     MRule *rule = new MRule(MFilename(m_build_path + "%.mode"));
 
-    MCommand *cmd = new MCommand();
+    MRecipe *cmd = new MRecipe();
     cmd->set_separator("");
     cmd->set_prefix(M_COMMAND_PREFIX_ECHO_OFF);
 
@@ -436,7 +402,7 @@ void MFileV3::output_clean_up() {
     if (m_flags & OPTION_B) {
         // OUT: rm -f "$(TARGET1)" "$(TARGET2)" $(BUILD)
 
-        MCommand *cmd = new MCommand();
+        MRecipe *cmd = new MRecipe();
         *cmd << "rm -rf";
 
         int idx = m_executable.size() == 1 ? -1 : 1;
@@ -457,7 +423,7 @@ void MFileV3::output_clean_up() {
         // OUT rm -f depend.mk "$(TARGET1)" "$(TARGET2)" $(OBJ1) $(OBJ2)
 
         // OUT("\trm -f");
-        MCommand *cmd = new MCommand();
+        MRecipe *cmd = new MRecipe();
         *cmd << "rm -f";
 
         // OUT: depend.mk
@@ -482,10 +448,10 @@ void MFileV3::output_clean_up() {
 void MFileV3::output_phony() {
     // OUT: .PHONY: default debug release clean
     MRule *rule = new MRule(".PHONY");
-    rule->add_prerequisite(new MText("default"));
-    rule->add_prerequisite(new MText("debug"));
-    rule->add_prerequisite(new MText("release"));
-    rule->add_prerequisite(new MText("clean"));
+    rule->add_prerequisite("default");
+    rule->add_prerequisite("debug");
+    rule->add_prerequisite("release");
+    rule->add_prerequisite("clean");
 
     add_component(rule);
     add_component(new MBlankLine());
@@ -522,7 +488,7 @@ void MFileV3::output_mm_dependencies() {
     if (m_flags & OPTION_B) {
         if (m_c) {
             // OUT: @$(CC) $(CFLAGS) -MM *.c $(LDFLAGS) | sed 's/^\\(.*\\).o:/$$(BUILD)\/\1.o:/' > $@
-            MCommand *cmd = new MCommand(M_COMMAND_PREFIX_ECHO_OFF);
+            MRecipe *cmd = new MRecipe(M_COMMAND_PREFIX_ECHO_OFF);
             cmd->set_separator("");
             *cmd << MSimpleVariable(CONFIG_CC) << " " << MSimpleVariable(CONFIG_CFLAGS) << " -MM" << c_types << " "
                  << MSimpleVariable(CONFIG_LDFLAGS) << " | sed 's/^\\(.*\\).o:/$" << MSimpleVariable(CONFIG_BD)
@@ -532,7 +498,7 @@ void MFileV3::output_mm_dependencies() {
 
         if (m_cc || m_cpp) {
             // OUT: @$(CXX) $(CXXFLAGS) -MM *.cpp *.cc $(LDFLAGS) | sed 's/^\\(.*\\).o:/$$(BUILD)\/\1.o:/' > $@
-            MCommand *cmd = new MCommand(M_COMMAND_PREFIX_ECHO_OFF);
+            MRecipe *cmd = new MRecipe(M_COMMAND_PREFIX_ECHO_OFF);
             cmd->set_separator("");
             *cmd << MSimpleVariable(CONFIG_CXX) << " " << MSimpleVariable(CONFIG_CXXFLAGS) << " -MM" << cxx_types << " "
                  << MSimpleVariable(CONFIG_LDFLAGS) << " | sed 's/^\\(.*\\).o:/$" << MSimpleVariable(CONFIG_BD)
@@ -542,7 +508,7 @@ void MFileV3::output_mm_dependencies() {
     } else {
         if (m_c) {
             // OUT: @$(CC) $(CFLAGS) -MM *.c $(LDFLAGS) > $@
-            MCommand *cmd = new MCommand(M_COMMAND_PREFIX_ECHO_OFF);
+            MRecipe *cmd = new MRecipe(M_COMMAND_PREFIX_ECHO_OFF);
             cmd->set_separator("");
             *cmd << MSimpleVariable(CONFIG_CC) << " " << MSimpleVariable(CONFIG_CFLAGS) << " -MM" << c_types << " "
                  << MSimpleVariable(CONFIG_LDFLAGS) << " > $@"; // TODO
@@ -550,7 +516,7 @@ void MFileV3::output_mm_dependencies() {
         }
         if (m_cc || m_cpp) {
             // OUT: @$(CXX) $(CXXFLAGS) -MM *.cpp *.cc $(LDFLAGS) > $@
-            MCommand *cmd = new MCommand(M_COMMAND_PREFIX_ECHO_OFF);
+            MRecipe *cmd = new MRecipe(M_COMMAND_PREFIX_ECHO_OFF);
             cmd->set_separator("");
             *cmd << MSimpleVariable(CONFIG_CXX) << " " << MSimpleVariable(CONFIG_CXXFLAGS) << " -MM" << cxx_types << " "
                  << MSimpleVariable(CONFIG_LDFLAGS) << " > $@"; // TODO
@@ -614,7 +580,7 @@ void MFileV3::add_mkdir_build_cmd_if_option_b(MRule *rule) {
     //   '+': ignore make's -n -t -q options.
     if (m_flags & OPTION_B) {
         // OUT @mkdir -p "$(BUILD)"
-        MCommand *cmd = new MCommand();
+        MRecipe *cmd = new MRecipe();
         cmd->set_prefix(M_COMMAND_PREFIX_ECHO_OFF);
         *cmd << "mkdir -p" << MQuoted(MSimpleVariable(CONFIG_BD));
         rule->add_recipe(cmd);

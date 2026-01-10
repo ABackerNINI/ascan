@@ -21,13 +21,14 @@ class MComponent {
 };
 
 // Check if a type is a subclass of MComponent.
-template <typename T> struct is_mcomponent : std::is_base_of<MComponent, T> {};
+template <typename T> struct is_mcomponent : std::is_base_of<MComponent, std::remove_reference_t<T>> {};
 
 template <typename _Tp> inline constexpr bool is_mcomponent_v = is_mcomponent<_Tp>::value;
 
 class MText : public MComponent {
   public:
     MText(const std::string &text = "") : m_text(text) {}
+    MText(const char *text) : m_text(text) {}
     virtual ~MText() = default;
     virtual std::string to_string() const override { return m_text; }
 
@@ -46,17 +47,18 @@ class MCompComponent : public MComponent {
         }
     }
 
-    template <typename T> MCompComponent &add_sub_component(T sub_component) {
-        if constexpr (std::is_pointer_v<T> && is_mcomponent_v<std::remove_pointer_t<T>>) {
+    template <typename T> MCompComponent &add_sub_component(T &&sub_component) {
+        if constexpr (std::is_pointer_v<std::remove_reference_t<T>> &&
+                      is_mcomponent_v<std::remove_pointer_t<std::remove_reference_t<T>>>) {
             m_sub_components.push_back(sub_component);
         } else if constexpr (is_mcomponent_v<T>) {
-            m_sub_components.push_back(new T(sub_component));
-        } else if constexpr (std::is_same_v<T, const char *>) {
+            m_sub_components.push_back(new std::remove_cv_t<std::remove_reference_t<T>>(sub_component));
+        } else if constexpr (std::is_same_v<const char *, std::remove_cv_t<std::remove_reference_t<T>>>) {
             m_sub_components.push_back(new MText(sub_component));
-        } else if constexpr (std::is_same_v<T, std::string>) {
+        } else if constexpr (std::is_same_v<std::string, std::remove_cv_t<std::remove_reference_t<T>>>) {
             m_sub_components.push_back(new MText(sub_component));
         } else {
-            static_assert(is_mcomponent<T>::value, "T must be a subclass of MComponent");
+            static_assert(false, "Invalid type for MCompComponent");
         }
         return *this;
     }
@@ -161,23 +163,23 @@ class MBlankLine : public MComponent {
 //   '@': turn off echo.
 //   '-': ignore error, make will exit when error occurs.
 //   '+': ignore make's -n -t -q options.
-enum MCommandPrefix {
+enum MRecipePrefix {
     M_COMMAND_PREFIX_NONE = ' ',
     M_COMMAND_PREFIX_ECHO_OFF = '@',
     M_COMMAND_PREFIX_IGNORE_ERROR = '-',
     M_COMMAND_PREFIX_IGNORE_MAKE_OPTIONS = '+'
 };
 
-class MCommand : public MCompComponent {
+class MRecipe : public MCompComponent {
   public:
-    MCommand(const std::string &command = "", MCommandPrefix prefix = M_COMMAND_PREFIX_NONE)
+    MRecipe(const std::string &command = "", MRecipePrefix prefix = M_COMMAND_PREFIX_NONE)
         : MCompComponent(" "), m_prefix(prefix) {
         if (!command.empty()) {
             add_sub_component(new MText(command));
         }
     }
 
-    MCommand(MCommandPrefix prefix) : MCompComponent(" "), m_prefix(prefix) {}
+    MRecipe(MRecipePrefix prefix) : MCompComponent(" "), m_prefix(prefix) {}
 
     virtual std::string to_string() const {
         if (m_prefix == M_COMMAND_PREFIX_NONE) {
@@ -186,10 +188,10 @@ class MCommand : public MCompComponent {
         return std::string("\t") + char(m_prefix) + MCompComponent::to_string();
     }
 
-    void set_prefix(MCommandPrefix prefix) { m_prefix = prefix; }
+    void set_prefix(MRecipePrefix prefix) { m_prefix = prefix; }
 
   protected:
-    MCommandPrefix m_prefix;
+    MRecipePrefix m_prefix;
 };
 
 class MRule : public MComponent {
@@ -197,35 +199,22 @@ class MRule : public MComponent {
     MRule(const std::string &target) : m_target(target) {}
     MRule(const MComponent &target) : m_target(target.to_string()) {}
 
-    virtual ~MRule() {
-        for (auto &dependency : m_prerequisites) {
-            delete dependency;
-        }
-        for (auto &command : m_recipes) {
-            delete command;
-        }
+    virtual ~MRule() {}
+
+    template <typename T> MRule &add_prerequisite(T prerequisite) {
+        m_prerequisites.add_sub_component(prerequisite);
+        return *this;
     }
 
-    void add_prerequisite(MComponent *prerequisite) { m_prerequisites.push_back(prerequisite); }
-
-    void add_recipe(MComponent *recipe) { m_recipes.push_back(recipe); }
+    template <typename T> MRule &add_recipe(T recipe) {
+        m_recipes.add_sub_component(recipe);
+        return *this;
+    }
 
     virtual std::string to_string() const {
-        std::string dependencies;
-        if (!m_prerequisites.empty()) {
-            dependencies = m_prerequisites[0]->to_string();
-            for (size_t i = 1; i < m_prerequisites.size(); ++i) {
-                dependencies += " " + m_prerequisites[i]->to_string();
-            }
-        }
+        std::string dependencies = m_prerequisites.to_string();
 
-        std::string commands;
-        if (!m_recipes.empty()) {
-            commands = m_recipes[0]->to_string();
-            for (size_t i = 1; i < m_recipes.size(); ++i) {
-                commands += "\n" + m_recipes[i]->to_string();
-            }
-        }
+        std::string commands = m_recipes.to_string();
 
         return m_target + (dependencies.empty() ? ":" : ": " + dependencies) +
                (commands.empty() ? "" : "\n" + commands);
@@ -233,8 +222,8 @@ class MRule : public MComponent {
 
   protected:
     std::string m_target;
-    std::vector<MComponent *> m_prerequisites;
-    std::vector<MComponent *> m_recipes;
+    MCompComponent m_prerequisites{" "};
+    MCompComponent m_recipes{"\n"};
 };
 
 class MQuoted : public MCompComponent {
@@ -250,30 +239,20 @@ class MFile {
   public:
     MFile(std::vector<cfile> &cfiles, Config &cfg, uint32_t flags) : m_cfiles(cfiles), m_cfg(cfg), m_flags(flags) {}
 
-    virtual ~MFile() {
-        for (auto &component : m_components) {
-            delete component;
-        }
-    }
+    virtual ~MFile() {}
 
-    virtual int output() = 0;
+    int output();
 
-    void add_component(MComponent *component) { m_components.push_back(component); }
+    virtual int build() = 0;
 
-    std::string to_string() const {
-        std::string str;
-        for (const auto &component : m_components) {
-            str += component->to_string() + "\n";
-        }
-        return str;
-    }
+    void add_component(MComponent *component) { m_components.add_sub_component(component); }
 
   protected:
     std::vector<cfile> &m_cfiles;
     Config &m_cfg;
     uint32_t m_flags;
 
-    std::vector<MComponent *> m_components;
+    MCompComponent m_components{"\n"};
 };
 
 #endif //_AUTO_SCAN_MFILE_H_

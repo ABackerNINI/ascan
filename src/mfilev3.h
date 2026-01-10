@@ -9,7 +9,7 @@ class MFileV3 : public MFile {
 
     virtual ~MFileV3() {}
 
-    virtual int output() override;
+    virtual int build() override;
 
   protected:
     void prepare();
@@ -32,7 +32,6 @@ class MFileV3 : public MFile {
     void output_gitignore();
 
   protected:
-    std::ofstream m_fout;
     std::vector<cfile *> m_executable;
     std::vector<std::string> m_binaries; // files to be added to gitignore
 
