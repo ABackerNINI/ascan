@@ -129,8 +129,12 @@ clean:
 
 # CHECK BUILD PARAMS
 
-RED = \033[0;31m
-RESET = \033[0m
+RED		  = $(shell tput setaf 1)
+GREEN	  = $(shell tput setaf 2)
+YELLOW	  = $(shell tput setaf 3)
+BOLD 	  = $(shell tput bold)
+UNDERLINE = $(shell tput smul)
+RESET	  = $(shell tput sgr0)
 
 define save_build_params
 	@echo "PROJECT=$(PROJECT)" > "$(1)"
@@ -152,7 +156,7 @@ define check_build_params
 
 	@if [ -f $(OBJ_DIR)/build_params.txt ]; then \
 		if ! diff -q "$(OBJ_DIR)/build_params.txt" "$(OBJ_DIR)/temp.txt" >/dev/null 2>&1 ; then \
-			echo "$(RED)"; \
+			echo "$(RED)$(BOLD)"; \
 			echo "WARNING: Build params mismatch, most likely due to Makefile changes, or a hash collision, you may need a 'make clean'."; \
 			echo "$(RESET)"; \
 			echo "Diff of build params (last vs current):"; \
