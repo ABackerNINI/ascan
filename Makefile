@@ -76,7 +76,7 @@ SRCS := $(SRCS:%.cpp=$(SRC_DIR)/%.cpp)
 OBJS = $(SRCS:%.cpp=$(OBJ_DIR)/%.o)
 DEPS = $(OBJS:.o=.d)
 
-# MAIN TARGET
+# TARGETS
 
 $(TARGET): $(OBJS) $(MODE_FILE)
 	@mkdir -p $(@D)
