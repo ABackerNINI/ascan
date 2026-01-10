@@ -2,4 +2,4 @@
 
 make clean
 make
-sudo cp ./ascan /usr/local/bin/ascan
+sudo cp bin/ascan /usr/local/bin/ascan
