@@ -11,11 +11,11 @@ __ASCAN::OPTIONS_SECTION
 # DIRECTORIES
 
 # The directory of source files. Must be subdirectory of the project root. Can be set to ".".
-SRC_DIR = src
+SRC_DIR = __ASCAN::SRC_DIR
 # Where to put object files. Must be subdirectory of the project root. Can be set to ".".
-BLD_DIR = build
+BLD_DIR = __ASCAN::BLD_DIR
 # Where to put the final binary. Must be subdirectory of the project root. Can be set to ".".
-BIN_DIR = bin
+BIN_DIR = __ASCAN::BIN_DIR
 # Extra parameters to identify the build configuration.
 # This is used to create a unique object directory for each build configuration.
 EXTRA_PARAMS =
@@ -157,5 +157,5 @@ define check_build_params
 		fi \
 	fi
 
-	mv -f "$(OBJ_DIR)/temp.txt" "$(OBJ_DIR)/build_params.txt"
+	@mv -f "$(OBJ_DIR)/temp.txt" "$(OBJ_DIR)/build_params.txt"
 endef

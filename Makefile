@@ -68,7 +68,7 @@ endif
 
 # SRCS = $(wildcard $(SRC_DIR)/*.cpp)
 SRCS := ascan.cpp options.cpp parser.cpp cfile.cpp align.cpp mfile.cpp  \
-		common.cpp config.cpp
+		common.cpp config.cpp mfilev3.cpp
 SRCS := $(SRCS:%.cpp=$(SRC_DIR)/%.cpp)
 
 # OBJECTS
@@ -165,5 +165,5 @@ define check_build_params
 		fi \
 	fi
 
-	mv -f "$(OBJ_DIR)/temp.txt" "$(OBJ_DIR)/build_params.txt"
+	@mv -f "$(OBJ_DIR)/temp.txt" "$(OBJ_DIR)/build_params.txt"
 endef

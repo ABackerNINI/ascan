@@ -165,5 +165,5 @@ define check_build_params
 		fi \
 	fi
 
-	mv -f "$(OBJ_DIR)/temp.txt" "$(OBJ_DIR)/build_params.txt"
+	@mv -f "$(OBJ_DIR)/temp.txt" "$(OBJ_DIR)/build_params.txt"
 endef
