@@ -94,7 +94,7 @@ $(BLD_DIR)/%.mk.mode:
 	@rm -f $(@D)/*.mk.mode
 	@touch $@
 
-# INCLUDE DEPENDENCIES
+# DEPENDENCIES
 
 -include $(DEPS)
 
