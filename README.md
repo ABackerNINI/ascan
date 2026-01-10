@@ -20,9 +20,7 @@ Run the following commands to install:
 
 ```bash
 git clone git@github.com:ABackerNINI/ascan.git
-cd ascan/src
-chmod +x install.sh
-./install.sh
+cd ascan && bash install.sh
 ```
 
 ## Future Work
