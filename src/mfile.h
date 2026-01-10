@@ -22,8 +22,14 @@ class MComponent {
 
 // Check if a type is a subclass of MComponent.
 template <typename T> struct is_mcomponent : std::is_base_of<MComponent, std::remove_reference_t<T>> {};
-
 template <typename _Tp> inline constexpr bool is_mcomponent_v = is_mcomponent<_Tp>::value;
+
+#if __cplusplus < 202002L
+namespace std {
+// C++20 std::remove_cvref_t
+template <typename _Tp> using remove_cvref_t = std::remove_cv_t<std::remove_reference_t<_Tp>>;
+} // namespace std
+#endif
 
 class MText : public MComponent {
   public:
@@ -48,14 +54,13 @@ class MCompComponent : public MComponent {
     }
 
     template <typename T> MCompComponent &add_sub_component(T &&sub_component) {
-        if constexpr (std::is_pointer_v<std::remove_reference_t<T>> &&
-                      is_mcomponent_v<std::remove_pointer_t<std::remove_reference_t<T>>>) {
+        if constexpr (std::is_convertible_v<T, MComponent *>) {
             m_sub_components.push_back(sub_component);
         } else if constexpr (is_mcomponent_v<T>) {
-            m_sub_components.push_back(new std::remove_cv_t<std::remove_reference_t<T>>(sub_component));
-        } else if constexpr (std::is_same_v<const char *, std::remove_cv_t<std::remove_reference_t<T>>>) {
+            m_sub_components.push_back(new std::remove_cvref_t<T>(std::forward<T>(sub_component)));
+        } else if constexpr (std::is_same_v<const char *, std::remove_cvref_t<T>>) {
             m_sub_components.push_back(new MText(sub_component));
-        } else if constexpr (std::is_same_v<std::string, std::remove_cv_t<std::remove_reference_t<T>>>) {
+        } else if constexpr (std::is_same_v<std::string, std::remove_cvref_t<T>>) {
             m_sub_components.push_back(new MText(sub_component));
         } else {
             static_assert(false, "Invalid type for MCompComponent");
