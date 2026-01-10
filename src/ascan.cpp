@@ -1,13 +1,17 @@
 #include "ascan.h"
 #include "common.h"
 #include "debug.h"
-#include "mfile.h"
+#include "mfilev3.h"
 #include <filesystem>
 #include <getopt.h>
 #include <string.h>
 #include <unistd.h>
 
 using namespace std;
+
+// TODO: rewrite CLI parsing
+// TODO: add option --use-v{1,2,3,4}, to specify which version of Makefile to generate
+// TODO: add option --simple, generate really simple Makefile
 
 int debug_level = DBG_LVL_DEBUG;
 
@@ -77,7 +81,7 @@ int ascan::start() {
     print_cfiles();
     associate_header();
 
-    MFile mf(m_cfiles, m_cfg, m_flags);
+    MFileV3 mf(m_cfiles, m_cfg, m_flags);
 
     return mf.output();
 }
@@ -306,7 +310,7 @@ void ascan::print_help(enum HELP_TYPE help, const options::as_option *option) co
         PRINT("Written by ABacker.");
 
         PRINT_TITLE("REPORTING BUGS");
-        PRINT("<" AS_URL ">");
+        PRINT("<" ASCAN_URL ">");
 
         PRINT_TITLE("COPYRIGHT");
         PRINT("License GPLv3+: GNU GPL version 3 or later "
@@ -314,7 +318,7 @@ void ascan::print_help(enum HELP_TYPE help, const options::as_option *option) co
 
         // PRINT_TITLE("SEE ALSO");
     } else if (help == HT_VER) {
-        printf("ascan version: " AS_VERSION "\n");
+        printf("ascan version: " ASCAN_VERSION "\n");
     } else if (help == HT_SPECIFIC) {
         PRINT_TITLE("OPTION");
         PRINT("Mandatory arguments to long options are mandatory for short "

@@ -52,7 +52,6 @@ class MCompComponent : public MComponent {
         } else {
             static_assert(is_mcomponent<T>::value, "T must be a subclass of MComponent");
         }
-
         return mcc;
     }
 
@@ -179,32 +178,32 @@ class MRule : public MComponent {
     MRule(const MComponent &name) : MComponent(name.to_string()) {}
 
     virtual ~MRule() {
-        for (auto &dependency : m_dependencies) {
+        for (auto &dependency : m_prerequisites) {
             delete dependency;
         }
-        for (auto &command : m_commands) {
+        for (auto &command : m_recipes) {
             delete command;
         }
     }
 
-    void add_dependency(MComponent *dependency) { m_dependencies.push_back(dependency); }
+    void add_prerequisite(MComponent *prerequisite) { m_prerequisites.push_back(prerequisite); }
 
-    void add_command(MComponent *command) { m_commands.push_back(command); }
+    void add_recipe(MComponent *recipe) { m_recipes.push_back(recipe); }
 
     virtual std::string to_string() const {
         std::string dependencies;
-        if (!m_dependencies.empty()) {
-            dependencies = m_dependencies[0]->to_string();
-            for (size_t i = 1; i < m_dependencies.size(); ++i) {
-                dependencies += " " + m_dependencies[i]->to_string();
+        if (!m_prerequisites.empty()) {
+            dependencies = m_prerequisites[0]->to_string();
+            for (size_t i = 1; i < m_prerequisites.size(); ++i) {
+                dependencies += " " + m_prerequisites[i]->to_string();
             }
         }
 
         std::string commands;
-        if (!m_commands.empty()) {
-            commands = m_commands[0]->to_string();
-            for (size_t i = 1; i < m_commands.size(); ++i) {
-                commands += "\n" + m_commands[i]->to_string();
+        if (!m_recipes.empty()) {
+            commands = m_recipes[0]->to_string();
+            for (size_t i = 1; i < m_recipes.size(); ++i) {
+                commands += "\n" + m_recipes[i]->to_string();
             }
         }
 
@@ -212,8 +211,8 @@ class MRule : public MComponent {
     }
 
   protected:
-    std::vector<MComponent *> m_dependencies;
-    std::vector<MComponent *> m_commands;
+    std::vector<MComponent *> m_prerequisites;
+    std::vector<MComponent *> m_recipes;
 };
 
 class MQuoted : public MComponent {
@@ -226,13 +225,15 @@ class MQuoted : public MComponent {
 
 class MFile {
   public:
-    MFile(std::vector<cfile> &cfiles, Config &cfg, uint32_t flags);
+    MFile(std::vector<cfile> &cfiles, Config &cfg, uint32_t flags) : m_cfiles(cfiles), m_cfg(cfg), m_flags(flags) {}
 
-    ~MFile() {
+    virtual ~MFile() {
         for (auto &component : m_components) {
             delete component;
         }
     }
+
+    virtual int output() = 0;
 
     void add_component(MComponent *component) { m_components.push_back(component); }
 
@@ -244,59 +245,12 @@ class MFile {
         return str;
     }
 
-    template <typename T> friend MFile &operator<<(MFile &mfile, T component) {
-        if constexpr (std::is_pointer_v<T> && is_mcomponent<std::remove_pointer_t<T>>::value) {
-            mfile.add_component(component);
-        } else if constexpr (is_mcomponent<T>::value) {
-            mfile.add_component(new T(component));
-        } else if constexpr (std::is_same_v<T, const char *>) {
-            mfile.add_component(new MComponent(component));
-        } else if constexpr (std::is_same_v<T, std::string>) {
-            mfile.add_component(new MComponent(component));
-        } else {
-            static_assert(is_mcomponent<T>::value, "T must be a subclass of MComponent");
-        }
-
-        return mfile;
-    }
-
-    int output();
-
-  protected:
-    void prepare();
-
-    void output_build_details();
-    void output_targets();
-    void output_compile_to_objects();
-    void output_executable_details();
-    void output_mode_control();
-    void output_clean_up();
-    void output_phony();
-
-    // Output dependencies using gcc -MM.
-    void output_mm_dependencies();
-
-    void add_mkdir_build_cmd_if_option_b(MRule *rule);
-
-    void output_part();
-
-    void output_gitignore();
-
   protected:
     std::vector<cfile> &m_cfiles;
     Config &m_cfg;
     uint32_t m_flags;
 
     std::vector<MComponent *> m_components;
-
-    std::ofstream m_fout;
-    std::vector<cfile *> m_executable;
-    std::vector<std::string> m_binaries; // files to be added to gitignore
-
-    bool m_c;
-    bool m_cc;
-    bool m_cpp;
-    std::string m_build_path; // = "$(BUILD)/" iff OPTION_B is set
 };
 
 #endif //_AUTO_SCAN_MFILE_H_

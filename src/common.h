@@ -4,8 +4,8 @@
 #include <string>
 #include <vector>
 
-#define AS_VERSION "0.1.0 alpha"
-#define AS_URL "git@github.com:ABackerNINI/ascan.git"
+#define ASCAN_VERSION "0.1.3 alpha"
+#define ASCAN_URL "git@github.com:ABackerNINI/ascan.git"
 
 // Get file extention.
 const char *get_ext(const char *filename, size_t length = 0);
