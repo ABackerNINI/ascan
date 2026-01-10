@@ -2,6 +2,7 @@
 #include "common.h"
 #include "debug.h"
 #include "mfilev3.h"
+#include "mfilev4.h"
 #include <filesystem>
 #include <getopt.h>
 #include <string.h>
@@ -81,7 +82,7 @@ int ascan::start() {
     print_cfiles();
     associate_header();
 
-    MFileV3 mf(m_cfiles, m_cfg, m_flags);
+    MFileV4 mf(m_cfiles, m_cfg, m_flags);
 
     return mf.output();
 }

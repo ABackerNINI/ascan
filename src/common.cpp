@@ -1,8 +1,9 @@
 #include "common.h"
 #include <algorithm>
+#include <cstring>
 #include <fstream>
 #include <ios>
-#include <string.h>
+#include <iostream>
 #include <unistd.h>
 
 using namespace std;
@@ -112,4 +113,42 @@ bool contain_space(const std::string &s) {
         }
     }
     return false;
+}
+
+// Read file line by line and put them together in a string.
+std::string read_file(const fs::path &path_) {
+    std::ifstream infile(path_);
+    if (!infile) {
+        std::cerr << "Can't open file: " << path_ << std::endl;
+        exit(1);
+    }
+
+    std::string content;
+    content.reserve(1024);
+
+    char buf[1024];
+    std::streamsize bytes_read = 0;
+    while (infile.read(buf, 1024), (bytes_read = infile.gcount()) > 0) {
+        content.append(buf, bytes_read);
+    }
+
+    if (!infile.eof()) {
+        if (infile.fail()) {
+            throw std::runtime_error("Error: Failed to read from file.");
+        } else if (infile.bad()) {
+            throw std::runtime_error("Error: Bad stream state.");
+        }
+    }
+
+    return content;
+}
+
+// Write string to a file.
+void write_file(const fs::path &path_, const std::string &content) {
+    std::ofstream outfile(path_);
+    if (!outfile) {
+        std::cerr << "Can't open file: " << path_ << std::endl;
+        exit(1);
+    }
+    outfile << content;
 }

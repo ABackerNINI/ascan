@@ -23,7 +23,9 @@ int MFile::output() {
         return EXIT_FAILURE;
     }
 
-    this->build();
+    if (this->build() != 0) {
+        return EXIT_FAILURE;
+    }
 
     fout << this->to_string();
 

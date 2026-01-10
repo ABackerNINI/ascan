@@ -2,20 +2,20 @@ PROJECT_ROOT := $(dir $(abspath $(lastword $(MAKEFILE_LIST))))
 
 # PROJECT
 
-PROJECT = __ASCAN::PROJECT_NAME
+PROJECT = __ASCAN::PROJECT_NAME__
 
 # OPTIONS
 
-__ASCAN::OPTIONS_SECTION
+__ASCAN::OPTIONS_SECTION__
 
 # DIRECTORIES
 
 # The directory of source files. Must be subdirectory of the project root. Can be set to ".".
-SRC_DIR = __ASCAN::SRC_DIR
+SRC_DIR = __ASCAN::SRC_DIR__
 # Where to put object files. Must be subdirectory of the project root. Can be set to ".".
-BLD_DIR = __ASCAN::BLD_DIR
+BLD_DIR = __ASCAN::BLD_DIR__
 # Where to put the final binary. Must be subdirectory of the project root. Can be set to ".".
-BIN_DIR = __ASCAN::BIN_DIR
+BIN_DIR = __ASCAN::BIN_DIR__
 # Extra parameters to identify the build configuration.
 # This is used to create a unique object directory for each build configuration.
 EXTRA_PARAMS =
@@ -49,21 +49,17 @@ endif
 CXXFLAGS = -Wall -Wextra -std=$(STD)
 LDFLAGS  =
 
-TARGET = $(BIN_DIR)/$(PROJECT)
+__ASCAN::TARGETS__
 
 ifeq ($(CONFIG),debug)
     CXXFLAGS += -g -O0 -DDEBUG
 else ifeq ($(CONFIG),release)
     CXXFLAGS += -flto=4 -O3 -march=native -DNDEBUG
-else ifeq ($(CONFIG),test)
-    CXXFLAGS += -g -O0 -DTEST -Igoogletest/include
-    LDFLAGS  += -Lgoogletest/lib -lgtest -lgtest_main -lpthread
-    TARGET = $(PROJECT)_test
 endif
 
 # SOURCES
 
-__ASCAN::SOURCES_SECTION
+__ASCAN::SOURCES_SECTION__
 
 # OBJECTS
 
@@ -72,7 +68,7 @@ DEPS = $(OBJS:.o=.d)
 
 # TARGETS
 
-__ASCAN::TARGETS_SECTION
+__ASCAN::TARGETS_SECTION__
 
 # RULES
 
