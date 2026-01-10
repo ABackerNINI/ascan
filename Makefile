@@ -39,11 +39,10 @@ $(error "SRC_DIR, BLD_DIR, OBJ_DIR, BIN_DIR must be set to a directory. Please c
 endif
 
 # Check that directories are subdirectories of the project root.
-PREFIX = $(abspath $(PROJECT_ROOT))
-SUB_DIR_CHECKS = $(shell echo $(abspath $(SRC_DIR)) | grep -q "^$(PREFIX)" || echo 0) \
-				 $(shell echo $(abspath $(BLD_DIR)) | grep -q "^$(PREFIX)" || echo 0) \
-				 $(shell echo $(abspath $(OBJ_DIR)) | grep -q "^$(PREFIX)" || echo 0) \
-				 $(shell echo $(abspath $(BIN_DIR)) | grep -q "^$(PREFIX)" || echo 0)
+SUB_DIR_CHECKS = $(shell echo $(abspath $(SRC_DIR)) | grep -q "^$(PROJECT_ROOT)" || echo 0) \
+				 $(shell echo $(abspath $(BLD_DIR)) | grep -q "^$(PROJECT_ROOT)" || echo 0) \
+				 $(shell echo $(abspath $(OBJ_DIR)) | grep -q "^$(PROJECT_ROOT)" || echo 0) \
+				 $(shell echo $(abspath $(BIN_DIR)) | grep -q "^$(PROJECT_ROOT)" || echo 0)
 ifeq ($(filter 0, $(SUB_DIR_CHECKS)),0)
 $(error "SRC_DIR, BLD_DIR, OBJ_DIR, BIN_DIR must be subdirectories of the project root. Please check your Makefile.")
 endif
@@ -162,5 +161,5 @@ define check_build_params
 		fi \
 	fi
 
-	$(call save_build_params,$(OBJ_DIR)/build_params.txt)
+	mv -f "$(OBJ_DIR)/temp.txt" "$(OBJ_DIR)/build_params.txt"
 endef
