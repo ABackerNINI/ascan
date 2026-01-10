@@ -250,14 +250,12 @@ class MFile {
 
     virtual int build() = 0;
 
-    void add_component(MComponent *component) { m_components.add_sub_component(component); }
+    virtual std::string to_string() const = 0;
 
   protected:
     std::vector<cfile> &m_cfiles;
     Config &m_cfg;
     uint32_t m_flags;
-
-    MCompComponent m_components{"\n"};
 };
 
 #endif //_AUTO_SCAN_MFILE_H_

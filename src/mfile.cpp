@@ -25,7 +25,7 @@ int MFile::output() {
 
     this->build();
 
-    fout << m_components.to_string();
+    fout << this->to_string();
 
     fout.close();
 

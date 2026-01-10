@@ -1,15 +1,19 @@
-#ifndef __MFILE_V3_H__
-#define __MFILE_V3_H__
+#ifndef __AUTO_SCAN_MFILE_V3_H__
+#define __AUTO_SCAN_MFILE_V3_H__
 
 #include "mfile.h"
 
 class MFileV3 : public MFile {
   public:
-    MFileV3(std::vector<cfile> &cfiles, Config &cfg, uint32_t flags);
+    MFileV3(std::vector<cfile> &cfiles, Config &cfg, uint32_t flags) : MFile(cfiles, cfg, flags) {}
 
     virtual ~MFileV3() {}
 
     virtual int build() override;
+
+    virtual std::string to_string() const override { return m_components.to_string(); }
+
+    void add_component(MComponent *component) { m_components.add_sub_component(component); }
 
   protected:
     void prepare();
@@ -39,6 +43,8 @@ class MFileV3 : public MFile {
     bool m_cc;
     bool m_cpp;
     std::string m_build_path; // = "$(BUILD)/" iff OPTION_B is set
+
+    MCompComponent m_components{"\n"};
 };
 
-#endif // __MFILE_V3_H__
+#endif // __AUTO_SCAN_MFILE_V3_H__

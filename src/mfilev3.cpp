@@ -11,8 +11,6 @@ using namespace std;
 
 /*==========================================================================*/
 
-MFileV3::MFileV3(std::vector<cfile> &cfiles, Config &cfg, uint32_t flags) : MFile(cfiles, cfg, flags) {}
-
 int MFileV3::build() {
     prepare();
 
@@ -56,7 +54,7 @@ void MFileV3::prepare() {
         m_build_path = MSimpleVariable(CONFIG_BD).to_string() + "/";
     }
 
-    // Find all executable
+    // Find all executables
     for (auto &cfile : m_cfiles) {
         if (cfile.have_main_func() && cfile.is_source()) {
             m_executable.push_back(&cfile);
