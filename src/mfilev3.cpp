@@ -1,6 +1,5 @@
 #include "mfilev3.h"
 
-
 #include "mfile.h"
 #include "options.h"
 #include <algorithm>
@@ -178,7 +177,7 @@ void MFileV3::output_targets() {
             default: debug
      */
     MRule *default_rule = new MRule("default");
-    default_rule->add_prerequisite(new MComponent("debug"));
+    default_rule->add_prerequisite(new MText("debug"));
     add_component(default_rule);
     add_component(new MBlankLine());
 
@@ -189,12 +188,12 @@ void MFileV3::output_targets() {
      */
     if (m_c) {
         MRule *debug_rule = new MRule("debug");
-        debug_rule->add_prerequisite(new MComponent(string(CONFIG_CFLAGS) + " += -g -DDEBUG=1")); // TODO
+        debug_rule->add_prerequisite(new MText(string(CONFIG_CFLAGS) + " += -g -DDEBUG=1")); // TODO
         add_component(debug_rule);
     }
     if (m_cpp || m_cc) {
         MRule *debug_rule = new MRule("debug");
-        debug_rule->add_prerequisite(new MComponent(string(CONFIG_CXXFLAGS) + " += -g -DDEBUG=1")); // TODO
+        debug_rule->add_prerequisite(new MText(string(CONFIG_CXXFLAGS) + " += -g -DDEBUG=1")); // TODO
         add_component(debug_rule);
     }
     MRule *debug_rule = new MRule("debug");
@@ -214,12 +213,12 @@ void MFileV3::output_targets() {
      */
     if (m_c) {
         MRule *release_rule = new MRule("release");
-        release_rule->add_prerequisite(new MComponent(string(CONFIG_CFLAGS) + " += -O3 # -DNDEBUG=1")); // TODO
+        release_rule->add_prerequisite(new MText(string(CONFIG_CFLAGS) + " += -O3 # -DNDEBUG=1")); // TODO
         add_component(release_rule);
     }
     if (m_cpp || m_cc) {
         MRule *release_rule = new MRule("release");
-        release_rule->add_prerequisite(new MComponent(string(CONFIG_CXXFLAGS) + " += -O3 # -DNDEBUG=1")); // TODO
+        release_rule->add_prerequisite(new MText(string(CONFIG_CXXFLAGS) + " += -O3 # -DNDEBUG=1")); // TODO
         add_component(release_rule);
     }
     MRule *release_rule = new MRule("release");
@@ -483,10 +482,10 @@ void MFileV3::output_clean_up() {
 void MFileV3::output_phony() {
     // OUT: .PHONY: default debug release clean
     MRule *rule = new MRule(".PHONY");
-    rule->add_prerequisite(new MComponent("default"));
-    rule->add_prerequisite(new MComponent("debug"));
-    rule->add_prerequisite(new MComponent("release"));
-    rule->add_prerequisite(new MComponent("clean"));
+    rule->add_prerequisite(new MText("default"));
+    rule->add_prerequisite(new MText("debug"));
+    rule->add_prerequisite(new MText("release"));
+    rule->add_prerequisite(new MText("clean"));
 
     add_component(rule);
     add_component(new MBlankLine());

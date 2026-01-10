@@ -15,22 +15,30 @@
 // Component of a Makefile.
 class MComponent {
   public:
-    MComponent(const std::string &name = "MComponent") : m_name(name) {}
+    MComponent() {}
     virtual ~MComponent() = default;
-    virtual std::string to_string() const { return m_name; }
-
-  protected:
-    std::string m_name;
+    virtual std::string to_string() const { return "MComponent"; }
 };
 
 // Check if a type is a subclass of MComponent.
 template <typename T> struct is_mcomponent : std::is_base_of<MComponent, T> {};
 
+template <typename _Tp> inline constexpr bool is_mcomponent_v = is_mcomponent<_Tp>::value;
+
+class MText : public MComponent {
+  public:
+    MText(const std::string &text = "") : m_text(text) {}
+    virtual ~MText() = default;
+    virtual std::string to_string() const override { return m_text; }
+
+  protected:
+    std::string m_text;
+};
+
 // Compound component of a Makefile.
 class MCompComponent : public MComponent {
   public:
-    MCompComponent(const std::string &name = "MCompComponent", const std::string &separator = "")
-        : MComponent(name), separator(separator) {}
+    MCompComponent(const std::string &separator = "") : separator(separator) {}
 
     virtual ~MCompComponent() {
         for (auto &sub_component : m_sub_components) {
@@ -38,21 +46,23 @@ class MCompComponent : public MComponent {
         }
     }
 
-    void add_sub_component(MComponent *sub_component) { m_sub_components.push_back(sub_component); }
-
-    template <typename T> friend MCompComponent &operator<<(MCompComponent &mcc, T sub_component) {
-        if constexpr (std::is_pointer_v<T> && is_mcomponent<std::remove_pointer_t<T>>::value) {
-            mcc.add_sub_component(sub_component);
-        } else if constexpr (is_mcomponent<T>::value) {
-            mcc.add_sub_component(new T(sub_component));
+    template <typename T> MCompComponent &add_sub_component(T sub_component) {
+        if constexpr (std::is_pointer_v<T> && is_mcomponent_v<std::remove_pointer_t<T>>) {
+            m_sub_components.push_back(sub_component);
+        } else if constexpr (is_mcomponent_v<T>) {
+            m_sub_components.push_back(new T(sub_component));
         } else if constexpr (std::is_same_v<T, const char *>) {
-            mcc.add_sub_component(new MComponent(sub_component));
+            m_sub_components.push_back(new MText(sub_component));
         } else if constexpr (std::is_same_v<T, std::string>) {
-            mcc.add_sub_component(new MComponent(sub_component));
+            m_sub_components.push_back(new MText(sub_component));
         } else {
             static_assert(is_mcomponent<T>::value, "T must be a subclass of MComponent");
         }
-        return mcc;
+        return *this;
+    }
+
+    template <typename T> friend MCompComponent &operator<<(MCompComponent &mcc, T sub_component) {
+        return mcc.add_sub_component(sub_component);
     }
 
     void set_separator(const std::string &separator) { this->separator = separator; }
@@ -75,64 +85,74 @@ class MCompComponent : public MComponent {
     std::vector<MComponent *> m_sub_components;
 };
 
-class MComment : public MComponent {
+class MComment : public MText {
   public:
-    MComment(const std::string &comment = "") : MComponent(comment) {}
+    MComment(const std::string &comment = "") : MText(comment) {}
 
     friend MComment &operator<<(MComment &mc, const std::string &comment) {
-        mc.m_name += comment;
+        mc.m_text += comment;
         return mc;
     }
 
     friend MComment &operator<<(MComment &mc, const char *comment) {
-        mc.m_name += comment;
+        mc.m_text += comment;
         return mc;
     }
 
-    virtual std::string to_string() const { return "# " + m_name; }
+    virtual std::string to_string() const { return "# " + m_text; }
 };
 
 class MFilename : public MComponent {
   public:
-    MFilename(const std::string &name) : MComponent(name) {}
+    MFilename(const std::string &filename) : m_filename(filename) {}
 
     virtual std::string to_string() const {
-        for (auto &c : m_name) {
+        for (auto &c : m_filename) {
             if (std::isspace(c)) {
-                return "\"" + m_name + "\"";
+                return "\"" + m_filename + "\"";
             }
         }
-        return m_name;
+        return m_filename;
     }
+
+  protected:
+    std::string m_filename;
 };
 
 class MSimpleVariable : public MComponent {
   public:
-    MSimpleVariable(const std::string &name) : MComponent(name) {}
+    MSimpleVariable(const std::string &varname) : m_varname(varname) {}
 
-    virtual std::string to_string() const { return "$(" + m_name + ")"; }
+    virtual std::string to_string() const { return "$(" + m_varname + ")"; }
+
+  protected:
+    std::string m_varname;
 };
 
 class MSimpleVariableDef : public MComponent {
   public:
-    MSimpleVariableDef(const std::string &name, const std::string &value) : MComponent(name), m_value(value) {}
+    MSimpleVariableDef(const std::string &varname, const std::string &value) : m_varname(varname), m_value(value) {}
 
-    virtual std::string to_string() const { return m_name + " = " + m_value; }
+    virtual std::string to_string() const { return m_varname + " = " + m_value; }
 
   protected:
+    std::string m_varname;
     std::string m_value;
 };
 
 class MVariableDef : public MCompComponent {
   public:
-    MVariableDef(const std::string &name) : MCompComponent(name, " ") {}
+    MVariableDef(const std::string &varname) : MCompComponent(" "), m_varname(varname) {}
 
-    virtual std::string to_string() const { return m_name + " = " + MCompComponent::to_string(); }
+    virtual std::string to_string() const { return m_varname + " = " + MCompComponent::to_string(); }
+
+  public:
+    std::string m_varname;
 };
 
 class MBlankLine : public MComponent {
   public:
-    MBlankLine() : MComponent("MBlankLine") {}
+    MBlankLine() {}
 
     virtual std::string to_string() const { return ""; }
 };
@@ -151,13 +171,13 @@ enum MCommandPrefix {
 class MCommand : public MCompComponent {
   public:
     MCommand(const std::string &command = "", MCommandPrefix prefix = M_COMMAND_PREFIX_NONE)
-        : MCompComponent("MCommand", " "), m_prefix(prefix) {
+        : MCompComponent(" "), m_prefix(prefix) {
         if (!command.empty()) {
-            add_sub_component(new MComponent(command));
+            add_sub_component(new MText(command));
         }
     }
 
-    MCommand(MCommandPrefix prefix) : MCompComponent("MCommand", " "), m_prefix(prefix) {}
+    MCommand(MCommandPrefix prefix) : MCompComponent(" "), m_prefix(prefix) {}
 
     virtual std::string to_string() const {
         if (m_prefix == M_COMMAND_PREFIX_NONE) {
@@ -174,8 +194,8 @@ class MCommand : public MCompComponent {
 
 class MRule : public MComponent {
   public:
-    MRule(const std::string &name = "MRule") : MComponent(name) {}
-    MRule(const MComponent &name) : MComponent(name.to_string()) {}
+    MRule(const std::string &target) : m_target(target) {}
+    MRule(const MComponent &target) : m_target(target.to_string()) {}
 
     virtual ~MRule() {
         for (auto &dependency : m_prerequisites) {
@@ -207,20 +227,23 @@ class MRule : public MComponent {
             }
         }
 
-        return m_name + (dependencies.empty() ? ":" : ": " + dependencies) + (commands.empty() ? "" : "\n" + commands);
+        return m_target + (dependencies.empty() ? ":" : ": " + dependencies) +
+               (commands.empty() ? "" : "\n" + commands);
     }
 
   protected:
+    std::string m_target;
     std::vector<MComponent *> m_prerequisites;
     std::vector<MComponent *> m_recipes;
 };
 
-class MQuoted : public MComponent {
+class MQuoted : public MCompComponent {
   public:
-    MQuoted(const std::string &name) : MComponent(name) {}
-    MQuoted(const MComponent &name) : MComponent(name.to_string()) {}
+    MQuoted(const std::string &content) { m_sub_components.push_back(new MText(content)); }
 
-    virtual std::string to_string() const { return "\"" + m_name + "\""; }
+    template <typename T> MQuoted(const T &content) { m_sub_components.push_back(new T(content)); }
+
+    virtual std::string to_string() const { return "\"" + MCompComponent::to_string() + "\""; }
 };
 
 class MFile {
