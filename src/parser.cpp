@@ -253,7 +253,7 @@ vector<string> scan_includes_and_main_func(const char *filename, bool *main_func
 
         if (state == IMS_MAIN_RIGHT_PAREN) {
             *main_func = true; // find main func
-            state      = IMS_INIT;
+            state = IMS_INIT;
         }
     }
 
@@ -263,9 +263,9 @@ vector<string> scan_includes_and_main_func(const char *filename, bool *main_func
 }
 
 enum PARSER_TOKEN_TYPE next_token(FILE *fp, char *buff, size_t buff_size) {
-    static int c            = '\0';
+    static int c = '\0';
     enum PARSER_STATE state = STA_INIT;
-    PARSER_TOKEN_TYPE type  = TYPE_EOF;
+    PARSER_TOKEN_TYPE type = TYPE_EOF;
 
     size_t len = 0;
 
@@ -331,10 +331,10 @@ enum PARSER_TOKEN_TYPE next_token(FILE *fp, char *buff, size_t buff_size) {
         case STA_SLASH:
             if (c == '/') {
                 state = STA_COMMENT1;
-                len   = 0;
+                len = 0;
             } else if (c == '*') {
                 state = STA_COMMENT2_1;
-                len   = 0;
+                len = 0;
             } else {
                 type = TYPE_SYM; // divide symbol
                 goto END;
@@ -344,7 +344,7 @@ enum PARSER_TOKEN_TYPE next_token(FILE *fp, char *buff, size_t buff_size) {
         case STA_DQUOTE:
             if (c == '\"') {
                 type = TYPE_STRING;
-                c    = '\0';
+                c = '\0';
                 --len;
                 goto END;
             } else if (c == '\\') {
@@ -354,12 +354,12 @@ enum PARSER_TOKEN_TYPE next_token(FILE *fp, char *buff, size_t buff_size) {
             break;
         case STA_DQUOTE_BACK_SLASH:
             state = STA_DQUOTE;
-            c     = '\0';
+            c = '\0';
             break;
         case STA_SQUOTE:
             if (c == '\'') {
                 type = TYPE_STRING;
-                c    = '\0';
+                c = '\0';
                 --len;
                 goto END;
             } else if (c == '\\') {
@@ -369,7 +369,7 @@ enum PARSER_TOKEN_TYPE next_token(FILE *fp, char *buff, size_t buff_size) {
             break;
         case STA_SQUOTE_BACK_SLASH:
             state = STA_SQUOTE;
-            c     = '\0';
+            c = '\0';
             break;
         case STA_NUMBER:
             if (!isdigit(c)) {

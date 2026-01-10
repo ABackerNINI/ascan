@@ -10,8 +10,7 @@ using namespace std;
 
 /*==========================================================================*/
 
-MFile::MFile(std::vector<cfile> &cfiles, Config &cfg, uint32_t flags) : m_cfiles(cfiles), m_cfg(cfg), m_flags(flags) {
-}
+MFile::MFile(std::vector<cfile> &cfiles, Config &cfg, uint32_t flags) : m_cfiles(cfiles), m_cfg(cfg), m_flags(flags) {}
 
 int MFile::output() {
 #ifdef DISABLE_WRITE
@@ -568,8 +567,7 @@ void MFile::output_mm_dependencies() {
 
 /*==========================================================================*/
 
-void MFile::output_part() {
-}
+void MFile::output_part() {}
 
 void MFile::output_gitignore() {
     /*
