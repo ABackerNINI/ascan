@@ -27,7 +27,7 @@
     ],
 	"C_Cpp.intelliSenseEngine": "disabled",
 	"editor.rulers": [
-		80
+		120
 	],
 	"files.associations": {
         "README": "markdown",
