@@ -50,7 +50,7 @@ void MFileV3::prepare() {
     }
 
     // Set m_build_path
-    if (settings.flag_build_) {
+    if (!settings.flag_no_build_) {
         m_build_path = MSimpleVariable(CONFIG_BD).to_string() + "/";
     }
 
@@ -115,7 +115,7 @@ void MFileV3::output_build_details() {
     add_component(new_spvar_def(CONFIG_LDFLAGS, m_cfg.get(CONFIG_LDFLAGS)));
 
     // OUT: BUILD = build
-    if (settings.flag_build_) {
+    if (!settings.flag_no_build_) {
         add_component(new_spvar_def(CONFIG_BD, m_cfg.get(CONFIG_BD)));
     }
 
@@ -243,7 +243,7 @@ void MFileV3::output_executable_details() {
 
     // OUT: OBJS1BD = $(OBJS1:%=$(BUILD)/%)
     //      OBJS2BD = $(OBJS2:%=$(BUILD)/%)
-    if (settings.flag_build_) {
+    if (!settings.flag_no_build_) {
         idx = m_executable.size() == 1 ? -1 : 1;
         for (size_t i = 0; i < m_executable.size(); ++i) {
             // OUT: OBJS1BD = $(OBJS1:%=$(BUILD)/%)
@@ -263,7 +263,7 @@ void MFileV3::output_executable_details() {
     idx = m_executable.size() == 1 ? -1 : 1;
     for (auto &exec : m_executable) {
         MRule *rule = new MRule(MSimpleVariable(m_cfg.make_bin(idx)));
-        if (settings.flag_build_) {
+        if (!settings.flag_no_build_) {
             // OUT: $(TARGET1): $(OBJS1BD)
             rule->add_prerequisite(new MSimpleVariable(m_cfg.make_objs_bd(idx)));
         } else {
@@ -372,7 +372,7 @@ void MFileV3::output_mode_control() {
 
     *cmd << "if [ ! -f \"$@\" ]; then \\\n";
 
-    if (settings.flag_build_) {
+    if (!settings.flag_no_build_) {
         // If build directory exists, then switch to another mode.
         // If not, then "make clean" is not needed.
         *cmd << "\t\tif [ -d \"" << MSimpleVariable(CONFIG_BD) << "\" ]; then \\\n";
@@ -397,7 +397,7 @@ void MFileV3::output_clean_up() {
     MRule *clean_rule = new MRule("clean");
 
     // if only one executable, hide the index number
-    if (settings.flag_build_) {
+    if (!settings.flag_no_build_) {
         // OUT: rm -f "$(TARGET1)" "$(TARGET2)" $(BUILD)
 
         MRecipe *cmd = new MRecipe();
@@ -483,7 +483,7 @@ void MFileV3::output_mm_dependencies() {
 
     add_mkdir_build_cmd_if_option_b(depend_rule);
 
-    if (settings.flag_build_) {
+    if (!settings.flag_no_build_) {
         if (m_c) {
             // OUT: @$(CC) $(CFLAGS) -MM *.c $(LDFLAGS) | sed 's/^\\(.*\\).o:/$$(BUILD)\/\1.o:/' > $@
             MRecipe *cmd = new MRecipe(MRecipePrefix::ECHO_OFF);
@@ -576,7 +576,7 @@ void MFileV3::add_mkdir_build_cmd_if_option_b(MRule *rule) {
     //   '@': turn off echo.
     //   '-': ignore error, make will exit when error occurs.
     //   '+': ignore make's -n -t -q options.
-    if (settings.flag_build_) {
+    if (!settings.flag_no_build_) {
         // OUT @mkdir -p "$(BUILD)"
         MRecipe *cmd = new MRecipe();
         cmd->set_prefix(MRecipePrefix::ECHO_OFF);
