@@ -1,7 +1,7 @@
 #ifndef __FS_H__
 #define __FS_H__
 
-#include <filesystem>
+#include <filesystem> // IWYU pragma: keep
 
 namespace fs {
 using namespace std::filesystem;
