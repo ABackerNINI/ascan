@@ -5,6 +5,7 @@
 #include "cfile.h"
 #include "config.h"
 #include "debug.h"
+#include "settings.h"
 #include <cstdint>
 #include <cstdio>
 #include <fstream>
@@ -297,7 +298,8 @@ class MQuoted : public MCompComponent {
 
 class MFile {
   public:
-    MFile(std::vector<cfile> &cfiles, Config &cfg, uint32_t flags) : m_cfiles(cfiles), m_cfg(cfg), m_flags(flags) {}
+    MFile(const Settings &settings, std::vector<cfile> &cfiles)
+        : settings(settings), m_cfiles(cfiles) {}
 
     virtual ~MFile() {}
 
@@ -308,9 +310,8 @@ class MFile {
     virtual std::string to_string() const = 0;
 
   protected:
+    const Settings &settings;
     std::vector<cfile> &m_cfiles; // all source files
-    Config &m_cfg; // config
-    uint32_t m_flags; // CLI flags
 };
 
 #endif //_AUTO_SCAN_MFILE_H_

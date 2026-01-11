@@ -5,7 +5,7 @@
 
 class MFileV3 : public MFile {
   public:
-    MFileV3(std::vector<cfile> &cfiles, Config &cfg, uint32_t flags) : MFile(cfiles, cfg, flags) {}
+    MFileV3(const Settings &settings, std::vector<cfile> &cfiles) : MFile(settings, cfiles) {}
 
     virtual ~MFileV3() {}
 
@@ -36,6 +36,8 @@ class MFileV3 : public MFile {
     void output_gitignore();
 
   protected:
+    Config m_cfg;
+
     std::vector<cfile *> m_executable;
     std::vector<std::string> m_binaries; // files to be added to gitignore
 

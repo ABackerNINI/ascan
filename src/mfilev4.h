@@ -5,7 +5,7 @@
 
 class MFileV4 : public MFile {
   public:
-    MFileV4(std::vector<cfile> &cfiles, Config &cfg, uint32_t flags) : MFile(cfiles, cfg, flags) {}
+    MFileV4(const Settings &settings, std::vector<cfile> &cfiles) : MFile(settings, cfiles) {}
 
     virtual ~MFileV4() {}
 

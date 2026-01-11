@@ -68,7 +68,7 @@ endif
 
 # SRCS = $(wildcard $(SRC_DIR)/*.cpp)
 SRCS := ascan.cpp options.cpp parser.cpp cfile.cpp align.cpp mfile.cpp  \
-		common.cpp config.cpp mfilev3.cpp mfilev4.cpp
+		common.cpp config.cpp mfilev3.cpp mfilev4.cpp settings.cpp
 SRCS := $(SRCS:%.cpp=$(SRC_DIR)/%.cpp)
 
 # OBJECTS

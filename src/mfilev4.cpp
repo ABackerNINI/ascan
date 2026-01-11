@@ -83,8 +83,6 @@ int MFileV4::build() {
         return 2;
     }
 
-    std::cout << "targets_section: " << t.targets_section.to_string() << std::endl;
-
     m_result = temp;
 
     return 0;

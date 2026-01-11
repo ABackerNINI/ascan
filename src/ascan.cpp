@@ -3,6 +3,7 @@
 #include "debug.h"
 #include "mfilev3.h"
 #include "mfilev4.h"
+#include "settings.h"
 #include <filesystem>
 #include <getopt.h>
 #include <string.h>
@@ -56,40 +57,35 @@ int debug_level = DBG_LVL_DEBUG;
 
 /*==========================================================================*/
 
-ascan::ascan(int argc, char **argv) {
-    m_flags = 0;
+ascan::ascan() {}
 
-    m_error = parse_cmd_args(argc, argv);
+int ascan::start(int argc, char **argv) {
+    Settings settings;
 
-    // char dir[BUFSIZ];
-    // getcwd(dir, BUFSIZ);
-    // m_cwd = string(dir);
-}
+    int ret;
+    if ((ret = settings.parse_argv(argc, argv)) != 0) {
+        return ret; // error in parsing command line arguments
+    }
 
-int ascan::start() {
-    if (m_error > 0) {
-        return EXIT_FAILURE;
-    } else if (m_error < 0) {
+    if (!test_makefile(settings.flag_force_, !settings.option_output_.empty())) {
         return EXIT_SUCCESS;
     }
 
-    if (!test_makefile()) {
-        return EXIT_SUCCESS;
-    }
     m_cfiles = recursion_scan_dir_c_cxx_files(".");
 
     match_c_cxx_includes();
-    match_starter_files();
+    // match_starter_files();
     print_cfiles();
     associate_header();
 
-    MFileV4 mf(m_cfiles, m_cfg, m_flags);
+    MFileV4 mf(settings, m_cfiles);
 
     return mf.output();
 }
 
 /*==========================================================================*/
 
+/*
 int check_debug_level(const char *s) {
     int num;
     if (!all_nums(s)) {
@@ -123,7 +119,9 @@ int pre_parse_debug_level(int argc, char **argv) {
     }
     return num;
 }
+ */
 
+/*
 int ascan::parse_cmd_args(int argc, char **argv) {
     // -a: all sections
     // -b: build
@@ -246,8 +244,7 @@ int ascan::parse_cmd_args(int argc, char **argv) {
                         printf("\"?\n\n");
                         help = HT_SPECIFIC;
                     } else {
-                        printf("Type 'ascan --help' to see useful "
-                               "informations.\n");
+                        printf("Type 'ascan --help' to see useful informations.\n");
                     }
                 }
 
@@ -280,7 +277,9 @@ ERROR_DEBUG_LEVEL:
 
     goto END;
 }
+ */
 
+/*
 void ascan::print_help(enum HELP_TYPE help, const options::as_option *option) const {
     static const char *desc = "Ascan will scan the c/c++ project and create simple makefile.\n\n"
                               "\tAscan is suitable for c/c++ projects that are:\n"
@@ -329,11 +328,13 @@ void ascan::print_help(enum HELP_TYPE help, const options::as_option *option) co
         PRINT_DESC(option->description);
     }
 }
+ */
+bool ascan::test_makefile(bool force, bool output_specified) {
+    Config config;
 
-bool ascan::test_makefile() {
     int exist = 0;
-    if (m_flags & OPTION_O) {
-        if (is_exist(m_cfg.output)) {
+    if (output_specified) {
+        if (is_exist(config.output)) {
             exist = 3;
         }
     } else {
@@ -341,15 +342,15 @@ bool ascan::test_makefile() {
         string makefile2 = "makefile";
 
         if (is_exist(makefile1)) {
-            m_cfg.output = makefile1;
+            config.output = makefile1;
             exist = 1;
         } else if (is_exist(makefile2)) {
-            m_cfg.output = makefile2;
+            config.output = makefile2;
             exist = 2;
         }
     }
 
-    if (!(m_flags & OPTION_F) && exist) {
+    if (!force && exist) {
         printf("There is already one %s, overwrite it? [y/N] ", (exist == 1 ? "Makefile" : "makefile"));
 
         char cmd[BUFSIZ];
@@ -362,14 +363,11 @@ bool ascan::test_makefile() {
         }
     }
 
-    if (!exist) {
-        m_flags |= OPTION_A;
-    }
-
     return true;
 }
 
 // Set 'have_main_func' for cfiles that are starter files specified by command line arguments.
+/*
 void ascan::match_starter_files() {
     for (auto &sfile : m_cfg.start_files) {
         for (auto &cfile : m_cfiles) {
@@ -384,6 +382,7 @@ void ascan::match_starter_files() {
         }
     }
 }
+*/
 
 void ascan::match_c_cxx_includes() {
     // Match includes for cfiles
@@ -429,8 +428,35 @@ void ascan::associate_header() {
 
 /*==========================================================================*/
 
-int main(int argc, char **argv) {
-    ascan ascan(argc, argv);
+#include "libs/rang.hpp"
+#include <csignal>
 
-    return ascan.start();
+// Signal handler for SIGINT (Control-C) to exit the program gracefully.
+void signal_handler(int s) {
+    (void)s;
+    std::cout << std::endl << rang::style::reset << rang::fg::red << rang::style::bold;
+    std::cout << "Control-C detected, exiting..." << rang::style::reset << std::endl;
+    std::exit(1);
+}
+
+// Register signal handler for SIGINT to exit the program gracefully.
+void register_signal_handler() {
+    // Nice Control-C
+    struct sigaction sigIntHandler;
+    sigIntHandler.sa_handler = signal_handler;
+    sigemptyset(&sigIntHandler.sa_mask);
+    sigIntHandler.sa_flags = 0;
+    sigaction(SIGINT, &sigIntHandler, nullptr);
+}
+
+int main(int argc, char **argv) {
+    // Reset colors at exit to avoid terminal issues after program termination
+    std::atexit([]() { std::cout << rang::style::reset; });
+
+    // Handle signals gracefully
+    register_signal_handler();
+
+    ascan ascan;
+
+    return ascan.start(argc, argv);
 }

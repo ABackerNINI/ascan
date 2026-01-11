@@ -19,7 +19,7 @@ int MFile::output() {
 
     fout.open(tmp, ios::out | ios::trunc);
     if (!fout.is_open()) {
-        print_error("Can't open file \"%s\"\n", m_cfg.output.c_str());
+        print_error("Can't open file \"%s\"\n", tmp.c_str());
         return EXIT_FAILURE;
     }
 
@@ -31,7 +31,7 @@ int MFile::output() {
 
     fout.close();
 
-    string cmd = "mv \"" + tmp + "\" \"" + m_cfg.output + "\"";
+    string cmd = "mv \"" + tmp + "\" \"" + settings.option_output_ + "\"";
     print_debug("%s\n", cmd.c_str());
     if (system(cmd.c_str()) != 0) {
         print_error("unkown error!");

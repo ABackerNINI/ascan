@@ -2,7 +2,6 @@
 #define _AUTO_SCAN_ASCAN_H_
 
 #include "cfile.h"
-#include "config.h"
 #include "options.h"
 #include <cstdint>
 #include <iostream>
@@ -11,13 +10,13 @@
 
 class ascan {
   public:
-    ascan(int argc, char **argv);
+    ascan();
     // Start to proceed auto-scan.
     //
     // Return:
     // -- EXIT_SUCCESS: if no error occurred.
     // -- EXIT_FAILURE: otherwise.
-    int start();
+    int start(int argc, char **argv);
 
   private:
     enum HELP_TYPE { HT_NONE, HT_ALL, HT_VER, HT_SPECIFIC };
@@ -38,19 +37,19 @@ class ascan {
     // -- true: if -f is set or user entered 'yes' to overwrite or no makefile
     // found.
     // -- false: otherwise.
-    bool test_makefile();
-    void match_starter_files();
+    bool test_makefile(bool force, bool output_specified);
+    // void match_starter_files();
     void match_c_cxx_includes();
     void associate_header();
     void print_cfiles() const;
 
   private:
-    int m_error; // whether there is an error during parsing args
-    uint32_t m_flags; // contains all options
-    Config m_cfg; // config
+    // int m_error; // whether there is an error during parsing args
+    // uint32_t m_flags; // contains all options
+    // Config m_cfg; // config
     // string m_cwd;            // current working dir
     std::vector<cfile> m_cfiles; // cfiles
-    options m_options;
+    // options m_options;
 };
 
 int main(int argc, char **argv);
