@@ -1,5 +1,6 @@
 #include "mfilev3.h"
 
+#include "align.h"
 #include "mfile.h"
 #include <algorithm>
 #include <cassert>

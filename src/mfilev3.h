@@ -1,6 +1,7 @@
 #ifndef __AUTO_SCAN_MFILE_V3_H__
 #define __AUTO_SCAN_MFILE_V3_H__
 
+#include "config.h"
 #include "mfile.h"
 
 class MFileV3 : public MFile {
