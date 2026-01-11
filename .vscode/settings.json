@@ -17,10 +17,12 @@
         "LTOK",
         "mcomponent",
         "mfile",
+        "mfilev",
         "msgdump",
         "OBJBD",
         "sdepend",
         "sfile",
+        "spvar",
         "SQUOTE",
         "tlexer",
         "tparser"
