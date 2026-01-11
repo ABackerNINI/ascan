@@ -18,6 +18,7 @@ class Settings {
     std::string option_src_dir_{"."};
     std::vector<std::string> main_files_;
     std::vector<std::string> include_dirs_;
+    int temp_version_{4};
     int debug_level_{0}; // 0: ERROR, 1: WARNING, 2: INFO, 3: DEBUG, 4: MSGDUMP, 5: EXCESSIVE
 };
 

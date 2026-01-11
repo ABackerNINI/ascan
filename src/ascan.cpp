@@ -11,11 +11,6 @@
 
 using namespace std;
 
-// TODO: rewrite CLI parsing
-// TODO: add option --use-v{1,2,3,4}, to specify which version of Makefile to generate
-// TODO: add option --simple, generate really simple Makefile
-// TODO: add position argument for the source directory
-
 int debug_level = DBG_LVL_DEBUG;
 
 #define PRINT_TITLE(title)                                                                                             \
@@ -78,9 +73,22 @@ int ascan::start(int argc, char **argv) {
     print_cfiles();
     associate_header();
 
-    MFileV4 mf(settings, m_cfiles);
+    if (settings.temp_version_ == 1) {
+        // TODO:
+    } else if (settings.temp_version_ == 2) {
+        // TODO:
+    } else if (settings.temp_version_ == 3) {
+        MFileV3 mf(settings, m_cfiles);
+        return mf.output();
+    } else if (settings.temp_version_ == 4) {
+        MFileV4 mf(settings, m_cfiles);
+        return mf.output();
+    }
 
-    return mf.output();
+    print_error("unknown template version\n");
+    print_error("available versions: 1, 2, 3, 4\n");
+
+    return 1;
 }
 
 /*==========================================================================*/
@@ -382,7 +390,6 @@ void ascan::match_starter_files(const std::vector<std::string> &start_files) {
         }
     }
 }
-
 
 void ascan::match_c_cxx_includes() {
     // Match includes for cfiles

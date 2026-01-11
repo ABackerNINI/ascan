@@ -14,8 +14,9 @@ int Settings::parse_argv(int argc, char **argv) {
     app.add_option("source-dir,--src-dir", option_src_dir_, "Source directory");
     app.add_option("main-files", main_files_, "Specify source files containing main() function to compile");
     app.add_option("-I", include_dirs_, "Include directories");
-
-    // app.add_flag_callback("--include-all", [&]() {}, "");
+    app.add_option("--use-v,--use-template,--template", temp_version_, "Use which template for Makefile generation")
+        ->check(CLI::Range(1, 4));
+    app.add_flag_callback("-s, --simple", [&]() { temp_version_ = 1; }, "Generate really simple Makefile, same as --template=1");
 
     try {
         app.parse(argc, argv);
