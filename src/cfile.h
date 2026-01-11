@@ -36,18 +36,17 @@ class cfile {
     bool have_main_func() const;
     // Get file type.
     enum FILE_TYPE file_type() const;
-    // Whether if it is a header file.
+    // Whether if it is a header file, e.g ".h" or ".hpp".
     bool is_header() const;
-    // Whether if it is a source file.
+    // Whether if it is a source file, e.g ".c" or ".cpp".
     bool is_source() const;
-    // Whether if it is a c header file.
+    // Whether if it is a c header file, e.g ".h".
     bool is_c_header() const;
-    // Whether if it is a c++ header file.
+    // Whether if it is a c++ header file, e.g ".h" or ".hpp".
     bool is_cxx_header() const;
-    // Get header files this file include.
-    // Whether if it is a c source file.
+    // Whether if it is a c source file, e.g ".c".
     bool is_c_source() const;
-    // Whether if it is a c++ source file.
+    // Whether if it is a c++ source file, e.g ".cpp" or ".cc".
     bool is_cxx_source() const;
     // Get header files this file include.
     const std::vector<cfile *> &includes() const;
