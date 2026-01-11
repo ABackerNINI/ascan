@@ -3,8 +3,9 @@
 
 // #define DEBUG
 
+#include "fmt.h" // IWYU pragma: keep
+
 #ifdef DEBUG
-    #include "libs/fmt/color.h"
     #include <cassert>
 
     #define __DBG_PRT_REAPEAT(...)                                                                                     \
