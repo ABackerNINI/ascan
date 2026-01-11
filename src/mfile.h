@@ -42,10 +42,24 @@ class MText : public MComponent {
     std::string m_text;
 };
 
+template <typename T> constexpr bool is_convertible_to_string_v = std::is_convertible_v<T, std::string>;
+
 // Compound component of a Makefile.
 class MCompComponent : public MComponent {
   public:
     MCompComponent(const std::string &separator = "") : separator(separator) {}
+
+    MCompComponent(const MCompComponent &other) = delete;
+    MCompComponent &operator=(const MCompComponent &other) = delete;
+
+    MCompComponent(MCompComponent &&other) { *this = std::move(other); }
+    MCompComponent &operator=(MCompComponent &&other) {
+        if (this != &other) {
+            std::swap(separator, other.separator);
+            std::swap(m_sub_components, other.m_sub_components);
+        }
+        return *this;
+    }
 
     virtual ~MCompComponent() {
         for (auto &sub_component : m_sub_components) {
@@ -53,14 +67,12 @@ class MCompComponent : public MComponent {
         }
     }
 
-    template <typename T> MCompComponent &add_sub_component(T &&sub_component) {
+    template <typename T> MCompComponent &add_component(T &&sub_component) {
         if constexpr (std::is_convertible_v<T, MComponent *>) {
             m_sub_components.push_back(sub_component);
         } else if constexpr (is_mcomponent_v<T>) {
             m_sub_components.push_back(new std::remove_cvref_t<T>(std::forward<T>(sub_component)));
-        } else if constexpr (std::is_same_v<const char *, std::remove_cvref_t<T>>) {
-            m_sub_components.push_back(new MText(sub_component));
-        } else if constexpr (std::is_same_v<std::string, std::remove_cvref_t<T>>) {
+        } else if constexpr (is_convertible_to_string_v<std::remove_cvref_t<T>>) {
             m_sub_components.push_back(new MText(sub_component));
         } else {
             static_assert(false, "Invalid type for MCompComponent");
@@ -69,7 +81,7 @@ class MCompComponent : public MComponent {
     }
 
     template <typename T> friend MCompComponent &operator<<(MCompComponent &mcc, T sub_component) {
-        return mcc.add_sub_component(sub_component);
+        return mcc.add_component(sub_component);
     }
 
     void set_separator(const std::string &separator) { this->separator = separator; }
@@ -126,6 +138,31 @@ class MFilename : public MComponent {
     std::string m_filename;
 };
 
+enum class VariableAssignmentType {
+    RECURSIVELY_EXPANDED, // =
+    SIMPLY_EXPANDED, // := or ::=
+    IMMEDIATELY_EVALUATED, // :::=
+    APPEND, // +=
+    CONDITIONAL, // ?=
+};
+
+constexpr const char *variable_assignment_type_to_string(VariableAssignmentType type) {
+    switch (type) {
+    case VariableAssignmentType::RECURSIVELY_EXPANDED:
+        return "=";
+    case VariableAssignmentType::SIMPLY_EXPANDED:
+        return ":=";
+    case VariableAssignmentType::IMMEDIATELY_EVALUATED:
+        return ":::=";
+    case VariableAssignmentType::APPEND:
+        return "+=";
+    case VariableAssignmentType::CONDITIONAL:
+        return "?=";
+    default:
+        return "";
+    }
+}
+
 class MSimpleVariable : public MComponent {
   public:
     MSimpleVariable(const std::string &varname) : m_varname(varname) {}
@@ -138,23 +175,43 @@ class MSimpleVariable : public MComponent {
 
 class MSimpleVariableDef : public MComponent {
   public:
-    MSimpleVariableDef(const std::string &varname, const std::string &value) : m_varname(varname), m_value(value) {}
+    MSimpleVariableDef(const std::string &varname,
+                       const std::string &value,
+                       VariableAssignmentType assignment_type = VariableAssignmentType::RECURSIVELY_EXPANDED)
+        : m_varname(varname), m_value(value), m_assignment_type(assignment_type) {}
 
-    virtual std::string to_string() const { return m_varname + " = " + m_value; }
+    virtual std::string to_string() const {
+        return m_varname + " " + variable_assignment_type_to_string(m_assignment_type) + " " + m_value;
+    }
 
   protected:
     std::string m_varname;
     std::string m_value;
+    VariableAssignmentType m_assignment_type;
 };
 
 class MVariableDef : public MCompComponent {
   public:
-    MVariableDef(const std::string &varname) : MCompComponent(" "), m_varname(varname) {}
+    MVariableDef(const std::string &varname,
+                 VariableAssignmentType assignment_type = VariableAssignmentType::RECURSIVELY_EXPANDED)
+        : MCompComponent(""), m_varname(varname), m_assignment_type(assignment_type) {}
 
-    virtual std::string to_string() const { return m_varname + " = " + MCompComponent::to_string(); }
+    template <typename T>
+    MVariableDef(const std::string &varname,
+                 T &&value,
+                 VariableAssignmentType assignment_type = VariableAssignmentType::RECURSIVELY_EXPANDED)
+        : MCompComponent(""), m_varname(varname), m_assignment_type(assignment_type) {
+        add_component(std::forward<T>(value));
+    }
+
+    virtual std::string to_string() const {
+        return m_varname + " " + variable_assignment_type_to_string(m_assignment_type) + " " +
+               MCompComponent::to_string();
+    }
 
   public:
     std::string m_varname;
+    VariableAssignmentType m_assignment_type;
 };
 
 class MBlankLine : public MComponent {
@@ -168,26 +225,26 @@ class MBlankLine : public MComponent {
 //   '@': turn off echo.
 //   '-': ignore error, make will exit when error occurs.
 //   '+': ignore make's -n -t -q options.
-enum MRecipePrefix {
-    M_COMMAND_PREFIX_NONE = ' ',
-    M_COMMAND_PREFIX_ECHO_OFF = '@',
-    M_COMMAND_PREFIX_IGNORE_ERROR = '-',
-    M_COMMAND_PREFIX_IGNORE_MAKE_OPTIONS = '+'
+enum class MRecipePrefix {
+    NONE = ' ', // ' '
+    ECHO_OFF = '@', // @
+    IGNORE_ERROR = '-', // -
+    IGNORE_MAKE_OPTIONS = '+' // +
 };
 
 class MRecipe : public MCompComponent {
   public:
-    MRecipe(const std::string &command = "", MRecipePrefix prefix = M_COMMAND_PREFIX_NONE)
+    MRecipe(const std::string &command = "", MRecipePrefix prefix = MRecipePrefix::NONE)
         : MCompComponent(" "), m_prefix(prefix) {
         if (!command.empty()) {
-            add_sub_component(new MText(command));
+            add_component(new MText(command));
         }
     }
 
     MRecipe(MRecipePrefix prefix) : MCompComponent(" "), m_prefix(prefix) {}
 
     virtual std::string to_string() const {
-        if (m_prefix == M_COMMAND_PREFIX_NONE) {
+        if (m_prefix == MRecipePrefix::NONE) {
             return std::string("\t") + MCompComponent::to_string();
         }
         return std::string("\t") + char(m_prefix) + MCompComponent::to_string();
@@ -204,15 +261,13 @@ class MRule : public MComponent {
     MRule(const std::string &target) : m_target(target) {}
     MRule(const MComponent &target) : m_target(target.to_string()) {}
 
-    virtual ~MRule() {}
-
-    template <typename T> MRule &add_prerequisite(T prerequisite) {
-        m_prerequisites.add_sub_component(prerequisite);
+    template <typename T> MRule &add_prerequisite(T &&prerequisite) {
+        m_prerequisites.add_component(std::forward<T>(prerequisite));
         return *this;
     }
 
-    template <typename T> MRule &add_recipe(T recipe) {
-        m_recipes.add_sub_component(recipe);
+    template <typename T> MRule &add_recipe(T &&recipe) {
+        m_recipes.add_component(std::forward<T>(recipe));
         return *this;
     }
 
@@ -235,7 +290,7 @@ class MQuoted : public MCompComponent {
   public:
     MQuoted(const std::string &content) { m_sub_components.push_back(new MText(content)); }
 
-    template <typename T> MQuoted(const T &content) { m_sub_components.push_back(new T(content)); }
+    template <typename T> MQuoted(T &&content) { add_component(std::forward<T>(content)); }
 
     virtual std::string to_string() const { return "\"" + MCompComponent::to_string() + "\""; }
 };
@@ -253,9 +308,9 @@ class MFile {
     virtual std::string to_string() const = 0;
 
   protected:
-    std::vector<cfile> &m_cfiles;
-    Config &m_cfg;
-    uint32_t m_flags;
+    std::vector<cfile> &m_cfiles; // all source files
+    Config &m_cfg; // config
+    uint32_t m_flags; // CLI flags
 };
 
 #endif //_AUTO_SCAN_MFILE_H_

@@ -71,7 +71,7 @@ class cfile {
     bool check_type(const std::vector<FILE_TYPE> &types, FILE_TYPE type) const;
 
   private:
-    std::string m_filename;
+    std::string m_filename; // TODO: rename to m_path
     std::string m_name;
     bool m_have_main_func;
     bool m_includes_matched;

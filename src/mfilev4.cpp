@@ -1,8 +1,6 @@
 #include "mfilev4.h"
 
 #include "common.h"
-#include "fs.h"
-#include "options.h"
 #include <algorithm>
 #include <cassert>
 #include <unistd.h>
@@ -122,10 +120,81 @@ void MFileV4::prepare() {
          [](const cfile *a, const cfile *b) { return a->name() < b->name(); });
 }
 
-void MFileV4::build_options_section() {}
+void MFileV4::build_options_section() {
+    // TODO: add options for the following three fields
+    MSimpleVariableDef config{"CONFIG", "debug", VariableAssignmentType::CONDITIONAL};
+    MSimpleVariableDef cxx{"CXX", "g++", VariableAssignmentType::CONDITIONAL};
+    MSimpleVariableDef std{"STD", "c++17", VariableAssignmentType::CONDITIONAL};
 
-void MFileV4::build_targets() {}
+    t.options_section.add_component(config);
+    t.options_section.add_component(MBlankLine());
+    t.options_section.add_component(cxx);
+    t.options_section.add_component(std);
+}
 
-void MFileV4::build_sources_section() {}
+void MFileV4::build_targets() {
+    if (m_executable.size() == 1) {
+        MVariableDef target{"TARGET"};
+        target.add_component(MSimpleVariable("BIN_DIR"));
+        target.add_component("/");
+        target.add_component(MSimpleVariable("PROJECT"));
+        t.targets.add_component(std::move(target));
+    } else if (m_executable.size() > 1) {
+        // TODO: implement multiple targets
+    }
+}
 
-void MFileV4::build_targets_section() {}
+static void find_all_headers(std::vector<cfile> &files, cfile *file) {
+    file->set_visited(true);
+    for (auto include = file->includes().begin(); include != file->includes().end(); ++include) {
+        if (!(*include)->visited()) {
+            find_all_headers(files, *include);
+            if ((*include)->associate() && !(*include)->associate()->visited()) {
+                find_all_headers(files, (*include)->associate());
+            }
+        }
+    }
+}
+
+void MFileV4::build_sources_section() {
+    if (m_executable.size() == 1) {
+        // TODO: wildcard sources
+
+        MVariableDef sources{"SRCS", VariableAssignmentType::SIMPLY_EXPANDED};
+        sources.set_separator(" ");
+        auto &exec = m_executable[0];
+        find_all_headers(m_cfiles, exec);
+        for (auto &cfile : m_cfiles) {
+            if (cfile.visited()) {
+                if (cfile.associate() != NULL && cfile.is_source() && &cfile != exec) {
+                    sources.add_component(new MFilename(cfile.associate()->filename()));
+                }
+                cfile.set_visited(false);
+            }
+        }
+
+        MVariableDef sources2{"SRCS", VariableAssignmentType::SIMPLY_EXPANDED};
+        sources2.set_separator(" ");
+        sources2.add_component(MText("$(SRCS:%.cpp=$(SRC_DIR)/%.cpp)"));
+
+        t.sources_section.add_component(std::move(sources));
+        t.sources_section.add_component(std::move(sources2));
+    } else {
+        // TODO: deal with multiple executables
+    }
+}
+
+void MFileV4::build_targets_section() {
+    if (m_executable.size() == 1) {
+        MRule target_rule{MSimpleVariable{"TARGET"}};
+        target_rule.add_prerequisite(MSimpleVariable{"OBJS"});
+        target_rule.add_prerequisite(MSimpleVariable{"MODE_FILE"});
+        target_rule.add_recipe(MRecipe("mkdir -p $(@D)", MRecipePrefix::ECHO_OFF));
+        target_rule.add_recipe(MRecipe("$(CXX) $(CXXFLAGS) $(OBJS) -o $@ $(LDFLAGS)"));
+        target_rule.add_recipe(MRecipe("$(call check_build_params)"));
+
+        t.targets_section.add_component(std::move(target_rule));
+    } else {
+        // TODO: deal with multiple executables
+    }
+}

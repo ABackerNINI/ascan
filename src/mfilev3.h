@@ -13,7 +13,7 @@ class MFileV3 : public MFile {
 
     virtual std::string to_string() const override { return m_components.to_string(); }
 
-    void add_component(MComponent *component) { m_components.add_sub_component(component); }
+    void add_component(MComponent *component) { m_components.add_component(component); }
 
   protected:
     void prepare();

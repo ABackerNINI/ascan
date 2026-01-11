@@ -13,6 +13,7 @@ using namespace std;
 // TODO: rewrite CLI parsing
 // TODO: add option --use-v{1,2,3,4}, to specify which version of Makefile to generate
 // TODO: add option --simple, generate really simple Makefile
+// TODO: add position argument for the source directory
 
 int debug_level = DBG_LVL_DEBUG;
 

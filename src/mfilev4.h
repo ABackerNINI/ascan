@@ -33,10 +33,10 @@ class MFileV4 : public MFile {
         std::string src_dir{"src"};
         std::string bld_dir{"build"};
         std::string bin_dir{"bin"};
-        MCompComponent options_section;
+        MCompComponent options_section{"\n"};
         MCompComponent targets;
-        MCompComponent sources_section;
-        MCompComponent targets_section;
+        MCompComponent sources_section{"\n"};
+        MCompComponent targets_section{"\n"};
     } t;
 
     std::string m_result;

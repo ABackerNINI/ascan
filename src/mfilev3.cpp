@@ -131,7 +131,7 @@ void MFileV3::output_targets() {
     int idx = m_executable.size() == 1 ? -1 : 1;
     for (auto &exec : m_executable) {
         MVariableDef *target = new MVariableDef(m_cfg.make_bin(idx++));
-        target->add_sub_component(new MFilename(exec->name()));
+        target->add_component(new MFilename(exec->name()));
         add_component(target);
     }
     add_component(new MBlankLine());
@@ -222,7 +222,7 @@ void MFileV3::output_executable_details() {
 
         // OUT: OBJS1 = xxx.o
         MVariableDef *obj = new MVariableDef(m_cfg.make_objs(idx++));
-        obj->add_sub_component(new MFilename(exec->name() + ".o"));
+        obj->add_component(new MFilename(exec->name() + ".o"));
 
         // OUT: all objects dependency.
         find_all_headers(m_cfiles, exec);
@@ -230,7 +230,7 @@ void MFileV3::output_executable_details() {
             if (cfile->visited()) {
                 if (cfile->associate() != NULL && cfile->is_source() && &(*cfile) != exec) {
                     // OUT: xxx.o
-                    obj->add_sub_component(new MFilename(cfile->associate()->name() + ".o"));
+                    obj->add_component(new MFilename(cfile->associate()->name() + ".o"));
                 }
                 cfile->set_visited(false);
             }
@@ -248,7 +248,7 @@ void MFileV3::output_executable_details() {
         for (size_t i = 0; i < m_executable.size(); ++i) {
             // OUT: OBJS1BD = $(OBJS1:%=$(BUILD)/%)
             MVariableDef *obj_bd = new MVariableDef(m_cfg.make_objs_bd(idx));
-            obj_bd->add_sub_component(new MSimpleVariable(m_cfg.make_objs(idx) + string(":%=$(") + CONFIG_BD + ")/%"));
+            obj_bd->add_component(new MSimpleVariable(m_cfg.make_objs(idx) + string(":%=$(") + CONFIG_BD + ")/%"));
             add_component(obj_bd);
             ++idx;
         }
@@ -368,7 +368,7 @@ void MFileV3::output_mode_control() {
 
     MRecipe *cmd = new MRecipe();
     cmd->set_separator("");
-    cmd->set_prefix(M_COMMAND_PREFIX_ECHO_OFF);
+    cmd->set_prefix(MRecipePrefix::ECHO_OFF);
 
     *cmd << "if [ ! -f \"$@\" ]; then \\\n";
 
@@ -486,7 +486,7 @@ void MFileV3::output_mm_dependencies() {
     if (m_flags & OPTION_B) {
         if (m_c) {
             // OUT: @$(CC) $(CFLAGS) -MM *.c $(LDFLAGS) | sed 's/^\\(.*\\).o:/$$(BUILD)\/\1.o:/' > $@
-            MRecipe *cmd = new MRecipe(M_COMMAND_PREFIX_ECHO_OFF);
+            MRecipe *cmd = new MRecipe(MRecipePrefix::ECHO_OFF);
             cmd->set_separator("");
             *cmd << MSimpleVariable(CONFIG_CC) << " " << MSimpleVariable(CONFIG_CFLAGS) << " -MM" << c_types << " "
                  << MSimpleVariable(CONFIG_LDFLAGS) << " | sed 's/^\\(.*\\).o:/$" << MSimpleVariable(CONFIG_BD)
@@ -496,7 +496,7 @@ void MFileV3::output_mm_dependencies() {
 
         if (m_cc || m_cpp) {
             // OUT: @$(CXX) $(CXXFLAGS) -MM *.cpp *.cc $(LDFLAGS) | sed 's/^\\(.*\\).o:/$$(BUILD)\/\1.o:/' > $@
-            MRecipe *cmd = new MRecipe(M_COMMAND_PREFIX_ECHO_OFF);
+            MRecipe *cmd = new MRecipe(MRecipePrefix::ECHO_OFF);
             cmd->set_separator("");
             *cmd << MSimpleVariable(CONFIG_CXX) << " " << MSimpleVariable(CONFIG_CXXFLAGS) << " -MM" << cxx_types << " "
                  << MSimpleVariable(CONFIG_LDFLAGS) << " | sed 's/^\\(.*\\).o:/$" << MSimpleVariable(CONFIG_BD)
@@ -506,7 +506,7 @@ void MFileV3::output_mm_dependencies() {
     } else {
         if (m_c) {
             // OUT: @$(CC) $(CFLAGS) -MM *.c $(LDFLAGS) > $@
-            MRecipe *cmd = new MRecipe(M_COMMAND_PREFIX_ECHO_OFF);
+            MRecipe *cmd = new MRecipe(MRecipePrefix::ECHO_OFF);
             cmd->set_separator("");
             *cmd << MSimpleVariable(CONFIG_CC) << " " << MSimpleVariable(CONFIG_CFLAGS) << " -MM" << c_types << " "
                  << MSimpleVariable(CONFIG_LDFLAGS) << " > $@"; // TODO
@@ -514,7 +514,7 @@ void MFileV3::output_mm_dependencies() {
         }
         if (m_cc || m_cpp) {
             // OUT: @$(CXX) $(CXXFLAGS) -MM *.cpp *.cc $(LDFLAGS) > $@
-            MRecipe *cmd = new MRecipe(M_COMMAND_PREFIX_ECHO_OFF);
+            MRecipe *cmd = new MRecipe(MRecipePrefix::ECHO_OFF);
             cmd->set_separator("");
             *cmd << MSimpleVariable(CONFIG_CXX) << " " << MSimpleVariable(CONFIG_CXXFLAGS) << " -MM" << cxx_types << " "
                  << MSimpleVariable(CONFIG_LDFLAGS) << " > $@"; // TODO
@@ -579,7 +579,7 @@ void MFileV3::add_mkdir_build_cmd_if_option_b(MRule *rule) {
     if (m_flags & OPTION_B) {
         // OUT @mkdir -p "$(BUILD)"
         MRecipe *cmd = new MRecipe();
-        cmd->set_prefix(M_COMMAND_PREFIX_ECHO_OFF);
+        cmd->set_prefix(MRecipePrefix::ECHO_OFF);
         *cmd << "mkdir -p" << MQuoted(MSimpleVariable(CONFIG_BD));
         rule->add_recipe(cmd);
     }
