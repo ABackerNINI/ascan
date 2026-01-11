@@ -58,10 +58,6 @@ ifeq ($(CONFIG),debug)
     CXXFLAGS += -g -O0 -DDEBUG
 else ifeq ($(CONFIG),release)
     CXXFLAGS += -flto=4 -O3 -march=native -DNDEBUG
-else ifeq ($(CONFIG),test)
-    CXXFLAGS += -g -O0 -DTEST -Igoogletest/include
-    LDFLAGS  += -Lgoogletest/lib -lgtest -lgtest_main -lpthread
-    TARGET = $(PROJECT)_test
 endif
 
 # SOURCES
@@ -94,7 +90,7 @@ $(BLD_DIR)/%.mk.mode:
 	@rm -f $(@D)/*.mk.mode
 	@touch $@
 
-# INCLUDE DEPENDENCIES
+# DEPENDENCIES
 
 -include $(DEPS)
 
@@ -157,7 +153,8 @@ define check_build_params
 	@if [ -f $(OBJ_DIR)/build_params.txt ]; then \
 		if ! diff -q "$(OBJ_DIR)/build_params.txt" "$(OBJ_DIR)/temp.txt" >/dev/null 2>&1 ; then \
 			echo "$(RED)$(BOLD)"; \
-			echo "WARNING: Build params mismatch, most likely due to Makefile changes, or a hash collision, you may need a 'make clean'."; \
+			echo -n "WARNING: Build params mismatch, most likely due to Makefile changes, or a hash collision, "; \
+			echo "you may need a 'make clean'."; \
 			echo "$(RESET)"; \
 			echo "Diff of build params (last vs current):"; \
 			diff --ignore-space-change --color --minimal "$(OBJ_DIR)/build_params.txt" "$(OBJ_DIR)/temp.txt"; \
