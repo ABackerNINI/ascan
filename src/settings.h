@@ -2,6 +2,7 @@
 #define __SETTINGS_H__
 
 #include <string>
+#include <vector>
 
 class Settings {
   public:
@@ -10,10 +11,14 @@ class Settings {
 
     void debug_print() const;
 
-    bool flag_force_;
-    bool flag_build_;
+    bool flag_force_{false};
+    bool flag_build_{true};
+    bool flag_recursive_{false};
     std::string option_output_;
-    int debug_level_; // 0: ERROR, 1: WARNING, 2: INFO, 3: DEBUG, 4: MSGDUMP, 5: EXCESSIVE
+    std::string option_src_dir_{"."};
+    std::vector<std::string> main_files_;
+    std::vector<std::string> include_dirs_;
+    int debug_level_{0}; // 0: ERROR, 1: WARNING, 2: INFO, 3: DEBUG, 4: MSGDUMP, 5: EXCESSIVE
 };
 
 #endif // __SETTINGS_H__
