@@ -25,6 +25,14 @@ const char *get_ext(const string &filename) {
     return get_ext(filename.c_str(), filename.length());
 }
 
+bool starts_with(const std::string &str, const std::string &prefix) {
+    return str.length() >= prefix.length() && str.compare(0, prefix.length(), prefix) == 0;
+}
+
+bool ends_with(const std::string &str, const std::string &suffix) {
+    return str.length() >= suffix.length() && str.compare(str.length() - suffix.length(), suffix.length(), suffix) == 0;
+}
+
 bool is_exist(const char *filename) {
     return access(filename, F_OK) == 0;
 }
@@ -115,7 +123,6 @@ bool contain_space(const std::string &s) {
     return false;
 }
 
-// Read file line by line and put them together in a string.
 std::string read_file(const fs::path &path_) {
     std::ifstream infile(path_);
     if (!infile) {
@@ -143,7 +150,6 @@ std::string read_file(const fs::path &path_) {
     return content;
 }
 
-// Write string to a file.
 void write_file(const fs::path &path_, const std::string &content) {
     std::ofstream outfile(path_);
     if (!outfile) {
