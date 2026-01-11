@@ -159,3 +159,22 @@ void write_file(const fs::path &path_, const std::string &content) {
     }
     outfile << content;
 }
+
+std::string vector_to_string(const std::vector<std::string> &vec,
+                             const std::string &sep,
+                             const std::string &default_for_empty) {
+    if (vec.empty()) {
+        return default_for_empty;
+    }
+
+    std::string result = "";
+    for (const auto &item : vec) {
+        result += item + sep;
+    }
+    if (result.size() > 0) {
+        for (size_t i = 0; i < sep.size(); i++) {
+            result.pop_back();
+        }
+    }
+    return result;
+}

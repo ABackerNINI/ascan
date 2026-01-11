@@ -50,4 +50,10 @@ std::string read_file(const fs::path &path_);
 // Write string to a file.
 void write_file(const fs::path &path_, const std::string &content);
 
+// Concatenate a vector of strings into one string with a separator.
+// If the vector is empty, return the default_for_empty string.
+std::string vector_to_string(const std::vector<std::string> &vec,
+                             const std::string &sep,
+                             const std::string &default_for_empty = "");
+
 #endif //_AUTO_SCAN_UTILS_H_
