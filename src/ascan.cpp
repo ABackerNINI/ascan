@@ -1,9 +1,10 @@
 #include "ascan.h"
-#include "common.h"
+
 #include "debug.h"
 #include "mfilev3.h"
 #include "mfilev4.h"
 #include "settings.h"
+#include "utils.h"
 #include <cstring>
 #include <filesystem>
 #include <getopt.h>

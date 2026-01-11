@@ -1,7 +1,8 @@
 #include "cfile.h"
-#include "common.h"
+
 #include "debug.h"
 #include "parser.h"
+#include "utils.h"
 #include <cassert>
 #include <dirent.h>
 #include <fcntl.h>

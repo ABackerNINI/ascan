@@ -6,6 +6,9 @@
 #include <string>
 #include <vector>
 
+#define ASCAN_VERSION "0.1.3 alpha"
+#define ASCAN_URL "git@github.com:ABackerNINI/ascan.git"
+
 class ascan {
   public:
     ascan();

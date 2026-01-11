@@ -1,12 +1,9 @@
-#ifndef _AUTO_SCAN_COMMON_H_
-#define _AUTO_SCAN_COMMON_H_
+#ifndef _AUTO_SCAN_UTILS_H_
+#define _AUTO_SCAN_UTILS_H_
 
 #include "fs.h" // IWYU pragma: keep
 #include <string>
 #include <vector>
-
-#define ASCAN_VERSION "0.1.3 alpha"
-#define ASCAN_URL "git@github.com:ABackerNINI/ascan.git"
 
 // Get file extention.
 const char *get_ext(const char *filename, size_t length = 0);
@@ -53,4 +50,4 @@ std::string read_file(const fs::path &path_);
 // Write string to a file.
 void write_file(const fs::path &path_, const std::string &content);
 
-#endif //_AUTO_SCAN_COMMON_H_
+#endif //_AUTO_SCAN_UTILS_H_
