@@ -1,6 +1,7 @@
 #include "mfilev4.h"
 
 #include "common.h"
+#include "debug.h"
 #include <algorithm>
 #include <cassert>
 #include <unistd.h>
@@ -47,7 +48,7 @@ int MFileV4::build() {
     prepare();
 
     if (m_executable.size() == 1) {
-        t.proj_name = m_executable[0]->name();
+        t.proj_name = m_executable[0]->stem();
     } else if (m_executable.size() > 1) {
         // TODO: proj_name = dir name of the project root
         t.proj_name = "ascan_project";
@@ -58,7 +59,7 @@ int MFileV4::build() {
     build_sources_section();
     build_targets_section();
 
-    fs::path tempfile = "../template/v4/template.mk";
+    fs::path tempfile = "templates/v4/template.mk";
     std::string temp = read_file(tempfile);
 
     std::vector<std::pair<std::string, std::string>> replaces;
@@ -75,11 +76,10 @@ int MFileV4::build() {
 
     if (num_replaced != replaces.size()) {
         print_warning("Failed to replace all strings in template\n");
-        // return 1;
     }
 
     if (temp.find("__ASCAN::") != std::string::npos) {
-        print_error("Failed to replace all strings in template\n");
+        print_error("There are still __ASCAN:: strings in the template\n");
         return 2;
     }
 
@@ -115,7 +115,7 @@ void MFileV4::prepare() {
 
     // Sort executables by name
     sort(m_executable.begin(), m_executable.end(),
-         [](const cfile *a, const cfile *b) { return a->name() < b->name(); });
+         [](const cfile *a, const cfile *b) { return a->stem() < b->stem(); });
 }
 
 void MFileV4::build_options_section() {
@@ -142,13 +142,13 @@ void MFileV4::build_targets() {
     }
 }
 
-static void find_all_headers(std::vector<cfile> &files, cfile *file) {
+static void find_all_sources_and_headers(std::vector<cfile> &files, cfile *file) {
     file->set_visited(true);
     for (auto include = file->includes().begin(); include != file->includes().end(); ++include) {
         if (!(*include)->visited()) {
-            find_all_headers(files, *include);
+            find_all_sources_and_headers(files, *include);
             if ((*include)->associate() && !(*include)->associate()->visited()) {
-                find_all_headers(files, (*include)->associate());
+                find_all_sources_and_headers(files, (*include)->associate());
             }
         }
     }
@@ -158,25 +158,30 @@ void MFileV4::build_sources_section() {
     if (m_executable.size() == 1) {
         // TODO: wildcard sources
 
-        MVariableDef sources{"SRCS", VariableAssignmentType::SIMPLY_EXPANDED};
+        MVariableDef sources{"SRCS", VariableAssignmentType::RECURSIVELY_EXPANDED};
         sources.set_separator(" ");
         auto &exec = m_executable[0];
-        find_all_headers(m_cfiles, exec);
-        for (auto &cfile : m_cfiles) {
-            if (cfile.visited()) {
-                if (cfile.associate() != NULL && cfile.is_source() && &cfile != exec) {
-                    sources.add_component(new MFilename(cfile.associate()->filename()));
+        find_all_sources_and_headers(m_cfiles, exec);
+
+        std::vector<cfile *> source_files;
+        for (cfile &cf : m_cfiles) {
+            if (cf.visited() && cf.is_source()) {
+                if (&cf != exec) {
+                    source_files.push_back(&cf);
                 }
-                cfile.set_visited(false);
+                cf.set_visited(false);
             }
         }
 
-        MVariableDef sources2{"SRCS", VariableAssignmentType::SIMPLY_EXPANDED};
-        sources2.set_separator(" ");
-        sources2.add_component(MText("$(SRCS:%.cpp=$(SRC_DIR)/%.cpp)"));
+        std::sort(source_files.begin(), source_files.end(), [](cfile *a, cfile *b) { return a->path() < b->path(); });
+
+        sources.add_component(new MFilename(fs::relative(exec->path(), settings.option_src_dir_)));
+
+        for (auto &src : source_files) {
+            sources.add_component(new MFilename(fs::relative(src->path(), settings.option_src_dir_)));
+        }
 
         t.sources_section.add_component(std::move(sources));
-        t.sources_section.add_component(std::move(sources2));
     } else {
         // TODO: deal with multiple executables
     }

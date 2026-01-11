@@ -65,11 +65,10 @@ endif
 # SRCS = $(wildcard $(SRC_DIR)/*.cpp)
 SRCS := ascan.cpp options.cpp parser.cpp cfile.cpp align.cpp mfile.cpp  \
 		common.cpp config.cpp
-SRCS := $(SRCS:%.cpp=$(SRC_DIR)/%.cpp)
 
 # OBJECTS
 
-OBJS = $(SRCS:%.cpp=$(OBJ_DIR)/%.o)
+OBJS = $(SRCS:%.cpp=$(OBJ_DIR)/$(SRC_DIR)/%.o)
 DEPS = $(OBJS:.o=.d)
 
 # TARGETS

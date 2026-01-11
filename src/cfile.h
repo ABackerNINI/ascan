@@ -29,9 +29,9 @@ class cfile {
     void associate_header(std::vector<cfile> &files);
 
     // File name with extension.
-    const std::string &filename() const;
+    const std::string &path() const;
     // File name without extension and directory.
-    const std::string &name() const;
+    const std::string &stem() const;
     // Whether the source file have a main function.
     bool have_main_func() const;
     // Get file type.
@@ -70,8 +70,8 @@ class cfile {
     bool check_type(const std::vector<FILE_TYPE> &types, FILE_TYPE type) const;
 
   private:
-    std::string m_filename; // TODO: rename to m_path
-    std::string m_name;
+    std::string m_path;
+    std::string m_stem;
     bool m_have_main_func;
     bool m_includes_matched;
     enum FILE_TYPE m_file_type;

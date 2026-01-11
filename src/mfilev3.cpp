@@ -63,7 +63,7 @@ void MFileV3::prepare() {
 
     // Sort executables by name
     sort(m_executable.begin(), m_executable.end(),
-         [](const cfile *a, const cfile *b) { return a->name() < b->name(); });
+         [](const cfile *a, const cfile *b) { return a->stem() < b->stem(); });
 }
 
 void MFileV3::output_build_details() {
@@ -131,7 +131,7 @@ void MFileV3::output_targets() {
     int idx = m_executable.size() == 1 ? -1 : 1;
     for (auto &exec : m_executable) {
         MVariableDef *target = new MVariableDef(m_cfg.make_bin(idx++));
-        target->add_component(new MFilename(exec->name()));
+        target->add_component(new MFilename(exec->stem()));
         add_component(target);
     }
     add_component(new MBlankLine());
@@ -222,7 +222,7 @@ void MFileV3::output_executable_details() {
 
         // OUT: OBJS1 = xxx.o
         MVariableDef *obj = new MVariableDef(m_cfg.make_objs(idx++));
-        obj->add_component(new MFilename(exec->name() + ".o"));
+        obj->add_component(new MFilename(exec->stem() + ".o"));
 
         // OUT: all objects dependency.
         find_all_headers(m_cfiles, exec);
@@ -230,7 +230,7 @@ void MFileV3::output_executable_details() {
             if (cfile->visited()) {
                 if (cfile->associate() != NULL && cfile->is_source() && &(*cfile) != exec) {
                     // OUT: xxx.o
-                    obj->add_component(new MFilename(cfile->associate()->name() + ".o"));
+                    obj->add_component(new MFilename(cfile->associate()->stem() + ".o"));
                 }
                 cfile->set_visited(false);
             }

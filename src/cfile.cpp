@@ -22,11 +22,11 @@ const std::vector<cfile::FILE_TYPE> cfile::cxx_source_types = {FILE_TYPE_CPP, FI
 
 /*==========================================================================*/
 
-cfile::cfile(const string &filename, const string &name) : m_filename(filename), m_name(name) {
+cfile::cfile(const string &filename, const string &name) : m_path(filename), m_stem(name) {
     //! Be careful with get_ext(std::string.c_str()), the c_str() return value
     //! is a dynamic memory which could move to another place when you modified
     //! the string.
-    const char *ext = get_ext(m_filename.c_str());
+    const char *ext = get_ext(m_path.c_str());
 
     // TODO: check if filename contains spaces
 
@@ -54,19 +54,19 @@ void cfile::match_includes_and_detect_main(vector<cfile> &files) {
         return;
     }
 
-    vector<string> includes = scan_includes_and_main_func(m_filename.c_str(), &m_have_main_func);
+    vector<string> includes = scan_includes_and_main_func(m_path.c_str(), &m_have_main_func);
 
     for (auto include = includes.begin(); include != includes.end(); ++include) {
         bool found = false;
         for (auto file = files.begin(); file != files.end(); ++file) {
-            if (*include == file->filename()) {
+            if (*include == file->path()) {
                 m_includes.push_back(&(*file));
                 found = true;
                 break;
             }
         }
         if (!found) {
-            fprintf(stderr, "File \"%s\" included by \"%s\" not found\n", include->c_str(), m_filename.c_str());
+            fprintf(stderr, "File \"%s\" included by \"%s\" not found\n", include->c_str(), m_path.c_str());
         }
     }
     m_includes_matched = true;
@@ -76,21 +76,21 @@ void cfile::associate_header(vector<cfile> &files) {
     assert(is_source());
     // TODO: multi-directory makefile
     for (auto file = files.begin(); file != files.end(); ++file) {
-        if (file->is_header() && m_name == file->m_name) {
+        if (file->is_header() && m_stem == file->m_stem) {
             m_associate = &(*file);
             file->m_associate = this;
-            print_debug("associated: %s <-> %s\n", m_filename.c_str(), file->m_filename.c_str());
+            print_debug("associated: %s <-> %s\n", m_path.c_str(), file->m_path.c_str());
             break;
         }
     }
 }
 
-const string &cfile::filename() const {
-    return m_filename;
+const string &cfile::path() const {
+    return m_path;
 }
 
-const string &cfile::name() const {
-    return m_name;
+const string &cfile::stem() const {
+    return m_stem;
 }
 
 bool cfile::have_main_func() const {

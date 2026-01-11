@@ -4,9 +4,9 @@
 #include "mfilev3.h"
 #include "mfilev4.h"
 #include "settings.h"
+#include <cstring>
 #include <filesystem>
 #include <getopt.h>
-#include <string.h>
 #include <unistd.h>
 
 using namespace std;
@@ -71,10 +71,10 @@ int ascan::start(int argc, char **argv) {
         return EXIT_SUCCESS;
     }
 
-    m_cfiles = recursion_scan_dir_c_cxx_files(".");
+    m_cfiles = recursion_scan_dir_c_cxx_files(settings.option_src_dir_, settings.flag_recursive_);
 
     match_c_cxx_includes();
-    // match_starter_files();
+    match_starter_files(settings.main_files_);
     print_cfiles();
     associate_header();
 
@@ -329,6 +329,7 @@ void ascan::print_help(enum HELP_TYPE help, const options::as_option *option) co
     }
 }
  */
+
 bool ascan::test_makefile(bool force, bool output_specified) {
     Config config;
 
@@ -367,12 +368,11 @@ bool ascan::test_makefile(bool force, bool output_specified) {
 }
 
 // Set 'have_main_func' for cfiles that are starter files specified by command line arguments.
-/*
-void ascan::match_starter_files() {
-    for (auto &sfile : m_cfg.start_files) {
+void ascan::match_starter_files(const std::vector<std::string> &start_files) {
+    for (auto &sfile : start_files) {
         for (auto &cfile : m_cfiles) {
             if (cfile.is_source()) {
-                filesystem::path p1(cfile.filename());
+                filesystem::path p1(cfile.path());
                 filesystem::path p2(sfile);
                 if (filesystem::relative(p1) == filesystem::relative(p2)) {
                     cfile.set_have_main_func(true);
@@ -382,7 +382,7 @@ void ascan::match_starter_files() {
         }
     }
 }
-*/
+
 
 void ascan::match_c_cxx_includes() {
     // Match includes for cfiles
@@ -401,7 +401,7 @@ void ascan::print_cfiles() const {
     for (auto &cfile : m_cfiles) {
         if (cfile.is_source()) {
             try {
-                filesystem::path p1(cfile.filename());
+                filesystem::path p1(cfile.path());
                 print_debug("%s", filesystem::relative(p1).c_str());
                 if (cfile.have_main_func()) {
                     print_debug_ex(" <----- [main]");
@@ -409,7 +409,7 @@ void ascan::print_cfiles() const {
                 print_debug_ex("\n");
                 for (auto &inc : cfile.includes()) {
                     try {
-                        filesystem::path p2(inc->filename());
+                        filesystem::path p2(inc->path());
                         print_debug_ex("\t|%s|\n", filesystem::relative(p2).c_str());
                     } catch (...) { print_debug_ex("\n"); }
                 }

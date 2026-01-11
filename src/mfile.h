@@ -1,14 +1,9 @@
 #ifndef _AUTO_SCAN_MFILE_H_
 #define _AUTO_SCAN_MFILE_H_
 
-#include "align.h"
 #include "cfile.h"
-#include "config.h"
-#include "debug.h"
 #include "settings.h"
-#include <cstdint>
 #include <cstdio>
-#include <fstream>
 #include <string>
 #include <type_traits>
 #include <vector>
@@ -22,8 +17,7 @@ class MComponent {
 };
 
 // Check if a type is a subclass of MComponent.
-template <typename T> struct is_mcomponent : std::is_base_of<MComponent, std::remove_reference_t<T>> {};
-template <typename _Tp> inline constexpr bool is_mcomponent_v = is_mcomponent<_Tp>::value;
+template <typename T> inline constexpr bool is_mcomponent_v = std::is_base_of_v<MComponent, std::remove_reference_t<T>>;
 
 #if __cplusplus < 202002L
 namespace std {
@@ -140,7 +134,7 @@ class MFilename : public MComponent {
 };
 
 enum class VariableAssignmentType {
-    RECURSIVELY_EXPANDED, // =
+    RECURSIVELY_EXPANDED, // '='
     SIMPLY_EXPANDED, // := or ::=
     IMMEDIATELY_EVALUATED, // :::=
     APPEND, // +=
@@ -298,8 +292,7 @@ class MQuoted : public MCompComponent {
 
 class MFile {
   public:
-    MFile(const Settings &settings, std::vector<cfile> &cfiles)
-        : settings(settings), m_cfiles(cfiles) {}
+    MFile(const Settings &settings, std::vector<cfile> &cfiles) : settings(settings), m_cfiles(cfiles) {}
 
     virtual ~MFile() {}
 

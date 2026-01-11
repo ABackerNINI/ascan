@@ -1,8 +1,9 @@
 #include "mfile.h"
-#include <cassert>
-#include <unistd.h>
 
-using namespace std;
+#include "debug.h"
+#include <cassert>
+#include <fstream>
+#include <unistd.h>
 
 int MFile::output() {
 #ifdef DISABLE_WRITE
@@ -13,11 +14,11 @@ int MFile::output() {
 
     // First write output to the temporary file, then rename it to the actual
     // output file in case exiting on error during output stage.
-    string tmp = "ascan_tmp.mf";
+    std::string tmp = "ascan_tmp.mf";
 
     std::ofstream fout;
 
-    fout.open(tmp, ios::out | ios::trunc);
+    fout.open(tmp, std::ios::out | std::ios::trunc);
     if (!fout.is_open()) {
         print_error("Can't open file \"%s\"\n", tmp.c_str());
         return EXIT_FAILURE;
@@ -31,7 +32,7 @@ int MFile::output() {
 
     fout.close();
 
-    string cmd = "mv \"" + tmp + "\" \"" + settings.option_output_ + "\"";
+    std::string cmd = "mv \"" + tmp + "\" \"" + settings.option_output_ + "\"";
     print_debug("%s\n", cmd.c_str());
     if (system(cmd.c_str()) != 0) {
         print_error("unkown error!");

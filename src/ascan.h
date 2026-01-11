@@ -3,8 +3,6 @@
 
 #include "cfile.h"
 #include "options.h"
-#include <cstdint>
-#include <iostream>
 #include <string>
 #include <vector>
 
@@ -29,6 +27,7 @@ class ascan {
     // an error occurred.
     // -- 0: otherwise.
     int parse_cmd_args(int argc, char **argv);
+
     void print_help(enum HELP_TYPE help, const options::as_option *option) const;
 
     // Check if there is one makefile, prompt overwrite when -f is not set.
@@ -38,9 +37,13 @@ class ascan {
     // found.
     // -- false: otherwise.
     bool test_makefile(bool force, bool output_specified);
-    // void match_starter_files();
+
+    void match_starter_files(const std::vector<std::string> &start_files);
+
     void match_c_cxx_includes();
+
     void associate_header();
+
     void print_cfiles() const;
 
   private:
