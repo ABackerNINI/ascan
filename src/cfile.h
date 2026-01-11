@@ -82,7 +82,7 @@ class cfile {
     bool m_visited;
 };
 
-std::vector<cfile> recursion_scan_dir_c_cxx_files(const char *dir);
-std::vector<cfile> recursion_scan_dir_c_cxx_files(const std::string &dir);
+std::vector<cfile> recursion_scan_dir_c_cxx_files(const char *dir, bool recursive);
+std::vector<cfile> recursion_scan_dir_c_cxx_files(const std::string &dir, bool recursive);
 
 #endif //_AUTO_SCAN_CFILES_H_

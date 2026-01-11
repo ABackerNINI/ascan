@@ -171,38 +171,44 @@ bool is_concerned_file_type(const std::string &ext) {
     return false;
 }
 
-static bool recursion_scan_dir_c_cxx_files_helper(char *dir, vector<cfile> &vec) {
+// TODO: rewrite it using std::filesystem
+static void recursion_scan_dir_c_cxx_files_helper(char *path, vector<cfile> &vec, bool recursive) {
     DIR *p_dir = NULL;
     struct dirent *p_entry = NULL;
     struct stat statbuf;
-    bool ret = true;
 
-    if ((p_dir = opendir(dir)) == NULL) {
-        fprintf(stderr, "Can't open dir \"%s\". @%s line %d\n", dir, __func__, __LINE__);
-        return false;
+    if ((p_dir = opendir(path)) == NULL) {
+        fprintf(stderr, "Can't open dir \"%s\". @%s line %d\n", path, __func__, __LINE__);
+        return;
     }
 
-    size_t len = strlen(dir);
-    dir[len] = '/';
+    size_t len = strlen(path);
+
+    if (path[len - 1] != '/' && path[len - 1] != '\\') {
+        path[len++] = '/';
+        path[len] = '\0';
+    }
 
     while (NULL != (p_entry = readdir(p_dir))) {
-        if (len + strlen(p_entry->d_name) + 1 <= FILENAME_MAX) {
-            strcpy(dir + len + 1, p_entry->d_name);
-        } else {
-            assert(false);
+        // Ignore "." and ".." directories
+        if (strcmp(p_entry->d_name, ".") == 0 || strcmp(p_entry->d_name, "..") == 0) {
+            continue;
         }
 
-        if (lstat(p_entry->d_name, &statbuf) == 0) {
+        if (len + strlen(p_entry->d_name) + 1 <= FILENAME_MAX) {
+            strcpy(path + len, p_entry->d_name);
+        } else {
+            fprintf(stderr, "File name too long: %s/%s. @%s line %d\n", path, p_entry->d_name, __func__, __LINE__);
+            continue;
+        }
+
+        if (lstat(path, &statbuf) == 0) {
             if ((statbuf.st_mode & S_IFMT) == S_IFDIR) { /* dir */
-                // TODO: multi-directory makefile
-                /* ignore "." and ".." */
-                // if (strcmp(".", p_entry->d_name) != 0 &&
-                //     strcmp("..", p_entry->d_name) != 0) {
-                // }
+                recursion_scan_dir_c_cxx_files_helper(path, vec, recursive);
             } else if ((statbuf.st_mode & S_IFMT) == S_IFREG) { /* regular file */
                 const char *ext = get_ext(p_entry->d_name);
                 if (ext && is_concerned_file_type(ext)) {
-                    vec.emplace_back(std::string(dir), string(p_entry->d_name).substr(0, ext - p_entry->d_name));
+                    vec.emplace_back(std::string(path), string(p_entry->d_name).substr(0, ext - p_entry->d_name));
                 }
             } else {
                 print_warning("Not a regular file or directory: \"%s\"\n", p_entry->d_name);
@@ -214,22 +220,20 @@ static bool recursion_scan_dir_c_cxx_files_helper(char *dir, vector<cfile> &vec)
 
     // END:
     closedir(p_dir);
-
-    return ret;
 }
 
-vector<cfile> recursion_scan_dir_c_cxx_files(const char *dir) {
+vector<cfile> recursion_scan_dir_c_cxx_files(const char *dir, bool recursive) {
     vector<cfile> vec;
 
     char path[FILENAME_MAX];
     strcpy(path, dir);
-    recursion_scan_dir_c_cxx_files_helper(path, vec);
+    recursion_scan_dir_c_cxx_files_helper(path, vec, recursive);
 
     return vec;
 }
 
-vector<cfile> recursion_scan_dir_c_cxx_files(const string &dir) {
-    return recursion_scan_dir_c_cxx_files(dir.c_str());
+vector<cfile> recursion_scan_dir_c_cxx_files(const string &dir, bool recursive) {
+    return recursion_scan_dir_c_cxx_files(dir.c_str(), recursive);
 }
 
 /*==========================================================================*/
