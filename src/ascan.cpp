@@ -14,43 +14,6 @@ using namespace std;
 
 int debug_level = DBG_LVL_DEBUG;
 
-#define PRINT_TITLE(title)                                                                                             \
-    if (isatty(STDOUT_FILENO)) {                                                                                       \
-        printf(CC(CC_BRIGHT, "%s") "\n", title);                                                                       \
-    } else {                                                                                                           \
-        printf("%s\n", title);                                                                                         \
-    }
-
-#define PRINT_OPTION(short_opt, long_opt, arg)                                                                         \
-    if (isatty(STDOUT_FILENO)) {                                                                                       \
-        if (short_opt && long_opt) {                                                                                   \
-            printf("\t" CC(CC_BRIGHT, "-%c") ", " CC(CC_BRIGHT, "--%s"), short_opt, long_opt);                         \
-        } else if (short_opt) {                                                                                        \
-            printf("\t" CC(CC_BRIGHT, "-%c"), short_opt);                                                              \
-        } else {                                                                                                       \
-            printf("\t" CC(CC_BRIGHT, "--%s"), long_opt);                                                              \
-        }                                                                                                              \
-        if (arg) {                                                                                                     \
-            printf("=" CC(CC_UNDERSCORE, "%s"), arg);                                                                  \
-        }                                                                                                              \
-    } else {                                                                                                           \
-        if (short_opt && long_opt) {                                                                                   \
-            printf("\t-%c, --%s", short_opt, long_opt);                                                                \
-        } else if (short_opt) {                                                                                        \
-            printf("\t-%c", short_opt);                                                                                \
-        } else {                                                                                                       \
-            printf("\t--%s", long_opt);                                                                                \
-        }                                                                                                              \
-        if (arg) {                                                                                                     \
-            printf("=%s", arg);                                                                                        \
-        }                                                                                                              \
-    }                                                                                                                  \
-    printf("\n");
-
-#define PRINT_DESC(desc) printf("\t\t%s.\n\n", desc)
-
-#define PRINT(msg) printf("\t%s\n\n", msg)
-
 /*==========================================================================*/
 
 ascan::ascan() {}
@@ -61,6 +24,10 @@ int ascan::start(int argc, char **argv) {
     int ret;
     if ((ret = settings.parse_argv(argc, argv)) != 0) {
         return ret; // error in parsing command line arguments
+    }
+
+    if (settings.flag_help_ || settings.flag_version_) {
+        return EXIT_SUCCESS;
     }
 
     if (!test_makefile(settings.flag_force_, !settings.option_output_.empty())) {
@@ -289,54 +256,7 @@ ERROR_DEBUG_LEVEL:
  */
 
 /*
-void ascan::print_help(enum HELP_TYPE help, const options::as_option *option) const {
-    static const char *desc = "Ascan will scan the c/c++ project and create simple makefile.\n\n"
-                              "\tAscan is suitable for c/c++ projects that are:\n"
-                              "\t\t1. Simple structured that all source codes are in one "
-                              "directory.\n"
-                              "\t\t2. Source codes are `.h` or `.c` or `.cpp` or `.cc`.\n"
-                              "\t`cd` to the project directory and run `ascan`.";
 
-    if (help == HT_ALL) {
-        PRINT_TITLE("NAME");
-        PRINT("ascan - auto scan");
-
-        PRINT_TITLE("SYNOPSIS");
-        PRINT("ascan [OPTION]...");
-
-        PRINT_TITLE("DESCRIPTION");
-        PRINT(desc);
-        PRINT("Mandatory arguments to long options are mandatory for short "
-              "options too.");
-
-        size_t n;
-        const options::as_option *options = m_options.get_as_opts(&n);
-        for (unsigned int i = 0; i < n; ++i) {
-            PRINT_OPTION(options[i].short_opt, options[i].long_opt, options[i].arg);
-            PRINT_DESC(options[i].description);
-        }
-
-        PRINT_TITLE("AUTHOR");
-        PRINT("Written by ABacker.");
-
-        PRINT_TITLE("REPORTING BUGS");
-        PRINT("<" ASCAN_URL ">");
-
-        PRINT_TITLE("COPYRIGHT");
-        PRINT("License GPLv3+: GNU GPL version 3 or later "
-              "<http://gnu.org/licenses/gpl.html>.");
-
-        // PRINT_TITLE("SEE ALSO");
-    } else if (help == HT_VER) {
-        printf("ascan version: " ASCAN_VERSION "\n");
-    } else if (help == HT_SPECIFIC) {
-        PRINT_TITLE("OPTION");
-        PRINT("Mandatory arguments to long options are mandatory for short "
-              "options too.");
-        PRINT_OPTION(option->short_opt, option->long_opt, option->arg);
-        PRINT_DESC(option->description);
-    }
-}
  */
 
 bool ascan::test_makefile(bool force, bool output_specified) {

@@ -14,6 +14,8 @@ class Settings {
     bool flag_force_{false};
     bool flag_build_{true};
     bool flag_recursive_{false};
+    bool flag_help_{false};
+    bool flag_version_{false};
     std::string option_output_;
     std::string option_src_dir_{"."};
     std::vector<std::string> main_files_;

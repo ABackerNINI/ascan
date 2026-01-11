@@ -2,16 +2,16 @@
 #define _AUTO_SCAN_ASCAN_H_
 
 #include "cfile.h"
-#include "options.h"
 #include <string>
 #include <vector>
 
-#define ASCAN_VERSION "0.1.3 alpha"
+#define ASCAN_VERSION "0.1.3 (alpha)"
 #define ASCAN_URL "git@github.com:ABackerNINI/ascan.git"
 
 class ascan {
   public:
     ascan();
+
     // Start to proceed auto-scan.
     //
     // Return:
@@ -20,8 +20,6 @@ class ascan {
     int start(int argc, char **argv);
 
   private:
-    enum HELP_TYPE { HT_NONE, HT_ALL, HT_VER, HT_SPECIFIC };
-
     // Parse the command arguments.
     //
     // Return:
@@ -30,8 +28,6 @@ class ascan {
     // an error occurred.
     // -- 0: otherwise.
     int parse_cmd_args(int argc, char **argv);
-
-    void print_help(enum HELP_TYPE help, const options::as_option *option) const;
 
     // Check if there is one makefile, prompt overwrite when -f is not set.
     //
@@ -57,7 +53,5 @@ class ascan {
     std::vector<cfile> m_cfiles; // cfiles
     // options m_options;
 };
-
-int main(int argc, char **argv);
 
 #endif //_AUTO_SCAN_ASCAN_H_
