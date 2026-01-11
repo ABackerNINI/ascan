@@ -1,8 +1,9 @@
 #include "options.h"
 
-#include <string.h>
+#include <cstring>
 
 #include "common.h"
+#include "config.h"
 #include "debug.h"
 
 // const char options::s_short_opts[] = "abfgho:v";

@@ -1,10 +1,8 @@
 #ifndef _AUTO_SCAN_OPTIONS_H_
 #define _AUTO_SCAN_OPTIONS_H_
 
-#include "config.h"
-#include <cstdint>
+#include <cstddef>
 #include <getopt.h>
-#include <iostream>
 
 #define OPTION_A 0x1 // option -a: overwrite all sections
 #define OPTION_B 0x2 // option -b: put binaries to 'build' subdirectory
