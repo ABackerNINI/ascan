@@ -47,7 +47,7 @@ endif
 # BUILD DETAILS
 
 CXXFLAGS = -Wall -Wextra -std=$(STD)
-LDFLAGS  =
+LDFLAGS  = __ASCAN::LD_FLAGS__
 
 __ASCAN::TARGETS__
 
@@ -126,8 +126,9 @@ RESET	  = $(shell tput sgr0)
 define save_build_params
 	@echo "PROJECT=$(PROJECT)" > "$(1)"
 	@echo "CONFIG=$(CONFIG)" >> "$(1)"
+	@echo "CC=$(CC)" >> "$(1)"
 	@echo "CXX=$(CXX)" >> "$(1)"
-	@echo "STD=$(STD)" >> "$(1)"
+	@echo "STD=$(STD) $(CSTD) $(CXXSTD)" >> "$(1)"
 	@echo "SRC_DIR=$(SRC_DIR)" >> "$(1)"
 	@echo "BLD_DIR=$(BLD_DIR)" >> "$(1)"
 	@echo "BIN_DIR=$(BIN_DIR)" >> "$(1)"
@@ -144,10 +145,10 @@ define check_build_params
 	@if [ -f $(OBJ_DIR)/build_params.txt ]; then \
 		if ! diff -q "$(OBJ_DIR)/build_params.txt" "$(OBJ_DIR)/temp.txt" >/dev/null 2>&1 ; then \
 			echo "$(RED)$(BOLD)"; \
-			echo -n "WARNING: Build params mismatch, most likely due to Makefile changes, or a hash collision, "; \
+			echo -n "WARNING: Build parameters mismatch, most likely due to Makefile changes, or a hash collision, "; \
 			echo "you may need a 'make clean'."; \
 			echo "$(RESET)"; \
-			echo "Diff of build params (last vs current):"; \
+			echo "Diff of build parameters (last vs current):"; \
 			diff --ignore-space-change --color --minimal "$(OBJ_DIR)/build_params.txt" "$(OBJ_DIR)/temp.txt"; \
 			echo ""; \
 		fi \
