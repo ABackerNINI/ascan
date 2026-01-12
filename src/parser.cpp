@@ -113,7 +113,8 @@ vector<string> scan_includes_and_main_func(const char *filename, bool *main_func
             break;
         case IMS_INCLUDE:
             if (type == TYPE_STRING) {
-                includes.push_back(make_path(filename, buff));
+                // includes.push_back(make_path(filename, buff));
+                includes.push_back(buff);
             }
             state = IMS_INIT;
             break;
@@ -420,24 +421,24 @@ END:
 
 /*%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
-static size_t erase_last_slash(const char *str, size_t length) {
-    if (length > 0) {
-        while (str[length] != '/') {
-            if (--length == 0) {
-                break;
-            }
-        }
-    }
-    return length;
-}
-
-static string make_path(const char *p1, const char *p2) {
-    size_t n1 = strlen(p1);
-
-    n1 = erase_last_slash(p1, n1);
-    while (strncmp(p2, "../", 3) == 0) {
-        p2 += 3;
-        n1 = erase_last_slash(p1, n1);
-    }
-    return string(p1).substr(0, n1) + "/" + p2;
-}
+// static size_t erase_last_slash(const char *str, size_t length) {
+//     if (length > 0) {
+//         while (str[length] != '/') {
+//             if (--length == 0) {
+//                 break;
+//             }
+//         }
+//     }
+//     return length;
+// }
+//
+// static string make_path(const char *p1, const char *p2) {
+//     size_t n1 = strlen(p1);
+//
+//     n1 = erase_last_slash(p1, n1);
+//     while (strncmp(p2, "../", 3) == 0) {
+//         p2 += 3;
+//         n1 = erase_last_slash(p1, n1);
+//     }
+//     return string(p1).substr(0, n1) + "/" + p2;
+// }
