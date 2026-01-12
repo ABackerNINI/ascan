@@ -53,12 +53,9 @@ void import_setting(std::string &feild, const std::string &from_setting) {
 int MFileV4::build() {
     prepare();
 
-    if (m_executable.size() == 1) {
-        t.proj_name = m_executable[0]->stem();
-    } else if (m_executable.size() > 1) {
-        // TODO: proj_name = dir name of the project root
-        t.proj_name = "ascan_project";
-    }
+    // Project name is the directory name of the project root
+    std::filesystem::path cwd = std::filesystem::current_path();
+    t.proj_name = cwd.filename().string();
 
     import_setting(t.proj_name, settings.option_proj_name_);
     import_setting(t.config, settings.option_default_config_);
