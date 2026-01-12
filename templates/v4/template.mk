@@ -19,12 +19,12 @@ BIN_DIR = __ASCAN::BIN_DIR__
 # Extra parameters to identify the build configuration.
 # This is used to create a unique object directory for each build configuration.
 EXTRA_PARAMS =
-PARAMS_SIGNATURE = $(shell echo "1$(EXTRA_PARAMS)1" | md5sum | cut -c1-12)
+PARAMS_SIGNATURE = $(shell echo "a$(EXTRA_PARAMS)b" | md5sum | cut -c1-12)
 # Where to put object files for each build configuration. Must be subdirectory of the project root. Can be set to ".".
 OBJ_DIR = $(BLD_DIR)/$(CONFIG)/$(CXX).$(STD).$(PARAMS_SIGNATURE)
-# This file is used to store the $(CONFIG) of the last successful build, so that
-# when the $(CONFIG) changes, we can rebuild the target.
-MODE_FILE = $(BLD_DIR)/$(CONFIG).mk.mode
+# This file is used to store the configuration of the last successful build, so that
+# when the configuration changes, we can rebuild the target.
+CONFIG_FILE = $(BLD_DIR)/$(CONFIG).$(CXX).$(STD).$(PARAMS_SIGNATURE).ascan.conf
 
 # CHECK DIRECTORIES
 
@@ -76,9 +76,9 @@ $(OBJ_DIR)/%.o: %.cpp
 	@mkdir -p $(@D)
 	$(CXX) $(CXXFLAGS) -MMD -MP -c $< -o $@
 
-$(BLD_DIR)/%.mk.mode:
+$(BLD_DIR)/%.ascan.conf:
 	@mkdir -p $(@D)
-	@rm -f $(@D)/*.mk.mode
+	@rm -f $(@D)/*.ascan.conf
 	@touch $@
 
 # DEPENDENCIES
@@ -100,16 +100,16 @@ all: debug release
 
 clean:
 	@echo "Cleaning..."
-	@rm -f $(TARGET) $(OBJS) $(DEPS) $(BLD_DIR)/*.mk.mode
+	@rm -f $(TARGET) $(OBJS) $(DEPS) $(BLD_DIR)/*.ascan.conf
 
 	@#! CAUTION: rm -rf command
-	@if [ ! "$(BLD_DIR)" = "." ]; then \
-		rm -rf $(BLD_DIR); \
+	@if [ ! "$(BLD_DIR)" = "." ] && [ ! "$(OBJ_DIR)" = "/"  ]; then \
+		rm -rf "$(BLD_DIR)"; \
 	fi
 
 	@#! CAUTION: rm -rf command
-	@if [ ! "$(BIN_DIR)" = "." ]; then \
-		rm -rf $(BIN_DIR); \
+	@if [ ! "$(BIN_DIR)" = "." ] && [ ! "$(BIN_DIR)" = "/"  ]; then \
+		rm -rf "$(BIN_DIR)"; \
 	fi
 
 .PHONY: debug release test all clean
@@ -133,7 +133,7 @@ define save_build_params
 	@echo "BIN_DIR=$(BIN_DIR)" >> "$(1)"
 	@echo "EXTRA_PARAMS=$(EXTRA_PARAMS)" >> "$(1)"
 	@echo "OBJ_DIR=$(OBJ_DIR)" >> "$(1)"
-	@echo "MODE_FILE=$(MODE_FILE)" >> "$(1)"
+	@echo "CONFIG_FILE=$(CONFIG_FILE)" >> "$(1)"
 	@echo "CXXFLAGS=$(CXXFLAGS)" >> "$(1)"
 	@echo "LDFLAGS=$(LDFLAGS)" >> "$(1)"
 endef
