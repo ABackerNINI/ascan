@@ -8,7 +8,9 @@
         "cdbgx",
         "cfile",
         "cfiles",
+        "CSTD",
         "cxxflag",
+        "CXXSTD",
         "DDEBUG",
         "DNDEBUG",
         "DQUOTE",
@@ -24,6 +26,7 @@
         "sfile",
         "spvar",
         "SQUOTE",
+        "stdcxx",
         "tlexer",
         "tparser"
     ],
