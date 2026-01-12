@@ -1,12 +1,12 @@
 #include "ascan.h"
 
 #include "debug.h"
+#include "fs.h" // IWYU pragma: keep
 #include "mfilev3.h"
 #include "mfilev4.h"
 #include "settings.h"
 #include "utils.h"
 #include <cstring>
-#include <filesystem>
 #include <getopt.h>
 #include <unistd.h>
 
@@ -52,7 +52,7 @@ int ascan::start(int argc, char **argv) {
         return EXIT_FAILURE;
     }
 
-    match_c_cxx_includes();
+    match_includes_and_detect_main();
     print_cfiles();
     associate_header();
 
@@ -111,7 +111,7 @@ bool ascan::test_makefile(bool force, bool output_specified) {
     return true;
 }
 
-void ascan::match_c_cxx_includes() {
+void ascan::match_includes_and_detect_main() {
     // Match includes for cfiles
     for (auto &cfile : m_cfiles) {
         if (cfile.is_source()) {
@@ -128,16 +128,16 @@ void ascan::print_cfiles() const {
     for (auto &cfile : m_cfiles) {
         if (cfile.is_source()) {
             try {
-                filesystem::path p1(cfile.path());
-                print_debug("%s", filesystem::relative(p1).c_str());
+                fs::path p1(cfile.path());
+                print_debug("%s", fs::relative(p1).c_str());
                 if (cfile.have_main_func()) {
                     print_debug_ex(" <----- [main]");
                 }
                 print_debug_ex("\n");
                 for (auto &inc : cfile.includes()) {
                     try {
-                        filesystem::path p2(inc->path());
-                        print_debug_ex("\t|%s|\n", filesystem::relative(p2).c_str());
+                        fs::path p2(inc->path());
+                        print_debug_ex("\t|%s|\n", fs::relative(p2).c_str());
                     } catch (...) { print_debug_ex("\n"); }
                 }
             } catch (...) { print_debug_ex("\n"); }
@@ -148,7 +148,7 @@ void ascan::print_cfiles() const {
 void ascan::associate_header() {
     for (auto &cfile : m_cfiles) {
         if (cfile.is_source()) {
-            cfile.associate_header(m_cfiles);
+            cfile.associate_header();
         }
     }
 }

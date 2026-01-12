@@ -27,7 +27,7 @@ class cfile {
     void set_have_main_func(bool have_main_func);
     void set_visited(bool visited);
     void match_includes_and_detect_main(std::vector<cfile> &files);
-    void associate_header(std::vector<cfile> &files);
+    void associate_header();
 
     // File name with extension.
     const fs::path &path() const;

@@ -53,30 +53,33 @@ void cfile::match_includes_and_detect_main(vector<cfile> &files) {
 
     vector<string> includes = scan_includes_and_main_func(m_path.c_str(), &m_have_main_func);
 
-    for (auto include = includes.begin(); include != includes.end(); ++include) {
+    // TODO: consider -I flag
+    for (auto &inc : includes) {
         bool found = false;
-        for (auto file = files.begin(); file != files.end(); ++file) {
-            if (*include == file->path()) {
-                m_includes.push_back(&(*file));
+        fs::path inc_path = fs::relative(m_path.parent_path() / inc);
+        for (auto &file : files) {
+            if (inc_path == file.path()) {
+                m_includes.push_back(&file);
                 found = true;
                 break;
             }
         }
         if (!found) {
-            fprintf(stderr, "File \"%s\" included by \"%s\" not found\n", include->c_str(), m_path.c_str());
+            fprintf(stderr, "File \"%s\" included by \"%s\" not found\n", inc.c_str(), m_path.c_str());
         }
     }
     m_includes_matched = true;
 }
 
-void cfile::associate_header(vector<cfile> &files) {
+void cfile::associate_header() {
     assert(is_source());
-    // TODO: multi-directory makefile
-    for (auto file = files.begin(); file != files.end(); ++file) {
-        if (file->is_header() && m_stem == file->m_stem) {
-            m_associate = &(*file);
-            file->m_associate = this;
-            print_debug("associated: %s <-> %s\n", m_path.c_str(), file->m_path.c_str());
+
+    for (auto &inc : m_includes) {
+        assert(inc->is_header());
+        if (m_stem == inc->m_stem) {
+            m_associate = inc;
+            inc->m_associate = this;
+            print_debug("associated: %s <-> %s\n", m_path.c_str(), inc->m_path.c_str());
             break;
         }
     }

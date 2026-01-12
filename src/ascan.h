@@ -39,7 +39,7 @@ class ascan {
 
     void match_starter_files(const std::vector<std::string> &start_files);
 
-    void match_c_cxx_includes();
+    void match_includes_and_detect_main();
 
     void associate_header();
 
