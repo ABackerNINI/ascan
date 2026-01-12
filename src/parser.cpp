@@ -43,8 +43,8 @@ enum INCLUDE_MAIN_STATE {
     IMS_MAIN_RIGHT_PAREN // )
 };
 
-static size_t erase_last_slash(const char *str, size_t length);
-static string make_path(const char *p1, const char *p2);
+// static size_t erase_last_slash(const char *str, size_t length);
+// static string make_path(const char *p1, const char *p2);
 
 /*%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
