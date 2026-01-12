@@ -17,7 +17,7 @@ class Settings {
     bool flag_help_{false};
     bool flag_version_{false};
     int temp_version_{4};
-    std::string option_src_dir_{"."};
+    std::string option_src_dir_;
     std::string option_output_;
     std::string option_proj_name_;
     std::string option_default_config_;

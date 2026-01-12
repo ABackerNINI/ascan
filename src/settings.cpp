@@ -4,6 +4,7 @@
 #include "debug_fmt.h"
 #include "libs/CLI11.hpp"
 #include "libs/rang.hpp"
+#include "utils.h"
 
 class HelpFormatter : public CLI::Formatter {
   public:
@@ -139,6 +140,67 @@ class HelpFormatter : public CLI::Formatter {
     }
 };
 
+std::string suggest_similar_option(std::string input, const CLI::App &app) {
+    // Remove leading dashes
+    size_t leading_dashes = 0;
+    while (input[leading_dashes] == '-' && leading_dashes < input.length()) {
+        leading_dashes++;
+    }
+    input = input.substr(leading_dashes);
+
+    // No suggestion for very short inputs
+    if (input.size() <= 1) {
+        return "";
+    }
+
+    // Find the closest match
+    std::vector<const CLI::Option *> options = app.get_options();
+    std::string suggestion;
+    size_t min_distance = INT32_MAX;
+    for (const CLI::Option *opt : options) {
+        for (auto &opt_name : opt->get_lnames()) { // Consider only long names for now
+            if (opt_name.empty()) {
+                continue;
+            }
+            size_t distance = edit_distance(input, opt_name);
+            if ((distance <= input.size() / 2 && distance <= opt_name.size() / 2) && distance < min_distance) {
+                min_distance = distance;
+                suggestion = "--" + opt_name;
+            }
+        }
+    }
+
+    return suggestion;
+}
+
+bool suggest_similar_option_based_on_CLI11_error_string(const std::string &error_string, const CLI::App &app) {
+    // The CLI11 error string looks like:
+    //   The following argument was not expected: -x
+    //   The following arguments were not expected: -x -y
+    // We just suggest the first unexpected option.
+    if (starts_with(error_string, "The following argument was not expected: ") ||
+        starts_with(error_string, "The following arguments were not expected: ")) {
+        std::string::size_type option_pos = error_string.find(": ");
+        if (option_pos == std::string::npos) {
+            return false;
+        }
+        std::string::size_type option_end_pos = error_string.find(" ", option_pos + 2);
+        if (option_end_pos == std::string::npos)
+            option_end_pos = error_string.length();
+        std::string option = error_string.substr(option_pos + 2, option_end_pos - option_pos - 2);
+        std::string suggestion = suggest_similar_option(option, app);
+        if (!suggestion.empty()) {
+            print("Unrecognized option: '{}', did you mean: '{}'?\n",
+                  fmt::styled(option, fg(fmt::terminal_color::red) | fmt::emphasis::bold),
+                  fmt::styled(suggestion, fg(fmt::terminal_color::green) | fmt::emphasis::bold));
+            return true;
+        }
+    }
+    return false;
+}
+
+// TODO: add option --static-lib/--shared-lib, to create static or shared library.
+
 int Settings::parse_argv(int argc, char **argv) {
     CLI::App app{"ASCAN - Scan c/c++ project and create simple Makefile for it."};
 
@@ -146,7 +208,7 @@ int Settings::parse_argv(int argc, char **argv) {
 
     app.add_flag("-f", flag_force_, "Force overwrite");
     app.add_flag("--no-build", flag_no_build_, "Do NOT put all binaries to 'build' subdirectory");
-    app.add_flag("--recursive", flag_recursive_, "Recursively scan subdirectories");
+    app.add_flag("-r,--recursive", flag_recursive_, "Recursively scan subdirectories");
     app.add_flag("-v,--version", flag_version_, "Print version information and exit");
     app.add_option("-o,--output", option_output_, "Output to the specified file rather than 'Makefile'")
         ->option_text("FILE");
@@ -158,18 +220,20 @@ int Settings::parse_argv(int argc, char **argv) {
         "--simple", [&]() { temp_version_ = 1; }, "Generate really simple Makefile, same as --template=1");
     app.add_option("--build-dir", option_build_dir_, "Build directory, objects will be put here, default is 'build'")
         ->option_text("DIR");
-    app.add_option("--bin-dir", option_bin_dir_, "Binary output directory, the final binary will be put here, default is 'bin'")
+    app.add_option("--bin-dir", option_bin_dir_,
+                   "Binary output directory, the final binary will be put here, default is 'bin'")
         ->option_text("DIR");
     app.add_option("--project-name", option_proj_name_, "Project name, default is the name of the current directory")
         ->option_text("NAME");
-    app.add_option("--default-config", option_default_config_, "Default build configuration {debug, release}, default is 'debug'")
+    app.add_option("--default-config", option_default_config_,
+                   "Default build configuration {debug, release}, default is 'debug'")
         ->check(CLI::IsMember({"debug", "release"}))
         ->option_text("CONFIG");
     app.add_option("--cc", option_cc_, "C compiler to use, default is 'gcc'")->option_text("COMPILER");
     app.add_option("--cxx", option_cxx_, "C++ compiler to use, default is 'g++'")->option_text("COMPILER");
     app.add_option("--stdc", option_std_c_, "C standard to use, default is 'c11'")->option_text("STD");
     app.add_option("--stdcxx", option_std_cxx_, "C++ standard to use, default is 'c++17'")->option_text("STD");
-    app.add_option("SOURCE_DIR,--src-dir", option_src_dir_, "Source directory")
+    app.add_option("SOURCE_DIR,--src-dir", option_src_dir_, "Source directory, default is the current directory")
         ->check(CLI::ExistingDirectory)
         ->option_text("DIR");
     app.add_option("MAIN_FILE", main_files_, "Specify source files containing main() function to compile")
@@ -178,13 +242,14 @@ int Settings::parse_argv(int argc, char **argv) {
 
     app.add_option("-I", include_dirs_, "Specify include directory")->check(CLI::ExistingDirectory)->option_text("DIR");
     app.add_option_function<std::string>(
-           "-L", [&](const std::string &lib_dir) { option_ldflags_.push_back(lib_dir); }, "Specify library directory")
+           "-L", [&](const std::string &lib_dir) { option_ldflags_.push_back("-L" + lib_dir); },
+           "Specify library directory")
         ->multi_option_policy(CLI::MultiOptionPolicy::TakeAll)
         ->trigger_on_parse()
         ->check(CLI::ExistingDirectory)
         ->option_text("DIR");
     app.add_option_function<std::string>(
-           "-l", [&](const std::string &lib) { option_ldflags_.push_back(lib); }, "Specify library to link with")
+           "-l", [&](const std::string &lib) { option_ldflags_.push_back("-l" + lib); }, "Specify library to link with")
         ->multi_option_policy(CLI::MultiOptionPolicy::TakeAll)
         ->trigger_on_parse()
         ->option_text("LIB");
@@ -199,6 +264,16 @@ int Settings::parse_argv(int argc, char **argv) {
         if (app.count("-h") + app.count("--help") > 0) {
             flag_help_ = true;
         }
+
+        // Handle OptionNotFound error by tring to suggest similar option
+        // OptionNotFound error was converted to ExtrasError by CLI11
+        if (e.get_exit_code() == static_cast<int>(CLI::ExitCodes::ExtrasError)) {
+            if (suggest_similar_option_based_on_CLI11_error_string(e.what(), app)) {
+                print("Run with --help for more information.\n");
+                return 1;
+            }
+        }
+
         std::cout << (e.get_exit_code() == 0 ? rang::fg::blue : rang::fg::red);
         int ret = app.exit(e);
         std::cout << rang::fg::reset;
@@ -214,16 +289,19 @@ int Settings::parse_argv(int argc, char **argv) {
     return 0;
 }
 
+#define print_setting3(name1, name2, name3, width)                                                                     \
+    gprintc("{:<{}}", fmt::format(#name1 ": {}", name1), width);                                                       \
+    gprintc("{:<{}}", fmt::format(#name2 ": {}", name2), width);                                                       \
+    gprintc("{:<{}}\n", fmt::format(#name3 ": {}", name3), width);
+
 void Settings::debug_print() const {
     gprint("Settings:\n");
-    gprintc("flag_force_: {}\n", flag_force_);
-    gprintc("flag_no_build_: {}\n", flag_no_build_);
-    gprintc("flag_recursive_: {}\n", flag_recursive_);
-    gprintc("flag_help_: {}\n", flag_help_);
-    gprintc("flag_version_: {}\n", flag_version_);
-    gprintc("option_output_: {}\n", option_output_);
-    gprintc("option_src_dir_: {}\n", option_src_dir_);
-    gprintc("main_files_: {}\n", main_files_);
-    gprintc("include_dirs_: {}\n", include_dirs_);
-    gprintc("debug_level_: {}\n", debug_level_);
+    const int width = 35;
+    print_setting3(flag_force_, flag_no_build_, flag_recursive_, width);
+    print_setting3(flag_help_, flag_version_, temp_version_, width);
+    print_setting3(option_src_dir_, option_output_, option_proj_name_, width);
+    print_setting3(option_default_config_, option_cc_, option_cxx_, width);
+    print_setting3(option_std_, option_std_c_, option_std_cxx_, width);
+    print_setting3(option_build_dir_, option_bin_dir_, option_ldflags_, width);
+    print_setting3(main_files_, include_dirs_, debug_level_, width);
 }
