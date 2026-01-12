@@ -105,11 +105,17 @@ int Settings::parse_argv(int argc, char **argv) {
         ->option_text("FILE");
     app.add_option("--debug", debug_level_, "Set debug level [0, 5]")->check(CLI::Range(0, 5))->option_text("LEVEL");
     app.add_option("-I", include_dirs_, "Include directories")->check(CLI::ExistingDirectory)->option_text("DIR");
-    app.add_option("--use-v,--use-template,--template", temp_version_, "Use which template for Makefile generation")
+    app.add_option("--template", temp_version_, "Use which template for Makefile generation")
         ->check(CLI::Range(1, 4))
         ->option_text("VERSION");
     app.add_flag_callback(
         "-s, --simple", [&]() { temp_version_ = 1; }, "Generate really simple Makefile, same as --template=1");
+    app.add_option("--build-dir", option_build_dir_, "Build directory, objects will be put here, default is 'build'")
+        ->check(CLI::ExistingDirectory)
+        ->option_text("DIR");
+    app.add_option("--bin-dir", option_bin_dir_, "Binary output directory, ")
+        ->check(CLI::ExistingDirectory)
+        ->option_text("DIR");
     app.add_option("SOURCE_DIR,--src-dir", option_src_dir_, "Source directory")
         ->check(CLI::ExistingDirectory)
         ->option_text("DIR");

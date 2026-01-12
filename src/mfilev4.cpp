@@ -54,6 +54,10 @@ int MFileV4::build() {
         t.proj_name = "ascan_project";
     }
 
+    t.src_dir = settings.option_src_dir_;
+    t.bld_dir = settings.option_build_dir_;
+    t.bin_dir = settings.option_bin_dir_;
+
     build_options_section();
     build_targets();
     build_sources_section();

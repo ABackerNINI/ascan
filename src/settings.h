@@ -19,6 +19,7 @@ class Settings {
     std::string option_output_;
     std::string option_src_dir_{"."};
     std::string option_bin_dir_{"bin"};
+    std::string option_build_dir_{"build"};
     std::vector<std::string> main_files_;
     std::vector<std::string> include_dirs_;
     int temp_version_{4};
