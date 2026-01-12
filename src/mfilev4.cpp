@@ -44,6 +44,12 @@ class safe_replacer {
     }
 };
 
+void import_setting(std::string &feild, const std::string &from_setting) {
+    if (!from_setting.empty()) {
+        feild = from_setting;
+    }
+}
+
 int MFileV4::build() {
     prepare();
 
@@ -54,9 +60,16 @@ int MFileV4::build() {
         t.proj_name = "ascan_project";
     }
 
-    t.src_dir = settings.option_src_dir_;
-    t.bld_dir = settings.option_build_dir_;
-    t.bin_dir = settings.option_bin_dir_;
+    import_setting(t.proj_name, settings.option_proj_name_);
+    import_setting(t.config, settings.option_default_config_);
+    import_setting(t.cc, settings.option_cc_);
+    import_setting(t.cxx, settings.option_cxx_);
+    import_setting(t.stdc, !settings.option_std_c_.empty() ? settings.option_std_c_ : settings.option_std_);
+    import_setting(t.stdcxx, !settings.option_std_cxx_.empty() ? settings.option_std_cxx_ : settings.option_std_);
+    import_setting(t.src_dir, settings.option_src_dir_);
+    import_setting(t.bld_dir, settings.option_build_dir_);
+    import_setting(t.bin_dir, settings.option_bin_dir_);
+    import_setting(t.ldflags, vector_to_string(settings.option_ldflags_, " "));
 
     build_options_section();
     build_targets();
@@ -73,6 +86,7 @@ int MFileV4::build() {
     replaces.push_back({"__ASCAN::BLD_DIR__", t.bld_dir});
     replaces.push_back({"__ASCAN::BIN_DIR__", t.bin_dir});
     replaces.push_back({"__ASCAN::TARGETS__", t.targets.to_string()});
+    replaces.push_back({"__ASCAN::LD_FLAGS__", t.ldflags});
     replaces.push_back({"__ASCAN::SOURCES_SECTION__", t.sources_section.to_string()});
     replaces.push_back({"__ASCAN::TARGETS_SECTION__", t.targets_section.to_string()});
 
@@ -123,15 +137,30 @@ void MFileV4::prepare() {
 }
 
 void MFileV4::build_options_section() {
-    // TODO: add options for the following three fields
-    MSimpleVariableDef config{"CONFIG", "debug", VariableAssignmentType::CONDITIONAL};
-    MSimpleVariableDef cxx{"CXX", "g++", VariableAssignmentType::CONDITIONAL};
-    MSimpleVariableDef std{"STD", "c++17", VariableAssignmentType::CONDITIONAL};
+    MSimpleVariableDef config{"CONFIG", t.config, VariableAssignmentType::CONDITIONAL};
 
     t.options_section.add_component(config);
     t.options_section.add_component(MBlankLine());
-    t.options_section.add_component(cxx);
-    t.options_section.add_component(std);
+    if (m_c && (m_cc || m_cpp)) {
+        MSimpleVariableDef cc{"CC", t.cc, VariableAssignmentType::CONDITIONAL};
+        MSimpleVariableDef cxx{"CXX", t.cxx, VariableAssignmentType::CONDITIONAL};
+        MSimpleVariableDef stdc{"CSTD", t.stdc, VariableAssignmentType::CONDITIONAL};
+        MSimpleVariableDef stdcxx{"CXXSTD", t.stdcxx, VariableAssignmentType::CONDITIONAL};
+        t.options_section.add_component(cc);
+        t.options_section.add_component(cxx);
+        t.options_section.add_component(stdc);
+        t.options_section.add_component(stdcxx);
+    } else if (m_c) {
+        MSimpleVariableDef cc{"CC", t.cc, VariableAssignmentType::CONDITIONAL};
+        MSimpleVariableDef stdc{"STD", t.stdc, VariableAssignmentType::CONDITIONAL};
+        t.options_section.add_component(cc);
+        t.options_section.add_component(stdc);
+    } else {
+        MSimpleVariableDef cxx{"CXX", t.cxx, VariableAssignmentType::CONDITIONAL};
+        MSimpleVariableDef stdcxx{"STD", t.stdcxx, VariableAssignmentType::CONDITIONAL};
+        t.options_section.add_component(cxx);
+        t.options_section.add_component(stdcxx);
+    }
 }
 
 void MFileV4::build_targets() {
@@ -195,9 +224,10 @@ void MFileV4::build_targets_section() {
     if (m_executable.size() == 1) {
         MRule target_rule{MSimpleVariable{"TARGET"}};
         target_rule.add_prerequisite(MSimpleVariable{"OBJS"});
-        target_rule.add_prerequisite(MSimpleVariable{"MODE_FILE"});
+        target_rule.add_prerequisite(MSimpleVariable{"CONFIG_FILE"});
         target_rule.add_recipe(MRecipe("mkdir -p $(@D)", MRecipePrefix::ECHO_OFF));
-        target_rule.add_recipe(MRecipe("$(CXX) $(CXXFLAGS) $(OBJS) -o $@ $(LDFLAGS)"));
+        target_rule.add_recipe(MRecipe("echo \"$(CXX) $(CXXFLAGS) ... -o $@ $(LDFLAGS)\"", MRecipePrefix::ECHO_OFF));
+        target_rule.add_recipe(MRecipe("$(CXX) $(CXXFLAGS) $(OBJS) -o $@ $(LDFLAGS)", MRecipePrefix::ECHO_OFF));
         target_rule.add_recipe(MRecipe("$(call check_build_params)"));
 
         t.targets_section.add_component(std::move(target_rule));

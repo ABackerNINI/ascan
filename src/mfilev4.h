@@ -29,10 +29,16 @@ class MFileV4 : public MFile {
     bool m_cpp;
 
     struct {
-        std::string proj_name{};
+        std::string proj_name;
+        std::string config{"debug"};
+        std::string cc{"gcc"};
+        std::string cxx{"g++"};
+        std::string stdc{"c17" };
+        std::string stdcxx{"c++17"};
         std::string src_dir{"src"};
         std::string bld_dir{"build"};
         std::string bin_dir{"bin"};
+        std::string ldflags;
         MCompComponent options_section{"\n"};
         MCompComponent targets;
         MCompComponent sources_section{"\n"};
