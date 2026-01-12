@@ -205,7 +205,9 @@ static void recursion_scan_dir_c_cxx_files_helper(char *path, vector<cfile> &vec
 
         if (lstat(path, &statbuf) == 0) {
             if ((statbuf.st_mode & S_IFMT) == S_IFDIR) { /* dir */
-                recursion_scan_dir_c_cxx_files_helper(path, vec, recursive);
+                if (recursive) {
+                    recursion_scan_dir_c_cxx_files_helper(path, vec, recursive);
+                }
             } else if ((statbuf.st_mode & S_IFMT) == S_IFREG) { /* regular file */
                 const char *ext = get_ext(p_entry->d_name);
                 if (ext && is_concerned_file_type(ext)) {
