@@ -1,6 +1,7 @@
 #ifndef _AUTO_SCAN_CFILES_H_
 #define _AUTO_SCAN_CFILES_H_
 
+#include "fs.h" // IWYU pragma: keep
 #include <string>
 #include <vector>
 
@@ -22,14 +23,14 @@ class cfile {
     static const std::vector<FILE_TYPE> cxx_source_types;
 
   public:
-    cfile(const std::string &filename, const std::string &name);
+    cfile(const fs::path &path);
     void set_have_main_func(bool have_main_func);
     void set_visited(bool visited);
     void match_includes_and_detect_main(std::vector<cfile> &files);
     void associate_header(std::vector<cfile> &files);
 
     // File name with extension.
-    const std::string &path() const;
+    const fs::path &path() const;
     // File name without extension and directory.
     const std::string &stem() const;
     // Whether the source file have a main function.
@@ -70,7 +71,7 @@ class cfile {
     bool check_type(const std::vector<FILE_TYPE> &types, FILE_TYPE type) const;
 
   private:
-    std::string m_path;
+    fs::path m_path;
     std::string m_stem;
     bool m_have_main_func;
     bool m_includes_matched;
@@ -81,7 +82,7 @@ class cfile {
     bool m_visited;
 };
 
-std::vector<cfile> recursion_scan_dir_c_cxx_files(const char *dir, bool recursive);
-std::vector<cfile> recursion_scan_dir_c_cxx_files(const std::string &dir, bool recursive);
+std::vector<fs::path> recursively_scan_dir_c_cxx_files(const char *dir, bool recursive);
+std::vector<fs::path> recursively_scan_dir_c_cxx_files(const std::string &dir, bool recursive);
 
 #endif //_AUTO_SCAN_CFILES_H_

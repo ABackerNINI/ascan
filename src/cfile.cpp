@@ -23,15 +23,11 @@ const std::vector<cfile::FILE_TYPE> cfile::cxx_source_types = {FILE_TYPE_CPP, FI
 
 /*==========================================================================*/
 
-cfile::cfile(const string &filename, const string &name) : m_path(filename), m_stem(name) {
-    //! Be careful with get_ext(std::string.c_str()), the c_str() return value
-    //! is a dynamic memory which could move to another place when you modified
-    //! the string.
-    const char *ext = get_ext(m_path.c_str());
+cfile::cfile(const fs::path &path) : m_path(path) {
+    m_stem = path.stem();
 
-    // TODO: check if filename contains spaces
-
-    assert(ext);
+    string ext = m_path.extension().string();
+    assert(!ext.empty() && "file extension is empty");
 
     m_have_main_func = false;
     m_includes_matched = false;
@@ -86,7 +82,7 @@ void cfile::associate_header(vector<cfile> &files) {
     }
 }
 
-const string &cfile::path() const {
+const fs::path &cfile::path() const {
     return m_path;
 }
 
@@ -173,7 +169,10 @@ bool is_concerned_file_type(const std::string &ext) {
 }
 
 // TODO: rewrite it using std::filesystem
-static void recursion_scan_dir_c_cxx_files_helper(char *path, vector<cfile> &vec, bool recursive) {
+static void recursion_scan_dir_c_cxx_files_helper(vector<fs::path> &result,
+                                                  char *path,
+                                                  bool recursive,
+                                                  const vector<std::string> &exts) {
     DIR *p_dir = NULL;
     struct dirent *p_entry = NULL;
     struct stat statbuf;
@@ -206,12 +205,14 @@ static void recursion_scan_dir_c_cxx_files_helper(char *path, vector<cfile> &vec
         if (lstat(path, &statbuf) == 0) {
             if ((statbuf.st_mode & S_IFMT) == S_IFDIR) { /* dir */
                 if (recursive) {
-                    recursion_scan_dir_c_cxx_files_helper(path, vec, recursive);
+                    recursion_scan_dir_c_cxx_files_helper(result, path, recursive, exts); /* recursive scan */
+                } else {
+                    // do nothing (skip sub directories when not recursive
                 }
             } else if ((statbuf.st_mode & S_IFMT) == S_IFREG) { /* regular file */
                 const char *ext = get_ext(p_entry->d_name);
                 if (ext && is_concerned_file_type(ext)) {
-                    vec.emplace_back(std::string(path), string(p_entry->d_name).substr(0, ext - p_entry->d_name));
+                    result.push_back(path);
                 }
             } else {
                 print_warning("Not a regular file or directory: \"%s\"\n", p_entry->d_name);
@@ -225,18 +226,18 @@ static void recursion_scan_dir_c_cxx_files_helper(char *path, vector<cfile> &vec
     closedir(p_dir);
 }
 
-vector<cfile> recursion_scan_dir_c_cxx_files(const char *dir, bool recursive) {
-    vector<cfile> vec;
+vector<fs::path> recursively_scan_dir_c_cxx_files(const char *dir, bool recursive) {
+    vector<fs::path> result;
 
     char path[FILENAME_MAX];
     strcpy(path, dir);
-    recursion_scan_dir_c_cxx_files_helper(path, vec, recursive);
+    recursion_scan_dir_c_cxx_files_helper(result, path, recursive, cfile::file_type_ext);
 
-    return vec;
+    return result;
 }
 
-vector<cfile> recursion_scan_dir_c_cxx_files(const string &dir, bool recursive) {
-    return recursion_scan_dir_c_cxx_files(dir.c_str(), recursive);
+vector<fs::path> recursively_scan_dir_c_cxx_files(const string &dir, bool recursive) {
+    return recursively_scan_dir_c_cxx_files(dir.c_str(), recursive);
 }
 
 /*==========================================================================*/
