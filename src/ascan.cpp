@@ -40,7 +40,11 @@ int ascan::start(int argc, char **argv) {
     }
 
     // Scan the source directory for C/C++ source files
-    m_cfiles = recursion_scan_dir_c_cxx_files(settings.option_src_dir_, settings.flag_recursive_);
+    auto srcfiles = recursively_scan_dir_c_cxx_files(settings.option_src_dir_, settings.flag_recursive_);
+
+    for (auto &cf : srcfiles) {
+        m_cfiles.emplace_back(fs::relative(cf));
+    }
 
     // If no C/C++ source files found, return error
     if (m_cfiles.empty()) {
@@ -49,7 +53,6 @@ int ascan::start(int argc, char **argv) {
     }
 
     match_c_cxx_includes();
-    match_starter_files(settings.main_files_);
     print_cfiles();
     associate_header();
 
@@ -106,22 +109,6 @@ bool ascan::test_makefile(bool force, bool output_specified) {
     }
 
     return true;
-}
-
-// Set 'have_main_func' for cfiles that are starter files specified by command line arguments.
-void ascan::match_starter_files(const std::vector<std::string> &start_files) {
-    for (auto &sfile : start_files) {
-        for (auto &cfile : m_cfiles) {
-            if (cfile.is_source()) {
-                filesystem::path p1(cfile.path());
-                filesystem::path p2(sfile);
-                if (filesystem::relative(p1) == filesystem::relative(p2)) {
-                    cfile.set_have_main_func(true);
-                    break;
-                }
-            }
-        }
-    }
 }
 
 void ascan::match_c_cxx_includes() {

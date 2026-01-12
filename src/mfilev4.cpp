@@ -122,15 +122,30 @@ void MFileV4::prepare() {
     }
 
     // Find all executables
-    for (auto &cfile : m_cfiles) {
-        if (cfile.have_main_func() && cfile.is_source()) {
-            m_executable.push_back(&cfile);
+    if (!settings.main_files_.empty()) { // If main files are specified, then only compile those files
+        for (auto &main_file : settings.main_files_) {
+            fs::path main_file_path = fs::relative(main_file);
+            for (auto &cfile : m_cfiles) {
+                if (cfile.is_source() && cfile.path() == main_file_path) {
+                    if (!cfile.have_main_func()) {
+                        print_warning("File '%s' seems to have no main function, but it is marked as main file\n",
+                                      cfile.path().c_str());
+                    }
+                    m_executable.push_back(&cfile);
+                    break;
+                }
+            }
         }
+    } else { // Otherwise, find all files with main function
+        for (auto &cfile : m_cfiles) {
+            if (cfile.have_main_func() && cfile.is_source()) {
+                m_executable.push_back(&cfile);
+            }
+        }
+        // Sort executables by name
+        sort(m_executable.begin(), m_executable.end(),
+             [](const cfile *a, const cfile *b) { return a->stem() < b->stem(); });
     }
-
-    // Sort executables by name
-    sort(m_executable.begin(), m_executable.end(),
-         [](const cfile *a, const cfile *b) { return a->stem() < b->stem(); });
 }
 
 void MFileV4::build_options_section() {
