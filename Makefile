@@ -32,9 +32,9 @@ CONFIG_FILE = $(BLD_DIR)/$(CONFIG).$(CXX).$(STD).$(PARAMS_SIGNATURE).ascan.conf
 # CHECK DIRECTORIES
 
 # Check that directories do not contain spaces.
-DIR_CHECKS = $(words $(SRC_DIR)) $(words $(BLD_DIR)) \
+SPACE_CHECKS = $(words $(SRC_DIR)) $(words $(BLD_DIR)) \
 		 	 $(words $(OBJ_DIR)) $(words $(BIN_DIR))
-ifneq ($(filter-out 1, $(DIR_CHECKS)),)
+ifneq ($(filter-out 1, $(SPACE_CHECKS)),)
 $(error "SRC_DIR, BLD_DIR, OBJ_DIR, BIN_DIR must be set to a directory. Please check your Makefile.")
 endif
 

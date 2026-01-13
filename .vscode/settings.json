@@ -28,7 +28,9 @@
         "SQUOTE",
         "stdcxx",
         "tlexer",
-        "tparser"
+        "tparser",
+        "xcpp",
+        "xcxx"
     ],
 	"C_Cpp.intelliSenseEngine": "disabled",
 	"editor.rulers": [
