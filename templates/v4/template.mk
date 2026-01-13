@@ -52,7 +52,7 @@ LDFLAGS = __ASCAN::LD_FLAGS__
 __ASCAN::TARGETS__
 
 ifeq ($(CONFIG),debug)
-    __ASCAN::C_CXX_FLAGS_DEBUG_AMEND__
+	__ASCAN::C_CXX_FLAGS_DEBUG_AMEND__
 else ifeq ($(CONFIG),release)
 	__ASCAN::C_CXX_FLAGS_RELEASE_AMEND__
 endif

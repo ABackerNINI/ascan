@@ -61,15 +61,15 @@ CXXFLAGS = -Wall -Wextra -std=$(CXXSTD) -I. -I./libs
 LDFLAGS = -L./libs -lfmt
 
 TARGET = $(BIN_DIR)/$(PROJECT)
-TARGET1 = $(BIN_DIR)/target1
-TARGET2 = $(BIN_DIR)/target2
+TARGET1 = $(BIN_DIR)/foo
+TARGET2 = $(BIN_DIR)/bar
 
 ifeq ($(CONFIG),debug)
-    CFLAGS += -g -O0 -DDEBUG
-    CXXFLAGS += -g -O0 -DDEBUG
+	CFLAGS += -g -O0 -DDEBUG
+	CXXFLAGS += -g -O0 -DDEBUG
 else ifeq ($(CONFIG),release)
-    CFLAGS += -flto=4 -O3 -march=native -DNDEBUG
-    CXXFLAGS += -flto=4 -O3 -march=native -DNDEBUG
+	CFLAGS += -flto=4 -O3 -march=native -DNDEBUG
+	CXXFLAGS += -flto=4 -O3 -march=native -DNDEBUG
 endif
 
 # SOURCES

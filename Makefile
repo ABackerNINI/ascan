@@ -55,13 +55,13 @@ LDFLAGS  = -L./libs -lfmt
 TARGET = $(BIN_DIR)/$(PROJECT)
 
 ifeq ($(CONFIG),debug)
-    CXXFLAGS += -g -O0 -DDEBUG
+	CXXFLAGS += -g -O0 -DDEBUG
 else ifeq ($(CONFIG),release)
-    CXXFLAGS += -flto=4 -O3 -march=native -DNDEBUG
+	CXXFLAGS += -flto=4 -O3 -march=native -DNDEBUG
 else ifeq ($(CONFIG),test)
-    CXXFLAGS += -g -O0 -DTEST -Igoogletest/include
-    LDFLAGS  += -Lgoogletest/lib -lgtest -lgtest_main -lpthread
-    TARGET   += _test
+	CXXFLAGS += -g -O0 -DTEST -Igoogletest/include
+	LDFLAGS  += -Lgoogletest/lib -lgtest -lgtest_main -lpthread
+	TARGET   += _test
 endif
 
 # SOURCES
