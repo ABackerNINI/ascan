@@ -274,7 +274,7 @@ void MFileV4::build_targets() {
         int index = 1;
         for (auto &exec : m_executable) {
             MVariableDef target{"TARGET" + std::to_string(index)};
-            target.add_component(make_comp_component(MSimpleVariable("BIN_DIR"), "/", MSimpleVariable(exec->stem())));
+            target.add_component(make_comp_component(MSimpleVariable("BIN_DIR"), "/", exec->stem()));
             t.targets.add_component(std::move(target));
             index++;
         }
