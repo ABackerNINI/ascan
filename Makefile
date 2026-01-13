@@ -1,4 +1,4 @@
-PROJECT_ROOT := $(dir $(abspath $(lastword $(MAKEFILE_LIST))))
+PROJECT_ROOT := $(abspath $(dir $(abspath $(lastword $(MAKEFILE_LIST)))))
 
 # PROJECT
 
