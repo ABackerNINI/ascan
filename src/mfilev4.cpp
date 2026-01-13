@@ -44,31 +44,13 @@ class safe_replacer {
     }
 };
 
-void import_setting(std::string &feild, const std::string &from_setting) {
-    if (!from_setting.empty()) {
-        feild = from_setting;
-    }
-}
-
 int MFileV4::build() {
     prepare();
 
-    // Project name is the directory name of the project root
-    std::filesystem::path cwd = std::filesystem::current_path();
-    t.proj_name = cwd.filename().string();
-
-    import_setting(t.proj_name, settings.option_proj_name_);
-    import_setting(t.config, settings.option_default_config_);
-    import_setting(t.cc, settings.option_cc_);
-    import_setting(t.cxx, settings.option_cxx_);
-    import_setting(t.stdc, !settings.option_std_c_.empty() ? settings.option_std_c_ : settings.option_std_);
-    import_setting(t.stdcxx, !settings.option_std_cxx_.empty() ? settings.option_std_cxx_ : settings.option_std_);
-    import_setting(t.src_dir, settings.option_src_dir_);
-    import_setting(t.bld_dir, settings.option_build_dir_);
-    import_setting(t.bin_dir, settings.option_bin_dir_);
-    import_setting(t.ldflags, vector_to_string(settings.option_ldflags_, " "));
+    import_settings();
 
     build_options_section();
+    build_obj_dir_config_file_cc_cxx_std();
     build_targets();
     build_sources_section();
     build_targets_section();
@@ -82,6 +64,8 @@ int MFileV4::build() {
     replaces.push_back({"__ASCAN::SRC_DIR__", t.src_dir});
     replaces.push_back({"__ASCAN::BLD_DIR__", t.bld_dir});
     replaces.push_back({"__ASCAN::BIN_DIR__", t.bin_dir});
+    replaces.push_back({"__ASCAN::OBJ_DIR_CC_CXX_STD__", t.obj_dir_config_file_cc_cxx_std.to_string()});
+    replaces.push_back({"__ASCAN::CONFIG_FILE_CC_CXX_STD__", t.obj_dir_config_file_cc_cxx_std.to_string()});
     replaces.push_back({"__ASCAN::TARGETS__", t.targets.to_string()});
     replaces.push_back({"__ASCAN::LD_FLAGS__", t.ldflags});
     replaces.push_back({"__ASCAN::SOURCES_SECTION__", t.sources_section.to_string()});
@@ -104,6 +88,7 @@ int MFileV4::build() {
 }
 
 void MFileV4::prepare() {
+    // TODO: set m_c, m_cpp, m_cc flags based on only the source files used, not all source files found
     // Set m_c, m_cpp, m_cc flags
     m_c = m_cc = m_cpp = false;
     for (auto &cfile : m_cfiles) {
@@ -148,30 +133,67 @@ void MFileV4::prepare() {
     }
 }
 
-void MFileV4::build_options_section() {
-    MSimpleVariableDef config{"CONFIG", t.config, VariableAssignmentType::CONDITIONAL};
+void MFileV4::import_setting(std::string &feild, const std::string &from_setting) {
+    if (!from_setting.empty()) {
+        feild = from_setting;
+    }
+}
 
-    t.options_section.add_component(config);
+void MFileV4::import_settings() {
+    // Project name is the directory name of the project root
+    fs::path cwd = fs::current_path();
+    t.proj_name = cwd.filename().string();
+
+    import_setting(t.proj_name, settings.option_proj_name_);
+    import_setting(t.config, settings.option_default_config_);
+    import_setting(t.cc, settings.option_cc_);
+    import_setting(t.cxx, settings.option_cxx_);
+    import_setting(t.stdc, !settings.option_std_c_.empty() ? settings.option_std_c_ : settings.option_std_);
+    import_setting(t.stdcxx, !settings.option_std_cxx_.empty() ? settings.option_std_cxx_ : settings.option_std_);
+    import_setting(t.src_dir, settings.option_src_dir_);
+    import_setting(t.bld_dir, settings.option_build_dir_);
+    import_setting(t.bin_dir, settings.option_bin_dir_);
+    import_setting(t.ldflags, vector_to_string(settings.option_ldflags_, " "));
+}
+
+void MFileV4::add_svardef(MCompComponent &mcc, const std::string &varname, const std::string &varval) {
+    mcc.add_component(MSimpleVariableDef(varname, varval, VariableAssignmentType::CONDITIONAL));
+}
+
+void MFileV4::add_svar(MCompComponent &mcc, const std::string &varname) {
+    mcc.add_component(MSimpleVariable(varname));
+}
+
+void MFileV4::build_options_section() {
+    add_svardef(t.options_section, "CONFIG", t.config);
+
     t.options_section.add_component(MBlankLine());
     if (m_c && (m_cc || m_cpp)) {
-        MSimpleVariableDef cc{"CC", t.cc, VariableAssignmentType::CONDITIONAL};
-        MSimpleVariableDef cxx{"CXX", t.cxx, VariableAssignmentType::CONDITIONAL};
-        MSimpleVariableDef stdc{"CSTD", t.stdc, VariableAssignmentType::CONDITIONAL};
-        MSimpleVariableDef stdcxx{"CXXSTD", t.stdcxx, VariableAssignmentType::CONDITIONAL};
-        t.options_section.add_component(cc);
-        t.options_section.add_component(cxx);
-        t.options_section.add_component(stdc);
-        t.options_section.add_component(stdcxx);
+        add_svardef(t.options_section, "CC", t.cc);
+        add_svardef(t.options_section, "CXX", t.cxx);
+        add_svardef(t.options_section, "CSTD", t.stdc);
+        add_svardef(t.options_section, "CXXSTD", t.stdcxx);
     } else if (m_c) {
-        MSimpleVariableDef cc{"CC", t.cc, VariableAssignmentType::CONDITIONAL};
-        MSimpleVariableDef stdc{"STD", t.stdc, VariableAssignmentType::CONDITIONAL};
-        t.options_section.add_component(cc);
-        t.options_section.add_component(stdc);
+        add_svardef(t.options_section, "CC", t.cc);
+        add_svardef(t.options_section, "STD", t.stdc);
     } else {
-        MSimpleVariableDef cxx{"CXX", t.cxx, VariableAssignmentType::CONDITIONAL};
-        MSimpleVariableDef stdcxx{"STD", t.stdcxx, VariableAssignmentType::CONDITIONAL};
-        t.options_section.add_component(cxx);
-        t.options_section.add_component(stdcxx);
+        add_svardef(t.options_section, "CXX", t.cxx);
+        add_svardef(t.options_section, "STD", t.stdcxx);
+    }
+}
+
+void MFileV4::build_obj_dir_config_file_cc_cxx_std() {
+    if (m_c && (m_cc || m_cpp)) {
+        add_svar(t.obj_dir_config_file_cc_cxx_std, "CC");
+        add_svar(t.obj_dir_config_file_cc_cxx_std, "CXX");
+        add_svar(t.obj_dir_config_file_cc_cxx_std, "CSTD");
+        add_svar(t.obj_dir_config_file_cc_cxx_std, "CXXSTD");
+    } else if (m_c) {
+        add_svar(t.obj_dir_config_file_cc_cxx_std, "CC");
+        add_svar(t.obj_dir_config_file_cc_cxx_std, "STD");
+    } else if (m_cpp) {
+        add_svar(t.obj_dir_config_file_cc_cxx_std, "CXX");
+        add_svar(t.obj_dir_config_file_cc_cxx_std, "STD");
     }
 }
 

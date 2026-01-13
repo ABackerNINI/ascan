@@ -1,4 +1,4 @@
-PROJECT_ROOT := $(dir $(abspath $(lastword $(MAKEFILE_LIST))))
+PROJECT_ROOT := $(abspath $(dir $(abspath $(lastword $(MAKEFILE_LIST)))))
 
 # PROJECT
 
@@ -21,10 +21,10 @@ BIN_DIR = __ASCAN::BIN_DIR__
 EXTRA_PARAMS =
 PARAMS_SIGNATURE = $(shell echo "a$(EXTRA_PARAMS)b" | md5sum | cut -c1-12)
 # Where to put object files for each build configuration. Must be subdirectory of the project root. Can be set to ".".
-OBJ_DIR = $(BLD_DIR)/$(CONFIG)/$(CXX).$(STD).$(PARAMS_SIGNATURE)
+OBJ_DIR = $(BLD_DIR)/$(CONFIG)/.__ASCAN::OBJ_DIR_CC_CXX_STD__.$(PARAMS_SIGNATURE)
 # This file is used to store the configuration of the last successful build, so that
 # when the configuration changes, we can rebuild the target.
-CONFIG_FILE = $(BLD_DIR)/$(CONFIG).$(CXX).$(STD).$(PARAMS_SIGNATURE).ascan.conf
+CONFIG_FILE = $(BLD_DIR)/$(CONFIG).__ASCAN::CONFIG_FILE_CC_CXX_STD__.$(PARAMS_SIGNATURE).ascan.conf
 
 # CHECK DIRECTORIES
 
@@ -128,7 +128,9 @@ define save_build_params
 	@echo "CONFIG=$(CONFIG)" >> "$(1)"
 	@echo "CC=$(CC)" >> "$(1)"
 	@echo "CXX=$(CXX)" >> "$(1)"
-	@echo "STD=$(STD) $(CSTD) $(CXXSTD)" >> "$(1)"
+	@echo "STD=$(STD)" >> "$(1)"
+	@echo "CSTD=$(CSTD)" >> "$(1)"
+	@echo "CXXSTD=$(CXXSTD)" >> "$(1)"
 	@echo "SRC_DIR=$(SRC_DIR)" >> "$(1)"
 	@echo "BLD_DIR=$(BLD_DIR)" >> "$(1)"
 	@echo "BIN_DIR=$(BIN_DIR)" >> "$(1)"

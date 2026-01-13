@@ -1,4 +1,4 @@
-PROJECT_ROOT := $(dir $(abspath $(lastword $(MAKEFILE_LIST))))
+PROJECT_ROOT := $(abspath $(dir $(abspath $(lastword $(MAKEFILE_LIST)))))
 
 # PROJECT
 
@@ -8,8 +8,11 @@ PROJECT = ascan
 
 CONFIG 	?= debug
 
-CXX 	?= g++
-STD     ?= c++17
+CC ?= gcc
+CXX	?= g++
+CSTD ?= c17
+CXXSTD ?= c++17
+STD ?= c++17
 
 # DIRECTORIES
 
@@ -25,9 +28,11 @@ EXTRA_PARAMS =
 PARAMS_SIGNATURE = $(shell echo "a$(EXTRA_PARAMS)b" | md5sum | cut -c1-12)
 # Where to put object files for each build configuration. Must be subdirectory of the project root. Can be set to ".".
 OBJ_DIR = $(BLD_DIR)/$(CONFIG)/$(CXX).$(STD).$(PARAMS_SIGNATURE)
+OBJ_DIR = $(BLD_DIR)/$(CONFIG)/$(CC).$(CXX).$(CSTD).$(CXXSTD).$(PARAMS_SIGNATURE)
 # This file is used to store the configuration of the last successful build, so that
 # when the configuration changes, we can rebuild the target.
 CONFIG_FILE = $(BLD_DIR)/$(CONFIG).$(CXX).$(STD).$(PARAMS_SIGNATURE).ascan.conf
+CONFIG_FILE = $(BLD_DIR)/$(CONFIG).$(CC).$(CXX).$(CSTD).$(CXXSTD).$(PARAMS_SIGNATURE).ascan.conf
 
 # CHECK DIRECTORIES
 
@@ -49,14 +54,21 @@ endif
 
 # BUILD DETAILS
 
+CFLAGS = -Wall -Wextra -std=$(STD) -I. -I./libs
 CXXFLAGS = -Wall -Wextra -std=$(STD) -I. -I./libs
+CFLAGS = -Wall -Wextra -std=$(CSTD) -I. -I./libs
+CXXFLAGS = -Wall -Wextra -std=$(CXXSTD) -I. -I./libs
 LDFLAGS  = -L./libs -lfmt
 
 TARGET = $(BIN_DIR)/$(PROJECT)
+TARGET1 = $(BIN_DIR)/target1
+TARGET2 = $(BIN_DIR)/target2
 
 ifeq ($(CONFIG),debug)
+    CFLAGS += -g -O0 -DDEBUG
     CXXFLAGS += -g -O0 -DDEBUG
 else ifeq ($(CONFIG),release)
+    CFLAGS += -flto=4 -O3 -march=native -DNDEBUG
     CXXFLAGS += -flto=4 -O3 -march=native -DNDEBUG
 endif
 
@@ -70,6 +82,10 @@ SRCS := ascan.cpp options.cpp parser.cpp cfile.cpp align.cpp mfile.cpp  \
 
 OBJS = $(SRCS:%.cpp=$(OBJ_DIR)/$(SRC_DIR)/%.o)
 DEPS = $(OBJS:.o=.d)
+OBJS1 = $(SRCS:%.cpp=$(OBJ_DIR)/$(SRC_DIR)/%.o)
+DEPS1 = $(OBJS:.o=.d)
+OBJS2 = $(SRCS:%.cpp=$(OBJ_DIR)/$(SRC_DIR)/%.o)
+DEPS2 = $(OBJS:.o=.d)
 
 # TARGETS
 
@@ -79,9 +95,29 @@ $(TARGET): $(OBJS) $(CONFIG_FILE)
 	@$(CXX) $(CXXFLAGS) $(OBJS) -o $@ $(LDFLAGS)
 	$(call check_build_params)
 
+$(TARGET1): $(OBJS1) $(CONFIG_FILE)
+	@mkdir -p $(@D)
+	@echo "$(CXX) $(CXXFLAGS) ... -o $@ $(LDFLAGS)"
+	@$(CXX) $(CXXFLAGS) $(OBJS1) -o $@ $(LDFLAGS)
+	$(call check_build_params)
+
+$(TARGET2): $(OBJS2) $(CONFIG_FILE)
+	@mkdir -p $(@D)
+	@echo "$(CXX) $(CXXFLAGS) ... -o $@ $(LDFLAGS)"
+	@$(CXX) $(CXXFLAGS) $(OBJS2) -o $@ $(LDFLAGS)
+	$(call check_build_params)
+
 # RULES
 
+$(OBJ_DIR)/%.o: %.c
+	@mkdir -p $(@D)
+	$(CXX) $(CXXFLAGS) -MMD -MP -c $< -o $@
+
 $(OBJ_DIR)/%.o: %.cpp
+	@mkdir -p $(@D)
+	$(CXX) $(CXXFLAGS) -MMD -MP -c $< -o $@
+
+$(OBJ_DIR)/%.o: %.cc
 	@mkdir -p $(@D)
 	$(CXX) $(CXXFLAGS) -MMD -MP -c $< -o $@
 
@@ -109,7 +145,9 @@ all: debug release
 
 clean:
 	@echo "Cleaning..."
-	@rm -f $(TARGET) $(OBJS) $(DEPS) $(BLD_DIR)/*.ascan.conf
+	@rm -f $(TARGET) $(TARGET1) $(TARGET2)
+	@rm -f $(OBJS) $(OBJS1) $(OBJS2) $(DEPS) $(DEPS1) $(DEPS2)
+	@rm -f $(BLD_DIR)/*.ascan.conf
 
 	@#! CAUTION: rm -rf command
 	@if [ ! "$(BLD_DIR)" = "." ] && [ ! "$(OBJ_DIR)" = "/"  ]; then \
@@ -137,7 +175,9 @@ define save_build_params
 	@echo "CONFIG=$(CONFIG)" >> "$(1)"
 	@echo "CC=$(CC)" >> "$(1)"
 	@echo "CXX=$(CXX)" >> "$(1)"
-	@echo "STD=$(STD) $(CSTD) $(CXXSTD)" >> "$(1)"
+	@echo "STD=$(STD)" >> "$(1)"
+	@echo "CSTD=$(CSTD)" >> "$(1)"
+	@echo "CXXSTD=$(CXXSTD)" >> "$(1)"
 	@echo "SRC_DIR=$(SRC_DIR)" >> "$(1)"
 	@echo "BLD_DIR=$(BLD_DIR)" >> "$(1)"
 	@echo "BIN_DIR=$(BIN_DIR)" >> "$(1)"
