@@ -34,7 +34,7 @@ int MFileV3::build() {
 void MFileV3::prepare() {
     // Set m_c, m_cpp, m_cc flags
     m_c = m_cc = m_cpp = false;
-    for (auto &cfile : m_cfiles) {
+    for (auto &cfile : cfiles_) {
         if (cfile.file_type() == cfile::FILE_TYPE_C) {
             m_c = true;
         } else if (cfile.file_type() == cfile::FILE_TYPE_CPP) {
@@ -55,7 +55,7 @@ void MFileV3::prepare() {
     }
 
     // Find all executables
-    for (auto &cfile : m_cfiles) {
+    for (auto &cfile : cfiles_) {
         if (cfile.have_main_func() && cfile.is_source()) {
             m_executable.push_back(&cfile);
         }
@@ -131,7 +131,7 @@ void MFileV3::output_targets() {
     int idx = m_executable.size() == 1 ? -1 : 1;
     for (auto &exec : m_executable) {
         MVariableDef *target = new MVariableDef(m_cfg.make_bin(idx++));
-        target->add_component(new MFilename(exec->stem()));
+        target->value().add_component(new MFilename(exec->stem()));
         add_component(target);
     }
     add_component(new MBlankLine());
@@ -222,15 +222,15 @@ void MFileV3::output_executable_details() {
 
         // OUT: OBJS1 = xxx.o
         MVariableDef *obj = new MVariableDef(m_cfg.make_objs(idx++));
-        obj->add_component(new MFilename(exec->stem() + ".o"));
+        obj->value().add_component(new MFilename(exec->stem() + ".o"));
 
         // OUT: all objects dependency.
-        find_all_headers(m_cfiles, exec);
-        for (auto cfile = m_cfiles.begin(); cfile != m_cfiles.end(); ++cfile) {
+        find_all_headers(cfiles_, exec);
+        for (auto cfile = cfiles_.begin(); cfile != cfiles_.end(); ++cfile) {
             if (cfile->visited()) {
                 if (cfile->associate() != NULL && cfile->is_source() && &(*cfile) != exec) {
                     // OUT: xxx.o
-                    obj->add_component(new MFilename(cfile->associate()->stem() + ".o"));
+                    obj->value().add_component(new MFilename(cfile->associate()->stem() + ".o"));
                 }
                 cfile->set_visited(false);
             }
@@ -248,7 +248,8 @@ void MFileV3::output_executable_details() {
         for (size_t i = 0; i < m_executable.size(); ++i) {
             // OUT: OBJS1BD = $(OBJS1:%=$(BUILD)/%)
             MVariableDef *obj_bd = new MVariableDef(m_cfg.make_objs_bd(idx));
-            obj_bd->add_component(new MSimpleVariable(m_cfg.make_objs(idx) + string(":%=$(") + CONFIG_BD + ")/%"));
+            obj_bd->value().add_component(
+                new MSimpleVariable(m_cfg.make_objs(idx) + string(":%=$(") + CONFIG_BD + ")/%"));
             add_component(obj_bd);
             ++idx;
         }

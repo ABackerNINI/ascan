@@ -119,7 +119,7 @@ void MFileV4::import_settings() {
 void MFileV4::prepare() {
     // TODO: set m_c, m_cpp, m_cc flags based on only the source files used, not all source files found
     // Set m_c, m_cpp, m_cc flags
-    for (auto &cfile : m_cfiles) {
+    for (auto &cfile : cfiles_) {
         if (cfile.file_type() == cfile::FILE_TYPE_C) {
             m_c = true;
         } else if (cfile.file_type() == cfile::FILE_TYPE_CPP) {
@@ -138,7 +138,7 @@ void MFileV4::prepare() {
     if (!settings.main_files_.empty()) { // If main files are specified, then only compile those files
         for (auto &main_file : settings.main_files_) {
             fs::path main_file_path = fs::relative(main_file);
-            for (auto &cfile : m_cfiles) {
+            for (auto &cfile : cfiles_) {
                 if (cfile.is_source() && cfile.path() == main_file_path) {
                     if (!cfile.have_main_func()) {
                         print_warning("File '%s' seems to have no main function, but it is marked as main file\n",
@@ -150,7 +150,7 @@ void MFileV4::prepare() {
             }
         }
     } else { // Otherwise, find all files with main function
-        for (auto &cfile : m_cfiles) {
+        for (auto &cfile : cfiles_) {
             if (cfile.have_main_func() && cfile.is_source()) {
                 m_executable.push_back(&cfile);
             }
@@ -161,15 +161,19 @@ void MFileV4::prepare() {
     }
 }
 
-void MFileV4::add_svardef(MCompComponent &mcc,
-                          const std::string &varname,
-                          const std::string &varval,
-                          VariableAssignmentType assignment_type) {
-    mcc.add_component(MSimpleVariableDef(varname, varval, assignment_type));
+MSimpleVariableDef *MFileV4::add_svardef(MCompComponent &mcc,
+                                         const std::string &varname,
+                                         const std::string &varval,
+                                         VariableAssignmentType assignment_type) {
+    MSimpleVariableDef *var = new MSimpleVariableDef(varname, varval, assignment_type);
+    mcc.add_component(var);
+    return var;
 }
 
-void MFileV4::add_svar(MCompComponent &mcc, const std::string &varname) {
-    mcc.add_component(MSimpleVariable(varname));
+MSimpleVariable *MFileV4::add_svar(MCompComponent &mcc, const std::string &varname) {
+    MSimpleVariable *var = new MSimpleVariable(varname);
+    mcc.add_component(var);
+    return var;
 }
 
 void MFileV4::build_options_section() {
@@ -240,7 +244,6 @@ void MFileV4::build_c_cxx_flags() {
         }
 
         add_svardef(target, "CFLAGS", vector_to_string(cflags, " "));
-        target.add_component("\n");
         add_svardef(target, "CXXFLAGS", vector_to_string(cxxflags, " "));
     } else if (m_c) {
         cflags.push_back("-std=$(STD)");
@@ -261,16 +264,24 @@ void MFileV4::build_targets() {
     // Only one executable:
     //   TARGET = $(BIN_DIR)/$(PROJECT) <-- use $(PROJECT) or stem of the executable?
     // Multiple executables:
-    //   TARGET1 = $(BIN_DIR)/target1
-    //   TARGET2 = $(BIN_DIR)/target2
+    //   TARGET1 = $(BIN_DIR)/foo
+    //   TARGET2 = $(BIN_DIR)/bar
     if (m_executable.size() <= 1) {
         MVariableDef target{"TARGET"};
-        target.add_component(MSimpleVariable("BIN_DIR"));
-        target.add_component("/");
-        target.add_component(MSimpleVariable("PROJECT"));
+        target.value().add_component(MSimpleVariable("BIN_DIR"));
+        target.value().add_component("/");
+        target.value().add_component(MSimpleVariable("PROJECT"));
         t.targets.add_component(std::move(target));
     } else if (m_executable.size() > 1) {
-        // TODO: implement multiple targets
+        int index = 1;
+        for (auto &exec : m_executable) {
+            MVariableDef target{"TARGET" + std::to_string(index)};
+            target.value().add_component(MSimpleVariable("BIN_DIR"));
+            target.value().add_component("/");
+            target.value().add_component(MSimpleVariable(exec->stem()));
+            t.targets.add_component(std::move(target));
+            index++;
+        }
     }
 }
 
@@ -290,11 +301,9 @@ void MFileV4::build_c_cxx_flags_amend() {
 
     if (m_c && (m_cc || m_cpp)) {
         add_svardef(debug_target, "CFLAGS", debug_amend, VariableAssignmentType::APPEND);
-        debug_target.add_component("\n\t");
-        add_svardef(debug_target, "CXXFLAGS", debug_amend, VariableAssignmentType::APPEND);
+        add_svardef(debug_target, "CXXFLAGS", debug_amend, VariableAssignmentType::APPEND)->indent(1);
         add_svardef(release_target, "CFLAGS", release_amend, VariableAssignmentType::APPEND);
-        release_target.add_component("\n\t");
-        add_svardef(release_target, "CXXFLAGS", release_amend, VariableAssignmentType::APPEND);
+        add_svardef(release_target, "CXXFLAGS", release_amend, VariableAssignmentType::APPEND)->indent(1);
     } else if (m_c) {
         add_svardef(debug_target, "CFLAGS", debug_amend, VariableAssignmentType::APPEND);
         add_svardef(release_target, "CFLAGS", release_amend, VariableAssignmentType::APPEND);
@@ -321,12 +330,12 @@ void MFileV4::build_sources_section() {
         // TODO: wildcard sources
 
         MVariableDef sources{"SRCS", VariableAssignmentType::RECURSIVELY_EXPANDED};
-        sources.set_separator(" ");
+        sources.value().set_separator(" ");
         auto &exec = m_executable[0];
-        find_all_sources_and_headers(m_cfiles, exec);
+        find_all_sources_and_headers(cfiles_, exec);
 
         std::vector<cfile *> source_files;
-        for (cfile &cf : m_cfiles) {
+        for (cfile &cf : cfiles_) {
             if (cf.visited() && cf.is_source()) {
                 if (&cf != exec) {
                     source_files.push_back(&cf);
@@ -337,10 +346,10 @@ void MFileV4::build_sources_section() {
 
         std::sort(source_files.begin(), source_files.end(), [](cfile *a, cfile *b) { return a->path() < b->path(); });
 
-        sources.add_component(new MFilename(fs::relative(exec->path(), settings.option_src_dir_)));
+        sources.value().add_component(new MFilename(fs::relative(exec->path(), settings.option_src_dir_)));
 
         for (auto &src : source_files) {
-            sources.add_component(new MFilename(fs::relative(src->path(), settings.option_src_dir_)));
+            sources.value().add_component(new MFilename(fs::relative(src->path(), settings.option_src_dir_)));
         }
 
         t.sources_section.add_component(std::move(sources));
@@ -352,6 +361,7 @@ void MFileV4::build_sources_section() {
 void MFileV4::build_targets_section() {
     if (m_executable.size() == 1) {
         MRule target_rule{MSimpleVariable{"TARGET"}};
+        target_rule.indent(1);
         target_rule.add_prerequisite(MSimpleVariable{"OBJS"});
         target_rule.add_prerequisite(MSimpleVariable{"CONFIG_FILE"});
         target_rule.add_recipe(MRecipe("mkdir -p $(@D)", MRecipePrefix::ECHO_OFF));

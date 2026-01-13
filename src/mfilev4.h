@@ -33,11 +33,12 @@ class MFileV4 : public MFile {
     void import_settings();
     void prepare();
 
-    void add_svardef(MCompComponent &mcc,
-                     const std::string &varname,
-                     const std::string &varval,
-                     VariableAssignmentType assignment_type = VariableAssignmentType::RECURSIVELY_EXPANDED);
-    void add_svar(MCompComponent &mcc, const std::string &varname);
+    MSimpleVariableDef *add_svardef(
+        MCompComponent &mcc,
+        const std::string &varname,
+        const std::string &varval,
+        VariableAssignmentType assignment_type = VariableAssignmentType::RECURSIVELY_EXPANDED);
+    MSimpleVariable *add_svar(MCompComponent &mcc, const std::string &varname);
 
     void build_options_section();
     void build_obj_dir_config_file_cc_cxx_std();
@@ -69,10 +70,10 @@ class MFileV4 : public MFile {
         std::string ldflags;
         MCompComponent options_section{"\n"};
         MCompComponent obj_dir_config_file_cc_cxx_std{""};
-        MCompComponent c_cxx_flags{""};
-        MCompComponent targets{""};
-        MCompComponent c_cxx_flags_debug_amend{""};
-        MCompComponent c_cxx_flags_release_amend{""};
+        MCompComponent c_cxx_flags{"\n"};
+        MCompComponent targets{"\n"};
+        MCompComponent c_cxx_flags_debug_amend{"\n"};
+        MCompComponent c_cxx_flags_release_amend{"\n"};
         MCompComponent sources_section{"\n"};
         MCompComponent targets_section{"\n"};
     } t;
