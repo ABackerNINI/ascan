@@ -43,6 +43,7 @@ class MFileV4 : public MFile {
     void build_obj_dir_config_file_cc_cxx_std();
     void build_c_cxx_flags();
     void build_targets();
+    void build_c_cxx_flags_amend();
     void build_sources_section();
     void build_targets_section();
 
@@ -70,6 +71,8 @@ class MFileV4 : public MFile {
         MCompComponent obj_dir_config_file_cc_cxx_std{""};
         MCompComponent c_cxx_flags{""};
         MCompComponent targets{""};
+        MCompComponent c_cxx_flags_debug_amend{""};
+        MCompComponent c_cxx_flags_release_amend{""};
         MCompComponent sources_section{"\n"};
         MCompComponent targets_section{"\n"};
     } t;

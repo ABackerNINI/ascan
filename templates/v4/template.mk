@@ -52,9 +52,9 @@ LDFLAGS = __ASCAN::LD_FLAGS__
 __ASCAN::TARGETS__
 
 ifeq ($(CONFIG),debug)
-    CXXFLAGS += -g -O0 -DDEBUG
+    __ASCAN::C_CXX_FLAGS_DEBUG_AMEND__
 else ifeq ($(CONFIG),release)
-    CXXFLAGS += -flto=4 -O3 -march=native -DNDEBUG
+	__ASCAN::C_CXX_FLAGS_RELEASE_AMEND__
 endif
 
 # SOURCES

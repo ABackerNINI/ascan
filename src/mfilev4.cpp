@@ -55,6 +55,7 @@ int MFileV4::build() {
     build_options_section();
     build_obj_dir_config_file_cc_cxx_std();
     build_c_cxx_flags();
+    build_c_cxx_flags_amend();
     build_targets();
     build_sources_section();
     build_targets_section();
@@ -72,6 +73,8 @@ int MFileV4::build() {
     replaces.push_back({"__ASCAN::CONFIG_FILE_CC_CXX_STD__", t.obj_dir_config_file_cc_cxx_std.to_string()});
     replaces.push_back({"__ASCAN::C_CXX_FLAGS__", t.c_cxx_flags.to_string()});
     replaces.push_back({"__ASCAN::TARGETS__", t.targets.to_string()});
+    replaces.push_back({"__ASCAN::C_CXX_FLAGS_DEBUG_AMEND__", t.c_cxx_flags_debug_amend.to_string()});
+    replaces.push_back({"__ASCAN::C_CXX_FLAGS_RELEASE_AMEND__", t.c_cxx_flags_release_amend.to_string()});
     replaces.push_back({"__ASCAN::LD_FLAGS__", t.ldflags});
     replaces.push_back({"__ASCAN::SOURCES_SECTION__", t.sources_section.to_string()});
     replaces.push_back({"__ASCAN::TARGETS_SECTION__", t.targets_section.to_string()});
@@ -255,7 +258,12 @@ void MFileV4::build_c_cxx_flags() {
 }
 
 void MFileV4::build_targets() {
-    if (m_executable.size() == 1) {
+    // Only one executable:
+    //   TARGET = $(BIN_DIR)/$(PROJECT) <-- use $(PROJECT) or stem of the executable?
+    // Multiple executables:
+    //   TARGET1 = $(BIN_DIR)/target1
+    //   TARGET2 = $(BIN_DIR)/target2
+    if (m_executable.size() <= 1) {
         MVariableDef target{"TARGET"};
         target.add_component(MSimpleVariable("BIN_DIR"));
         target.add_component("/");
@@ -263,6 +271,36 @@ void MFileV4::build_targets() {
         t.targets.add_component(std::move(target));
     } else if (m_executable.size() > 1) {
         // TODO: implement multiple targets
+    }
+}
+
+void MFileV4::build_c_cxx_flags_amend() {
+    // debug amend:
+    //   CFLAGS += -g -O0 -DDEBUG
+    //   CXXFLAGS += -g -O0 -DDEBUG
+    // release amend:
+    //   CFLAGS += -flto=4 -O3 -march=native -DNDEBUG
+    //   CXXFLAGS += -flto=4 -O3 -march=native -DNDEBUG
+
+    auto &debug_target = t.c_cxx_flags_debug_amend;
+    auto &release_target = t.c_cxx_flags_release_amend;
+
+    const std::string debug_amend = "-g -O0 -DDEBUG";
+    const std::string release_amend = "-flto=4 -O3 -march=native -DNDEBUG";
+
+    if (m_c && (m_cc || m_cpp)) {
+        add_svardef(debug_target, "CFLAGS", debug_amend, VariableAssignmentType::APPEND);
+        debug_target.add_component("\n\t");
+        add_svardef(debug_target, "CXXFLAGS", debug_amend, VariableAssignmentType::APPEND);
+        add_svardef(release_target, "CFLAGS", release_amend, VariableAssignmentType::APPEND);
+        release_target.add_component("\n\t");
+        add_svardef(release_target, "CXXFLAGS", release_amend, VariableAssignmentType::APPEND);
+    } else if (m_c) {
+        add_svardef(debug_target, "CFLAGS", debug_amend, VariableAssignmentType::APPEND);
+        add_svardef(release_target, "CFLAGS", release_amend, VariableAssignmentType::APPEND);
+    } else {
+        add_svardef(debug_target, "CXXFLAGS", debug_amend, VariableAssignmentType::APPEND);
+        add_svardef(release_target, "CXXFLAGS", release_amend, VariableAssignmentType::APPEND);
     }
 }
 
