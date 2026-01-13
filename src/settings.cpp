@@ -256,6 +256,27 @@ int Settings::parse_argv(int argc, char **argv) {
     app.add_option("-std", option_std_, "C/C++ standard to use, default is 'c11'/'c++17' respectively")
         ->option_text("STD");
 
+    // DEBUG FLAGS & OPTIONS
+
+    app.add_option_function<std::string>(
+           "-x",
+           [&](const std::string &lang) {
+               if (lang == "c") {
+                   debug_flag_xc_ = true;
+               } else if (lang == "cc") {
+                   debug_flag_xcc_ = true;
+               } else if (lang == "c++") {
+                   debug_flag_xcpp_ = true;
+               } else {
+                   throw CLI::ValidationError("Invalid language: " + lang);
+               }
+           },
+           "[DEBUG ONLY] Specify language included")
+        ->check(CLI::IsMember({"c", "cc", "c++"}))
+        ->multi_option_policy(CLI::MultiOptionPolicy::TakeAll)
+        ->trigger_on_parse()
+        ->option_text("LANG");
+
     app.formatter(std::make_shared<HelpFormatter>());
 
     try {

@@ -3,6 +3,7 @@
 
 #include "cfile.h"
 #include "settings.h"
+#include "traits.h" // IWYU pragma: keep
 #include <cstdio>
 #include <string>
 #include <type_traits>
@@ -19,13 +20,6 @@ class MComponent {
 // Check if a type is a subclass of MComponent.
 template <typename T> inline constexpr bool is_mcomponent_v = std::is_base_of_v<MComponent, std::remove_reference_t<T>>;
 
-#if __cplusplus < 202002L
-namespace std {
-// C++20 std::remove_cvref_t
-template <typename _Tp> using remove_cvref_t = std::remove_cv_t<std::remove_reference_t<_Tp>>;
-} // namespace std
-#endif
-
 class MText : public MComponent {
   public:
     MText(const std::string &text = "") : m_text(text) {}
@@ -36,8 +30,6 @@ class MText : public MComponent {
   protected:
     std::string m_text;
 };
-
-template <typename T> constexpr bool is_convertible_to_string_v = std::is_convertible_v<T, std::string>;
 
 // Compound component of a Makefile.
 class MCompComponent : public MComponent {
@@ -67,7 +59,7 @@ class MCompComponent : public MComponent {
             m_sub_components.push_back(sub_component);
         } else if constexpr (is_mcomponent_v<T>) {
             m_sub_components.push_back(new std::remove_cvref_t<T>(std::forward<T>(sub_component)));
-        } else if constexpr (is_convertible_to_string_v<std::remove_cvref_t<T>>) {
+        } else if constexpr (std::is_convertible_v<std::remove_cvref_t<T>, std::string>) {
             m_sub_components.push_back(new MText(sub_component));
         } else {
             static_assert(false, "Invalid type for MCompComponent");

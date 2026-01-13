@@ -2,6 +2,10 @@
 #define __AUTO_SCAN_MFILE_V4_H__
 
 #include "mfile.h"
+#include "traits.h"
+#include <string>
+#include <type_traits>
+#include <vector>
 
 class MFileV4 : public MFile {
   public:
@@ -14,9 +18,20 @@ class MFileV4 : public MFile {
     virtual std::string to_string() const override { return m_result; }
 
   protected:
-    void prepare();
-    void import_setting(std::string &feild, const std::string &from_setting);
+    template <typename T> void import_setting(T &feild, const T &from_setting) {
+        if constexpr (std::is_same_v<std::string, T> || (is_container_v<T> && has_empty_v<T>)) {
+            if (!from_setting.empty()) {
+                feild = from_setting;
+            }
+        } else if constexpr (std::is_arithmetic_v<T> || std::is_same_v<bool, T>) {
+            feild = from_setting;
+        } else {
+            static_assert(std::is_same_v<T, void>, "Not supported type");
+        }
+    }
+
     void import_settings();
+    void prepare();
 
     void add_svardef(MCompComponent &mcc, const std::string &varname, const std::string &varval);
     void add_svar(MCompComponent &mcc, const std::string &varname);
@@ -30,9 +45,9 @@ class MFileV4 : public MFile {
   protected:
     std::vector<cfile *> m_executable;
 
-    bool m_c;
-    bool m_cc;
-    bool m_cpp;
+    bool m_c{false};
+    bool m_cc{false};
+    bool m_cpp{false};
 
     struct {
         std::string proj_name;
@@ -47,7 +62,7 @@ class MFileV4 : public MFile {
         std::string ldflags;
         MCompComponent options_section{"\n"};
         MCompComponent obj_dir_config_file_cc_cxx_std{""};
-        MCompComponent targets;
+        MCompComponent targets{""};
         MCompComponent sources_section{"\n"};
         MCompComponent targets_section{"\n"};
     } t;

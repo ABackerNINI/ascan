@@ -45,9 +45,12 @@ class safe_replacer {
 };
 
 int MFileV4::build() {
-    prepare();
-
+    // Import settings from CLI parser
+    // * Why not use the Settings class directly?
+    // * Because each template version may have different default values for the settings.
     import_settings();
+
+    prepare();
 
     build_options_section();
     build_obj_dir_config_file_cc_cxx_std();
@@ -87,10 +90,30 @@ int MFileV4::build() {
     return 0;
 }
 
+void MFileV4::import_settings() {
+    // Project name is the directory name of the project root
+    fs::path cwd = fs::current_path();
+    t.proj_name = cwd.filename().string();
+
+    import_setting(t.proj_name, settings.option_proj_name_);
+    import_setting(t.config, settings.option_default_config_);
+    import_setting(t.cc, settings.option_cc_);
+    import_setting(t.cxx, settings.option_cxx_);
+    import_setting(t.stdc, !settings.option_std_c_.empty() ? settings.option_std_c_ : settings.option_std_);
+    import_setting(t.stdcxx, !settings.option_std_cxx_.empty() ? settings.option_std_cxx_ : settings.option_std_);
+    import_setting(t.src_dir, settings.option_src_dir_);
+    import_setting(t.bld_dir, settings.option_build_dir_);
+    import_setting(t.bin_dir, settings.option_bin_dir_);
+    import_setting(t.ldflags, vector_to_string(settings.option_ldflags_, " "));
+
+    import_setting(m_c, settings.debug_flag_xc_);
+    import_setting(m_cc, settings.debug_flag_xcc_);
+    import_setting(m_cpp, settings.debug_flag_xcpp_);
+}
+
 void MFileV4::prepare() {
     // TODO: set m_c, m_cpp, m_cc flags based on only the source files used, not all source files found
     // Set m_c, m_cpp, m_cc flags
-    m_c = m_cc = m_cpp = false;
     for (auto &cfile : m_cfiles) {
         if (cfile.file_type() == cfile::FILE_TYPE_C) {
             m_c = true;
@@ -131,29 +154,6 @@ void MFileV4::prepare() {
         sort(m_executable.begin(), m_executable.end(),
              [](const cfile *a, const cfile *b) { return a->stem() < b->stem(); });
     }
-}
-
-void MFileV4::import_setting(std::string &feild, const std::string &from_setting) {
-    if (!from_setting.empty()) {
-        feild = from_setting;
-    }
-}
-
-void MFileV4::import_settings() {
-    // Project name is the directory name of the project root
-    fs::path cwd = fs::current_path();
-    t.proj_name = cwd.filename().string();
-
-    import_setting(t.proj_name, settings.option_proj_name_);
-    import_setting(t.config, settings.option_default_config_);
-    import_setting(t.cc, settings.option_cc_);
-    import_setting(t.cxx, settings.option_cxx_);
-    import_setting(t.stdc, !settings.option_std_c_.empty() ? settings.option_std_c_ : settings.option_std_);
-    import_setting(t.stdcxx, !settings.option_std_cxx_.empty() ? settings.option_std_cxx_ : settings.option_std_);
-    import_setting(t.src_dir, settings.option_src_dir_);
-    import_setting(t.bld_dir, settings.option_build_dir_);
-    import_setting(t.bin_dir, settings.option_bin_dir_);
-    import_setting(t.ldflags, vector_to_string(settings.option_ldflags_, " "));
 }
 
 void MFileV4::add_svardef(MCompComponent &mcc, const std::string &varname, const std::string &varval) {

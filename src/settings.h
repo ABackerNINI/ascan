@@ -32,6 +32,10 @@ class Settings {
     std::vector<std::string> main_files_;
     std::vector<std::string> include_dirs_;
     int debug_level_{0}; // 0: ERROR, 1: WARNING, 2: INFO, 3: DEBUG, 4: MSGDUMP, 5: EXCESSIVE
+
+    bool debug_flag_xc_;
+    bool debug_flag_xcc_;
+    bool debug_flag_xcpp_;
 };
 
 #endif // __SETTINGS_H__
