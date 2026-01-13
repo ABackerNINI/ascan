@@ -12,7 +12,6 @@
 // Component of a Makefile.
 class MComponent {
   public:
-    MComponent() {}
     std::string indent() const { return std::string(indent_, '\t'); }
     void indent(int i) { indent_ = i; }
     void indent(int i) const { indent_ = i; }
@@ -35,6 +34,8 @@ class MText : public MComponent {
   public:
     MText(const std::string &text = "") : text_(text) {}
     MText(const char *text) : text_(text) {}
+    MText(const MComponent &text) : MText(text.to_string()) {}
+
     virtual ~MText() = default;
     virtual std::string to_string() const override { return indent() + text_; }
 
@@ -78,8 +79,13 @@ class MCompComponent : public MComponent {
         return *this;
     }
 
-    template <typename T> friend MCompComponent &operator<<(MCompComponent &mcc, T sub_component) {
-        return mcc.add_component(sub_component);
+    template <typename... T> MCompComponent &add_components(T &&...sub_components) {
+        (add_component(std::forward<T>(sub_components)), ...);
+        return *this;
+    }
+
+    template <typename T> friend MCompComponent &operator<<(MCompComponent &mcc, T &&sub_component) {
+        return mcc.add_component(std::forward<T>(sub_component));
     }
 
     void set_separator(const std::string &separator) { this->separator_ = separator; }
@@ -106,9 +112,17 @@ class MCompComponent : public MComponent {
     std::vector<MComponent *> sub_components_;
 };
 
+template <typename... T> MCompComponent make_comp_component(T &&...sub_components) {
+    MCompComponent mcc;
+    mcc.add_components(std::forward<T>(sub_components)...);
+    return mcc;
+}
+
 class MComment : public MText {
   public:
     MComment(const std::string &comment = "") : MText(comment) {}
+
+    MComment(const MComponent &comment) : MComment(comment.to_string()) {}
 
     friend MComment &operator<<(MComment &mc, const std::string &comment) {
         mc.text_ += comment;
@@ -126,6 +140,8 @@ class MComment : public MText {
 class MFilename : public MComponent {
   public:
     MFilename(const std::string &filename) : filename_(filename) {}
+
+    MFilename(const MComponent &filename) : MFilename(filename.to_string()) {}
 
     virtual std::string to_string() const {
         for (auto &c : filename_) {
@@ -169,6 +185,8 @@ class MSimpleVariable : public MComponent {
   public:
     MSimpleVariable(const std::string &varname) : varname_(varname) {}
 
+    MSimpleVariable(const MComponent &varname) : MSimpleVariable(varname.to_string()) {}
+
     virtual std::string to_string() const { return indent() + "$(" + varname_ + ")"; }
 
   protected:
@@ -181,6 +199,11 @@ class MSimpleVariableDef : public MComponent {
                        const std::string &value,
                        VariableAssignmentType assignment_type = VariableAssignmentType::RECURSIVELY_EXPANDED)
         : varname_(varname), value_(value), assignment_type_(assignment_type) {}
+
+    MSimpleVariableDef(const MComponent &varname,
+                       const MComponent &value,
+                       VariableAssignmentType assignment_type = VariableAssignmentType::RECURSIVELY_EXPANDED)
+        : MSimpleVariableDef(varname.to_string(), value.to_string(), assignment_type) {}
 
     virtual std::string to_string() const {
         return indent() + varname_ + " " + variable_assignment_type_to_string(assignment_type_) + " " + value_;
@@ -198,16 +221,35 @@ class MVariableDef : public MComponent {
                  VariableAssignmentType assignment_type = VariableAssignmentType::RECURSIVELY_EXPANDED)
         : varname_(varname), assignment_type_(assignment_type) {}
 
+    MVariableDef(const MComponent &varname,
+                 VariableAssignmentType assignment_type = VariableAssignmentType::RECURSIVELY_EXPANDED)
+        : MVariableDef(varname.to_string(), assignment_type) {}
+
     template <typename T>
     MVariableDef(const std::string &varname,
                  T &&value,
                  VariableAssignmentType assignment_type = VariableAssignmentType::RECURSIVELY_EXPANDED)
-        : varname_(varname), assignment_type_(assignment_type) {
+        : MVariableDef(varname, assignment_type) {
         value_.add_component(std::forward<T>(value));
     }
 
-    MCompComponent &value() { return value_; }
-    const MCompComponent &value() const { return value_; }
+    template <typename T>
+    MVariableDef(const MComponent &varname,
+                 T &&value,
+                 VariableAssignmentType assignment_type = VariableAssignmentType::RECURSIVELY_EXPANDED)
+        : MVariableDef(varname.to_string(), std::forward<T>(value), assignment_type) {}
+
+    template <typename T> MVariableDef &add_component(T &&val_component) {
+        value_.add_component(std::forward<T>(val_component));
+        return *this;
+    }
+
+    template <typename... T> MVariableDef &add_components(T &&...val_components) {
+        (value_.add_component(std::forward<T>(val_components)), ...);
+        return *this;
+    }
+
+    void set_separator(const std::string &separator) { value_.set_separator(separator); }
 
     virtual std::string to_string() const {
         return indent() + varname_ + " " + variable_assignment_type_to_string(assignment_type_) + " " +
@@ -217,7 +259,7 @@ class MVariableDef : public MComponent {
   public:
     std::string varname_;
     VariableAssignmentType assignment_type_;
-    MCompComponent value_{""};
+    MCompComponent value_{" "};
 };
 
 class MBlankLine : public MComponent {
@@ -239,42 +281,73 @@ enum class MRecipePrefix {
     IGNORE_MAKE_OPTIONS = '+' // +
 };
 
-class MRecipe : public MCompComponent {
+class MRecipe : public MComponent {
   public:
-    MRecipe(const std::string &command = "", MRecipePrefix prefix = MRecipePrefix::NONE)
-        : MCompComponent(" "), prefix_(prefix) {
+    MRecipe(const std::string &command = "", MRecipePrefix prefix = MRecipePrefix::NONE) : prefix_(prefix) {
         if (!command.empty()) {
-            add_component(new MText(command));
+            cmd_.add_component(new MText(command));
         }
     }
 
-    MRecipe(MRecipePrefix prefix) : MCompComponent(" "), prefix_(prefix) {}
+    MRecipe(const MComponent &command, MRecipePrefix prefix = MRecipePrefix::NONE)
+        : MRecipe(command.to_string(), prefix) {}
+
+    MRecipe(MRecipePrefix prefix) : prefix_(prefix) {}
 
     virtual std::string to_string() const {
         if (prefix_ == MRecipePrefix::NONE) {
-            return indent() + std::string("\t") + MCompComponent::to_string();
+            return indent() + std::string("\t") + cmd_.to_string();
         }
-        return indent() + std::string("\t") + char(prefix_) + MCompComponent::to_string();
+        return indent() + std::string("\t") + char(prefix_) + cmd_.to_string();
     }
 
     void set_prefix(MRecipePrefix prefix) { prefix_ = prefix; }
 
+    void set_separator(const std::string &separator) { cmd_.set_separator(separator); }
+
+    template <typename T> MRecipe &add_component(T &&cmd_component) {
+        cmd_.add_component(std::forward<T>(cmd_component));
+        return *this;
+    }
+
+    template <typename... T> MRecipe &add_components(T &&...cmd_components) {
+        (cmd_.add_component(std::forward<T>(cmd_components)), ...);
+        return *this;
+    }
+
+    template <typename T> friend MRecipe &operator<<(MRecipe &mcc, T &&sub_component) {
+        mcc.cmd_.add_component(std::forward<T>(sub_component));
+        return mcc;
+    }
+
   protected:
     MRecipePrefix prefix_;
+    MCompComponent cmd_{" "};
 };
 
 class MRule : public MComponent {
   public:
     MRule(const std::string &target) : target_(target) {}
-    MRule(const MComponent &target) : target_(target.to_string()) {}
+
+    MRule(const MComponent &target) : MRule(target.to_string()) {}
 
     template <typename T> MRule &add_prerequisite(T &&prerequisite) {
         prerequisites_.add_component(std::forward<T>(prerequisite));
         return *this;
     }
 
+    template <typename... T> MRule &add_prerequisites(T &&...prerequisite_components) {
+        (prerequisites_.add_component(std::forward<T>(prerequisite_components)), ...);
+        return *this;
+    }
+
     template <typename T> MRule &add_recipe(T &&recipe) {
         recipes_.add_component(std::forward<T>(recipe));
+        return *this;
+    }
+
+    template <typename... T> MRule &add_recipes(T &&...recipe_components) {
+        (recipes_.add_component(std::forward<T>(recipe_components)), ...);
         return *this;
     }
 
@@ -294,13 +367,28 @@ class MRule : public MComponent {
     MCompComponent recipes_{"\n"};
 };
 
-class MQuoted : public MCompComponent {
+class MQuoted : public MComponent {
   public:
-    MQuoted(const std::string &content) { sub_components_.push_back(new MText(content)); }
+    MQuoted(const std::string &content) { content_.add_components(content); }
 
-    template <typename T> MQuoted(T &&content) { add_component(std::forward<T>(content)); }
+    MQuoted(const MComponent &content) : MQuoted(content.to_string()) {}
 
-    virtual std::string to_string() const { return indent() + "\"" + MCompComponent::to_string() + "\""; }
+    template <typename T> MQuoted(T &&content) { content_.add_component(std::forward<T>(content)); }
+
+    template <typename T> MQuoted &add_content(T &&content_component) {
+        content_.add_component(std::forward<T>(content_component));
+        return *this;
+    }
+
+    template <typename... T> MQuoted &add_contents(T &&...content_components) {
+        (content_.add_component(std::forward<T>(content_components)), ...);
+        return *this;
+    }
+
+    virtual std::string to_string() const { return indent() + "\"" + content_.to_string() + "\""; }
+
+  protected:
+    MCompComponent content_{""};
 };
 
 class MFile {

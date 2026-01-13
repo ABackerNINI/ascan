@@ -268,17 +268,13 @@ void MFileV4::build_targets() {
     //   TARGET2 = $(BIN_DIR)/bar
     if (m_executable.size() <= 1) {
         MVariableDef target{"TARGET"};
-        target.value().add_component(MSimpleVariable("BIN_DIR"));
-        target.value().add_component("/");
-        target.value().add_component(MSimpleVariable("PROJECT"));
+        target.add_component(make_comp_component(MSimpleVariable("BIN_DIR"), "/", MSimpleVariable("PROJECT")));
         t.targets.add_component(std::move(target));
     } else if (m_executable.size() > 1) {
         int index = 1;
         for (auto &exec : m_executable) {
             MVariableDef target{"TARGET" + std::to_string(index)};
-            target.value().add_component(MSimpleVariable("BIN_DIR"));
-            target.value().add_component("/");
-            target.value().add_component(MSimpleVariable(exec->stem()));
+            target.add_component(make_comp_component(MSimpleVariable("BIN_DIR"), "/", MSimpleVariable(exec->stem())));
             t.targets.add_component(std::move(target));
             index++;
         }
@@ -330,7 +326,6 @@ void MFileV4::build_sources_section() {
         // TODO: wildcard sources
 
         MVariableDef sources{"SRCS", VariableAssignmentType::RECURSIVELY_EXPANDED};
-        sources.value().set_separator(" ");
         auto &exec = m_executable[0];
         find_all_sources_and_headers(cfiles_, exec);
 
@@ -346,10 +341,10 @@ void MFileV4::build_sources_section() {
 
         std::sort(source_files.begin(), source_files.end(), [](cfile *a, cfile *b) { return a->path() < b->path(); });
 
-        sources.value().add_component(new MFilename(fs::relative(exec->path(), settings.option_src_dir_)));
+        sources.add_component(MFilename(fs::relative(exec->path(), settings.option_src_dir_)));
 
         for (auto &src : source_files) {
-            sources.value().add_component(new MFilename(fs::relative(src->path(), settings.option_src_dir_)));
+            sources.add_component(MFilename(fs::relative(src->path(), settings.option_src_dir_)));
         }
 
         t.sources_section.add_component(std::move(sources));
@@ -361,9 +356,7 @@ void MFileV4::build_sources_section() {
 void MFileV4::build_targets_section() {
     if (m_executable.size() == 1) {
         MRule target_rule{MSimpleVariable{"TARGET"}};
-        target_rule.indent(1);
-        target_rule.add_prerequisite(MSimpleVariable{"OBJS"});
-        target_rule.add_prerequisite(MSimpleVariable{"CONFIG_FILE"});
+        target_rule.add_prerequisites(MSimpleVariable{"OBJS"}, MSimpleVariable{"CONFIG_FILE"});
         target_rule.add_recipe(MRecipe("mkdir -p $(@D)", MRecipePrefix::ECHO_OFF));
         target_rule.add_recipe(MRecipe("echo \"$(CXX) $(CXXFLAGS) ... -o $@ $(LDFLAGS)\"", MRecipePrefix::ECHO_OFF));
         target_rule.add_recipe(MRecipe("$(CXX) $(CXXFLAGS) $(OBJS) -o $@ $(LDFLAGS)", MRecipePrefix::ECHO_OFF));
