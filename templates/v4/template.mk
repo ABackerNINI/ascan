@@ -46,8 +46,8 @@ endif
 
 # BUILD DETAILS
 
-CXXFLAGS = -Wall -Wextra -std=$(STD)
-LDFLAGS  = __ASCAN::LD_FLAGS__
+__ASCAN::C_CXX_FLAGS__
+LDFLAGS = __ASCAN::LD_FLAGS__
 
 __ASCAN::TARGETS__
 

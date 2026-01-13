@@ -33,11 +33,15 @@ class MFileV4 : public MFile {
     void import_settings();
     void prepare();
 
-    void add_svardef(MCompComponent &mcc, const std::string &varname, const std::string &varval);
+    void add_svardef(MCompComponent &mcc,
+                     const std::string &varname,
+                     const std::string &varval,
+                     VariableAssignmentType assignment_type = VariableAssignmentType::RECURSIVELY_EXPANDED);
     void add_svar(MCompComponent &mcc, const std::string &varname);
 
     void build_options_section();
     void build_obj_dir_config_file_cc_cxx_std();
+    void build_c_cxx_flags();
     void build_targets();
     void build_sources_section();
     void build_targets_section();
@@ -48,6 +52,8 @@ class MFileV4 : public MFile {
     bool m_c{false};
     bool m_cc{false};
     bool m_cpp{false};
+
+    const std::vector<std::string> default_flags = {"-Wall", "-Wextra"};
 
     struct {
         std::string proj_name;
@@ -62,6 +68,7 @@ class MFileV4 : public MFile {
         std::string ldflags;
         MCompComponent options_section{"\n"};
         MCompComponent obj_dir_config_file_cc_cxx_std{""};
+        MCompComponent c_cxx_flags{""};
         MCompComponent targets{""};
         MCompComponent sources_section{"\n"};
         MCompComponent targets_section{"\n"};

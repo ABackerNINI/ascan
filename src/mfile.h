@@ -205,6 +205,7 @@ class MBlankLine : public MComponent {
   public:
     MBlankLine() {}
 
+    // TODO: fix this
     virtual std::string to_string() const { return ""; }
 };
 

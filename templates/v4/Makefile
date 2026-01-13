@@ -58,7 +58,7 @@ CFLAGS = -Wall -Wextra -std=$(STD) -I. -I./libs
 CXXFLAGS = -Wall -Wextra -std=$(STD) -I. -I./libs
 CFLAGS = -Wall -Wextra -std=$(CSTD) -I. -I./libs
 CXXFLAGS = -Wall -Wextra -std=$(CXXSTD) -I. -I./libs
-LDFLAGS  = -L./libs -lfmt
+LDFLAGS = -L./libs -lfmt
 
 TARGET = $(BIN_DIR)/$(PROJECT)
 TARGET1 = $(BIN_DIR)/target1

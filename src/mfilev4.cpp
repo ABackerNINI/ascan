@@ -54,6 +54,7 @@ int MFileV4::build() {
 
     build_options_section();
     build_obj_dir_config_file_cc_cxx_std();
+    build_c_cxx_flags();
     build_targets();
     build_sources_section();
     build_targets_section();
@@ -69,6 +70,7 @@ int MFileV4::build() {
     replaces.push_back({"__ASCAN::BIN_DIR__", t.bin_dir});
     replaces.push_back({"__ASCAN::OBJ_DIR_CC_CXX_STD__", t.obj_dir_config_file_cc_cxx_std.to_string()});
     replaces.push_back({"__ASCAN::CONFIG_FILE_CC_CXX_STD__", t.obj_dir_config_file_cc_cxx_std.to_string()});
+    replaces.push_back({"__ASCAN::C_CXX_FLAGS__", t.c_cxx_flags.to_string()});
     replaces.push_back({"__ASCAN::TARGETS__", t.targets.to_string()});
     replaces.push_back({"__ASCAN::LD_FLAGS__", t.ldflags});
     replaces.push_back({"__ASCAN::SOURCES_SECTION__", t.sources_section.to_string()});
@@ -156,8 +158,11 @@ void MFileV4::prepare() {
     }
 }
 
-void MFileV4::add_svardef(MCompComponent &mcc, const std::string &varname, const std::string &varval) {
-    mcc.add_component(MSimpleVariableDef(varname, varval, VariableAssignmentType::CONDITIONAL));
+void MFileV4::add_svardef(MCompComponent &mcc,
+                          const std::string &varname,
+                          const std::string &varval,
+                          VariableAssignmentType assignment_type) {
+    mcc.add_component(MSimpleVariableDef(varname, varval, assignment_type));
 }
 
 void MFileV4::add_svar(MCompComponent &mcc, const std::string &varname) {
@@ -165,35 +170,87 @@ void MFileV4::add_svar(MCompComponent &mcc, const std::string &varname) {
 }
 
 void MFileV4::build_options_section() {
-    add_svardef(t.options_section, "CONFIG", t.config);
+    VariableAssignmentType cond_eq = VariableAssignmentType::CONDITIONAL;
 
-    t.options_section.add_component(MBlankLine());
+    auto &target = t.options_section;
+
+    add_svardef(target, "CONFIG", t.config, cond_eq);
+
+    target.add_component(MBlankLine());
     if (m_c && (m_cc || m_cpp)) {
-        add_svardef(t.options_section, "CC", t.cc);
-        add_svardef(t.options_section, "CXX", t.cxx);
-        add_svardef(t.options_section, "CSTD", t.stdc);
-        add_svardef(t.options_section, "CXXSTD", t.stdcxx);
+        add_svardef(target, "CC", t.cc, cond_eq);
+        add_svardef(target, "CXX", t.cxx, cond_eq);
+        add_svardef(target, "CSTD", t.stdc, cond_eq);
+        add_svardef(target, "CXXSTD", t.stdcxx, cond_eq);
     } else if (m_c) {
-        add_svardef(t.options_section, "CC", t.cc);
-        add_svardef(t.options_section, "STD", t.stdc);
+        add_svardef(target, "CC", t.cc, cond_eq);
+        add_svardef(target, "STD", t.stdc, cond_eq);
     } else {
-        add_svardef(t.options_section, "CXX", t.cxx);
-        add_svardef(t.options_section, "STD", t.stdcxx);
+        add_svardef(target, "CXX", t.cxx, cond_eq);
+        add_svardef(target, "STD", t.stdcxx, cond_eq);
     }
 }
 
 void MFileV4::build_obj_dir_config_file_cc_cxx_std() {
+    // $(CC).$(STD)
+    // $(CXX).$(STD)
+    // $(CC).$(CXX).$(CSTD).$(CXXSTD)
+
+    auto &target = t.obj_dir_config_file_cc_cxx_std;
+
     if (m_c && (m_cc || m_cpp)) {
-        add_svar(t.obj_dir_config_file_cc_cxx_std, "CC");
-        add_svar(t.obj_dir_config_file_cc_cxx_std, "CXX");
-        add_svar(t.obj_dir_config_file_cc_cxx_std, "CSTD");
-        add_svar(t.obj_dir_config_file_cc_cxx_std, "CXXSTD");
+        add_svar(target, "CC");
+        target.add_component(".");
+        add_svar(target, "CXX");
+        target.add_component(".");
+        add_svar(target, "CSTD");
+        target.add_component(".");
+        add_svar(target, "CXXSTD");
     } else if (m_c) {
-        add_svar(t.obj_dir_config_file_cc_cxx_std, "CC");
-        add_svar(t.obj_dir_config_file_cc_cxx_std, "STD");
-    } else if (m_cpp) {
-        add_svar(t.obj_dir_config_file_cc_cxx_std, "CXX");
-        add_svar(t.obj_dir_config_file_cc_cxx_std, "STD");
+        add_svar(target, "CC");
+        target.add_component(".");
+        add_svar(target, "STD");
+    } else {
+        add_svar(target, "CXX");
+        target.add_component(".");
+        add_svar(target, "STD");
+    }
+}
+
+void MFileV4::build_c_cxx_flags() {
+    // CFLAGS = -Wall -Wextra -std=$(STD) -I. -I./libs
+    // CXXFLAGS = -Wall -Wextra -std=$(STD) -I. -I./libs
+    // CFLAGS = -Wall -Wextra -std=$(CSTD) -I. -I./libs
+    // CXXFLAGS = -Wall -Wextra -std=$(CXXSTD) -I. -I./libs
+    auto &target = t.c_cxx_flags;
+
+    std::vector<std::string> cflags = default_flags;
+    std::vector<std::string> cxxflags = default_flags;
+    if (m_c && (m_cc || m_cpp)) {
+        cflags.push_back("-std=$(CSTD)");
+        for (auto &inc : settings.include_dirs_) {
+            cflags.push_back("-I" + inc);
+        }
+        cxxflags.push_back("-std=$(CXXSTD)");
+        for (auto &inc : settings.include_dirs_) {
+            cxxflags.push_back("-I" + inc);
+        }
+
+        add_svardef(target, "CFLAGS", vector_to_string(cflags, " "));
+        target.add_component("\n");
+        add_svardef(target, "CXXFLAGS", vector_to_string(cxxflags, " "));
+    } else if (m_c) {
+        cflags.push_back("-std=$(STD)");
+        for (auto &inc : settings.include_dirs_) {
+            cflags.push_back("-I" + inc);
+        }
+        add_svardef(target, "CFLAGS", vector_to_string(cflags, " "));
+    } else {
+        cxxflags.push_back("-std=$(STD)");
+        for (auto &inc : settings.include_dirs_) {
+            cxxflags.push_back("-I" + inc);
+        }
+        add_svardef(target, "CXXFLAGS", vector_to_string(cxxflags, " "));
     }
 }
 
