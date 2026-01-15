@@ -322,11 +322,13 @@ static void find_all_sources_and_headers(std::vector<cfile> &files, cfile *file)
 }
 
 void MFileV4::build_sources_section() {
-    if (m_executable.size() == 1) {
+    int index = 0;
+    for (auto &exec : m_executable) {
         // TODO: wildcard sources
 
-        MVariableDef sources{"SRCS", VariableAssignmentType::RECURSIVELY_EXPANDED};
-        auto &exec = m_executable[0];
+        MVariableDef sources{"SRCS" + (index == 0 && m_executable.size() == 1 ? "" : std::to_string(index + 1)),
+                             VariableAssignmentType::RECURSIVELY_EXPANDED};
+
         find_all_sources_and_headers(cfiles_, exec);
 
         std::vector<cfile *> source_files;
@@ -343,13 +345,15 @@ void MFileV4::build_sources_section() {
 
         sources.add_component(MFilename(fs::relative(exec->path(), settings.option_src_dir_)));
 
+        // TODO: break the line if too long
+
         for (auto &src : source_files) {
             sources.add_component(MFilename(fs::relative(src->path(), settings.option_src_dir_)));
         }
 
         t.sources_section.add_component(std::move(sources));
-    } else {
-        // TODO: deal with multiple executables
+
+        index++;
     }
 }
 

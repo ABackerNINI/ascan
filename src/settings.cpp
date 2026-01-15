@@ -200,6 +200,8 @@ bool suggest_similar_option_based_on_CLI11_error_string(const std::string &error
 }
 
 // TODO: add option --static-lib/--shared-lib, to create static or shared library.
+// TODO: add option --keep-flags to keep original flags in Makefile. (HARD)
+// TODO: add warning for overwriting Makefile in non-git directory.
 
 int Settings::parse_argv(int argc, char **argv) {
     CLI::App app{"ASCAN - Scan c/c++ project and create simple Makefile for it."};
