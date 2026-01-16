@@ -1,0 +1,192 @@
+PROJECT_ROOT := $(abspath $(dir $(abspath $(lastword $(MAKEFILE_LIST)))))
+
+# PROJECT
+
+PROJECT = ascan
+
+# OPTIONS
+
+CONFIG ?= debug
+
+CXX ?= g++
+STD ?= c++17
+
+# DIRECTORIES
+
+# Where to put object files. Must be subdirectory of the project root! Can be set to ".".
+BLD_DIR = build
+# Where to put the final binary. Must be subdirectory of the project root! Can be set to ".".
+BIN_DIR = bin
+# Extra parameters to identify the build configuration.
+# This is used to create a unique object directory for each build configuration.
+EXTRA_PARAMS =
+PARAMS_SIGNATURE = $(shell echo "a$(EXTRA_PARAMS)b" | md5sum | cut -c1-12)
+# Where to put object files for each build configuration. Must be subdirectory of the project root!
+OBJ_DIR = $(BLD_DIR)/$(CONFIG)/$(CXX).$(STD).$(PARAMS_SIGNATURE)
+CONFIG_FILE_EXT = ascan.conf
+# This file is used to store the configuration of the last successful build, so that
+# when the configuration changes, we can rebuild the target.
+CONFIG_FILE = $(BLD_DIR)/$(CONFIG).$(CXX).$(STD).$(PARAMS_SIGNATURE).$(CONFIG_FILE_EXT)
+
+# CHECK DIRECTORIES
+
+# Check that directories do not contain spaces.
+SPACE_CHECKS = $(words $(BLD_DIR)) $(words $(OBJ_DIR)) $(words $(BIN_DIR))
+ifneq ($(filter-out 1,$(SPACE_CHECKS)),)
+$(error "BLD_DIR, OBJ_DIR, BIN_DIR must be set to a directory. Please check your Makefile.")
+endif
+
+# Check that directories are subdirectories of the project root.
+SUB_DIR_CHECKS = $(shell echo "$(abspath $(BLD_DIR))" | grep -q "^$(PROJECT_ROOT)" || echo 0) \
+				 $(shell echo "$(abspath $(OBJ_DIR))" | grep -q "^$(PROJECT_ROOT)" || echo 0) \
+				 $(shell echo "$(abspath $(BIN_DIR))" | grep -q "^$(PROJECT_ROOT)" || echo 0)
+ifeq ($(filter 0,$(SUB_DIR_CHECKS)),0)
+$(error "BLD_DIR, OBJ_DIR, BIN_DIR must be subdirectories of the project root. Please check your Makefile.")
+endif
+
+# BUILD DETAILS
+
+CXXFLAGS = -Wall -Wextra -std=$(STD) -I. -I./libs
+LDFLAGS = -L./libs -lfmt
+
+TARGETS = ascan opt_parser
+
+ifeq ($(CONFIG),debug)
+	CXXFLAGS += -g -O0 -DDEBUG
+else ifeq ($(CONFIG),release)
+	CXXFLAGS += -flto=4 -O3 -march=native -DNDEBUG
+else ifeq ($(CONFIG),test)
+	CXXFLAGS += -g -O0 -DTEST -Igoogletest/include
+	LDFLAGS += -Lgoogletest/lib -lgtest -lgtest_main -lpthread
+	TARGETS := $(addsuffix _test,$(TARGETS))
+endif
+
+# TARGETS
+
+BIN_TARGETS = $(addprefix $(BIN_DIR)/,$(TARGETS))
+
+.PHONY:
+all: $(BIN_TARGETS)
+
+# SOURCES
+
+ASCAN_SRCS = src/ascan.cpp 		\
+			 src/cfile.cpp 		\
+			 src/config.cpp 	\
+			 src/mfile.cpp 		\
+			 src/mfilev3.cpp 	\
+			 src/mfilev4.cpp 	\
+			 src/parser.cpp 	\
+			 src/settings.cpp 	\
+			 src/utils.cpp
+OPT_PARSER_SRCS = experiment/opt_parser.cpp
+
+# PROCESS
+
+define REGISTER_SRCS
+_SIG = $(shell echo "a$1$2b" | md5sum | cut -c1-32)
+$(_SIG)_OBJS = $(foreach src,$2,$(OBJ_DIR)/$(basename $(src)).o)
+OBJS += $$($(_SIG)_OBJS)
+DEPS += $$($(_SIG)_OBJS:.o=.d)
+$(BIN_DIR)/$1: $$($(_SIG)_OBJS)
+endef
+
+$(eval $(call REGISTER_SRCS,ascan,$(ASCAN_SRCS)))
+$(eval $(call REGISTER_SRCS,opt_parser,$(OPT_PARSER_SRCS)))
+
+# $(info $(OBJS))
+# $(info $(DEPS))
+
+# RULES
+
+$(BIN_TARGETS): %: $(CONFIG_FILE)
+	@mkdir -p $(@D)
+	@echo "$(CXX) $(CXXFLAGS) ... -o $@ $(LDFLAGS)"
+	@$(CXX) $(CXXFLAGS) $(filter-out %.$(CONFIG_FILE_EXT),$^) -o $@ $(LDFLAGS)
+	$(call CHECK_BUILD_PARAMS)
+
+$(OBJ_DIR)/%.o: %.cpp
+	@mkdir -p $(@D)
+	$(CXX) $(CXXFLAGS) -MMD -MP -c $< -o $@
+
+$(BLD_DIR)/%.$(CONFIG_FILE_EXT):
+	@mkdir -p $(@D)
+	@rm -f $(@D)/*.$(CONFIG_FILE_EXT)
+	@touch $@
+
+# DEPENDENCIES
+
+-include $(DEPS)
+
+# PHONY TARGETS
+
+debug:
+	@$(MAKE) CONFIG=debug --no-print-directory
+
+release:
+	@$(MAKE) CONFIG=release --no-print-directory
+
+test:
+	@$(MAKE) CONFIG=test --no-print-directory
+
+clean:
+	@echo "Cleaning..."
+	@rm -f $(BIN_TARGETS) $(OBJS) $(DEPS) $(BLD_DIR)/*.$(CONFIG_FILE_EXT)
+
+	@#! CAUTION: rm -rf command
+	@if [ echo "$(abspath $(BLD_DIR))" | grep -q "^$(PROJECT_ROOT)" ] && \
+		[ "$(BLD_DIR)" != "." ] && \
+		[ "$(BLD_DIR)" != "/"  ]; then \
+		rm -rf "$(BLD_DIR)"; \
+	fi
+
+	@#! CAUTION: rm -rf command
+	@if [ echo "$(abspath $(BIN_DIR))" | grep -q "^$(PROJECT_ROOT)" ] && \
+		[ "$(BIN_DIR)" != "." ] && \
+		[ "$(BIN_DIR)" != "/"  ]; then \
+		rm -rf "$(BIN_DIR)"; \
+	fi
+
+.PHONY: debug release test clean
+
+# CHECK BUILD PARAMS
+
+RED		  = $(shell tput setaf 1)
+GREEN	  = $(shell tput setaf 2)
+YELLOW	  = $(shell tput setaf 3)
+BOLD 	  = $(shell tput bold)
+UNDERLINE = $(shell tput smul)
+RESET	  = $(shell tput sgr0)
+
+define SAVE_BUILD_PARAMS
+	@echo "PROJECT=$(PROJECT)" > "$(1)"
+	@echo "CONFIG=$(CONFIG)" >> "$(1)"
+	@echo "CC=$(CC)" >> "$(1)"
+	@echo "CXX=$(CXX)" >> "$(1)"
+	@echo "STD=$(STD) $(CSTD) $(CXXSTD)" >> "$(1)"
+	@echo "BLD_DIR=$(BLD_DIR)" >> "$(1)"
+	@echo "BIN_DIR=$(BIN_DIR)" >> "$(1)"
+	@echo "EXTRA_PARAMS=$(EXTRA_PARAMS)" >> "$(1)"
+	@echo "OBJ_DIR=$(OBJ_DIR)" >> "$(1)"
+	@echo "CONFIG_FILE=$(CONFIG_FILE)" >> "$(1)"
+	@echo "CXXFLAGS=$(CXXFLAGS)" >> "$(1)"
+	@echo "LDFLAGS=$(LDFLAGS)" >> "$(1)"
+endef
+
+define CHECK_BUILD_PARAMS
+	$(call SAVE_BUILD_PARAMS,$(OBJ_DIR)/temp.txt)
+
+	@if [ -f $(OBJ_DIR)/build_params.txt ]; then \
+		if ! diff -q "$(OBJ_DIR)/build_params.txt" "$(OBJ_DIR)/temp.txt" >/dev/null 2>&1 ; then \
+			echo "$(RED)$(BOLD)"; \
+			echo -n "WARNING: Build parameters mismatch, most likely due to Makefile changes, or a hash collision, "; \
+			echo "you may need a 'make clean'."; \
+			echo "$(RESET)"; \
+			echo "Diff of build parameters (last vs current):"; \
+			diff --ignore-space-change --color --minimal "$(OBJ_DIR)/build_params.txt" "$(OBJ_DIR)/temp.txt"; \
+			echo ""; \
+		fi \
+	fi
+
+	@mv -f "$(OBJ_DIR)/temp.txt" "$(OBJ_DIR)/build_params.txt"
+endef
