@@ -23,10 +23,7 @@ EXTRA_PARAMS :=
 PARAMS_SIGNATURE := $(shell echo "a$(EXTRA_PARAMS)b" | md5sum | cut -c1-12)
 # Where to put object files for each build configuration. Must be subdirectory of the project root!
 OBJ_DIR = $(BLD_DIR)/$(CONFIG)/$(CXX).$(STD).$(PARAMS_SIGNATURE)
-CONFIG_FILE_EXT := ascan.conf
-# This file is used to store the configuration of the last successful build, so that
-# when the configuration changes, we can rebuild the target.
-CONFIG_FILE := $(BLD_DIR)/$(CONFIG).$(CXX).$(STD).$(PARAMS_SIGNATURE).$(CONFIG_FILE_EXT)
+CONFIG_FILE_EXT := conf
 
 # CHECK DIRECTORIES
 
@@ -65,12 +62,12 @@ default: all
 # =============================================================================
 
 define ASCAN_CONFIG
-sig1 := $(shell echo "a$1b" | md5sum | cut -c1-32)
-
 target := $(BIN_DIR)/ascan
 
-cxxflags := -g0
-ldflags :=
+compiler := $(CXX)
+std := $(STD)
+compiler_flags := $(CXXFLAGS) -g0
+ldflags := $(LDFLAGS)
 
 srcs := src/ascan.cpp 		\
 	    src/cfile.cpp 		\
@@ -86,11 +83,12 @@ endef
 # =============================================================================
 
 define OPT_PARSER_CONFIG
-
 target := $(BIN_DIR)/opt_parser
 
-cxxflags := -g1
-ldflags :=
+compiler := $(CXX)
+std := $(STD)
+compiler_flags := $(CXXFLAGS) -g1
+ldflags := $(LDFLAGS)
 
 srcs := experiment/opt_parser.cpp
 endef
@@ -101,43 +99,54 @@ OBJS :=
 DEPS :=
 TARGETS :=
 
+define GEN_VARS
+objs := $(foreach src,$(srcs),$(OBJ_DIR)/$(basename $(src)).o)
+deps := $$(objs:.o=.d)
+
+# This file is used to store the configuration of the last successful build, so that
+# when the configuration changes, we can rebuild the target.
+config_file := $(BLD_DIR)/$(notdir $(target))/$(CONFIG).$(compiler).$(std).$(PARAMS_SIGNATURE).$(CONFIG_FILE_EXT)
+endef
+
 define REGISTER_CONFIG
 $(eval $(call $1,$1))
+$(eval $(call GEN_VARS))
 
-CXXFLAGS_ := $(strip $(CXXFLAGS) $(cxxflags))
-LDFLAGS_ := $(strip $(LDFLAGS) $(ldflags))
-TARGET_ := $(target)
-OBJS_ := $(foreach src,$(srcs),$(OBJ_DIR)/$(basename $(src)).o)
-DEPS_ := $$(OBJS_:.o=.d)
+OBJS += $(objs)
+DEPS += $(deps)
+TARGETS += $(target)
 
-OBJS += $$(OBJS_)
-DEPS += $$(DEPS_)
-TARGETS += $$(TARGET_)
+-include $(deps)
 
--include $$(DEPS_)
+all: $(target)
 
-all: $$(TARGET_)
+$(notdir $(target)): $(target)
 
-$$(TARGET_): $$(OBJS_) $$(CONFIG_FILE)
+$(target): $(objs) $(config_file)
 	@mkdir -p $$(@D)
-	@echo "$$(CXX) $$(CXXFLAGS_) ... -o $$@ $$(LDFLAGS_)"
-	@$$(CXX) $$(CXXFLAGS_) $(filter-out %.$$(CONFIG_FILE_EXT),$$^) -o $$@ $$(LDFLAGS_)
-	$$(call CHECK_BUILD_PARAMS)
+	@echo "$(compiler) $(compiler_flags) ... -o $$@ $(ldflags)"
+	@$(compiler) $(compiler_flags) $(objs) -o $$@ $(ldflags)
+	$(call CHECK_BUILD_PARAMS)
 
-$$(OBJS_): $$(OBJ_DIR)/%.o: %.cpp
+$(objs): $(OBJ_DIR)/%.o: %.cpp
 	@mkdir -p $$(@D)
-	$$(CXX) $$(CXXFLAGS_) -MMD -MP -c $$< -o $$@
+	$(compiler) $(compiler_flags) -MMD -MP -c $$< -o $$@
+
+$(config_file):
+	@mkdir -p $$(@D)
+	@rm -f $$(@D)/*.$(CONFIG_FILE_EXT)
+	@touch $$@
 endef
 
 # =============================================================================
 
 define DEBUG_PRINT_CONFIG
 $(info CONFIG_NAME=$1)
-$(info CXXFLAGS_=$(CXXFLAGS_))
-$(info LDFLAGS_=$(LDFLAGS_))
-$(info TARGET_=$(TARGET_))
-$(info OBJS_=$(OBJS_))
-$(info DEPS_=$(DEPS_))
+$(info compiler_flags=$(compiler_flags))
+$(info ldflags=$(ldflags))
+$(info target=$(target))
+$(info objs=$(objs))
+$(info deps=$(deps))
 $(info -----------------------------------------------------------------------)
 endef
 
@@ -151,18 +160,13 @@ $(info OBJS=$(OBJS))
 $(info DEPS=$(DEPS))
 
 debug_print_config:
-	@echo "CXXFLAGS_ = $(CXXFLAGS_)"
-	@echo "LDFLAGS_ = $(LDFLAGS_)"
-	@echo "TARGET_ = $(TARGET_)"
-	@echo "OBJS_ = $(OBJS_)"
-	@echo "DEPS_ = $(DEPS_)"
+	@echo "compiler_flags = $(compiler_flags)"
+	@echo "ldflags = $(ldflags)"
+	@echo "target = $(target)"
+	@echo "objs = $(objs)"
+	@echo "deps = $(deps)"
 
 # RULES
-
-$(BLD_DIR)/%.$(CONFIG_FILE_EXT):
-	@mkdir -p $(@D)
-	@rm -f $(@D)/*.$(CONFIG_FILE_EXT)
-	@touch $@
 
 # PHONY TARGETS
 
