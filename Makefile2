@@ -2,7 +2,7 @@ PROJECT_ROOT := $(abspath $(dir $(abspath $(lastword $(MAKEFILE_LIST)))))
 
 # PROJECT
 
-PROJECT = ascan
+PROJECT := ascan
 
 # OPTIONS
 
@@ -14,30 +14,30 @@ STD ?= c++17
 # DIRECTORIES
 
 # Where to put object files. Must be subdirectory of the project root! Can be set to ".".
-BLD_DIR = build
+BLD_DIR := build
 # Where to put the final binary. Must be subdirectory of the project root! Can be set to ".".
-BIN_DIR = bin
+BIN_DIR := bin
 # Extra parameters to identify the build configuration.
 # This is used to create a unique object directory for each build configuration.
-EXTRA_PARAMS =
-PARAMS_SIGNATURE = $(shell echo "a$(EXTRA_PARAMS)b" | md5sum | cut -c1-12)
+EXTRA_PARAMS :=
+PARAMS_SIGNATURE := $(shell echo "a$(EXTRA_PARAMS)b" | md5sum | cut -c1-12)
 # Where to put object files for each build configuration. Must be subdirectory of the project root!
 OBJ_DIR = $(BLD_DIR)/$(CONFIG)/$(CXX).$(STD).$(PARAMS_SIGNATURE)
-CONFIG_FILE_EXT = ascan.conf
+CONFIG_FILE_EXT := ascan.conf
 # This file is used to store the configuration of the last successful build, so that
 # when the configuration changes, we can rebuild the target.
-CONFIG_FILE = $(BLD_DIR)/$(CONFIG).$(CXX).$(STD).$(PARAMS_SIGNATURE).$(CONFIG_FILE_EXT)
+CONFIG_FILE := $(BLD_DIR)/$(CONFIG).$(CXX).$(STD).$(PARAMS_SIGNATURE).$(CONFIG_FILE_EXT)
 
 # CHECK DIRECTORIES
 
 # Check that directories do not contain spaces.
-SPACE_CHECKS = $(words $(BLD_DIR)) $(words $(OBJ_DIR)) $(words $(BIN_DIR))
+SPACE_CHECKS := $(words $(BLD_DIR)) $(words $(OBJ_DIR)) $(words $(BIN_DIR))
 ifneq ($(filter-out 1,$(SPACE_CHECKS)),)
 $(error "BLD_DIR, OBJ_DIR, BIN_DIR must be set to a directory. Please check your Makefile.")
 endif
 
 # Check that directories are subdirectories of the project root.
-SUB_DIR_CHECKS = $(shell echo "$(abspath $(BLD_DIR))" | grep -q "^$(PROJECT_ROOT)" || echo 0) \
+SUB_DIR_CHECKS := $(shell echo "$(abspath $(BLD_DIR))" | grep -q "^$(PROJECT_ROOT)" || echo 0) \
 				 $(shell echo "$(abspath $(OBJ_DIR))" | grep -q "^$(PROJECT_ROOT)" || echo 0) \
 				 $(shell echo "$(abspath $(BIN_DIR))" | grep -q "^$(PROJECT_ROOT)" || echo 0)
 ifeq ($(filter 0,$(SUB_DIR_CHECKS)),0)
@@ -46,8 +46,8 @@ endif
 
 # BUILD DETAILS
 
-CXXFLAGS = -Wall -Wextra -std=$(STD) -I. -I./libs
-LDFLAGS = -L./libs -lfmt
+CXXFLAGS := -Wall -Wextra -std=$(STD) -I. -I./libs
+LDFLAGS := -L./libs -lfmt
 
 ifeq ($(CONFIG),debug)
 	CXXFLAGS += -g -O0 -DDEBUG
@@ -65,99 +65,97 @@ default: all
 # =============================================================================
 
 define ASCAN_CONFIG
-sig1 = $(shell echo "a$1b" | md5sum | cut -c1-32)
+sig1 := $(shell echo "a$1b" | md5sum | cut -c1-32)
 
-$$(sig1)target = $(BIN_DIR)/ascan
+target := $(BIN_DIR)/ascan
 
-$$(sig1)cxxflags = -g0
-$$(sig1)ldflags =
+cxxflags := -g0
+ldflags :=
 
-$$(sig1)srcs = src/ascan.cpp 	\
-	   src/cfile.cpp 	\
-	   src/config.cpp 	\
-	   src/mfile.cpp 	\
-	   src/mfilev3.cpp 	\
-	   src/mfilev4.cpp 	\
-	   src/parser.cpp 	\
-	   src/settings.cpp \
-	   src/utils.cpp
+srcs := src/ascan.cpp 		\
+	    src/cfile.cpp 		\
+	    src/config.cpp 		\
+	    src/mfile.cpp 		\
+	    src/mfilev3.cpp 	\
+	    src/mfilev4.cpp 	\
+	    src/parser.cpp 		\
+	    src/settings.cpp 	\
+	    src/utils.cpp
 endef
 
 # =============================================================================
 
 define OPT_PARSER_CONFIG
-sig2 = $(shell echo "a$1b" | md5sum | cut -c1-32)
 
-$$(sig2)target = $(BIN_DIR)/opt_parser
+target := $(BIN_DIR)/opt_parser
 
-$$(sig2)cxxflags = -g1
-$$(sig2)ldflags =
+cxxflags := -g1
+ldflags :=
 
-$$(sig2)srcs = experiment/opt_parser.cpp
+srcs := experiment/opt_parser.cpp
 endef
 
 # =============================================================================
 
+OBJS :=
+DEPS :=
+TARGETS :=
+
 define REGISTER_CONFIG
 $(eval $(call $1,$1))
 
-sig3 = $(shell echo "a$1b" | md5sum | cut -c1-32)
+CXXFLAGS_ := $(strip $(CXXFLAGS) $(cxxflags))
+LDFLAGS_ := $(strip $(LDFLAGS) $(ldflags))
+TARGET_ := $(target)
+OBJS_ := $(foreach src,$(srcs),$(OBJ_DIR)/$(basename $(src)).o)
+DEPS_ := $$(OBJS_:.o=.d)
 
-$$(sig3)CXXFLAGS_ = $(strip $(CXXFLAGS) $$($$(sig3)cxxflags))
-$$(sig3)LDFLAGS_ = $(strip $(LDFLAGS) $$($$(sig3)ldflags))
-$$(sig3)TARGET_ = $$($$(sig3)target)
-$$(sig3)OBJS_ = $(foreach src,$$($$(sig3)srcs),$(OBJ_DIR)/$(basename $(src)).o)
-$$(sig3)DEPS_ = $$($$(sig3)OBJS_:.o=.d)
+OBJS += $$(OBJS_)
+DEPS += $$(DEPS_)
+TARGETS += $$(TARGET_)
 
-OBJS += $$($(sig3)OBJS_)
-DEPS += $$($(sig3)DEPS_)
-TARGETS += $$($$(sig3)TARGET_)
+-include $$(DEPS_)
 
--include $$($$(sig3)DEPS_)
+all: $$(TARGET_)
 
-all: $$($$(sig3)TARGET_)
-
-$$($$(sig3)TARGET_): $$($$(sig3)OBJS_) $$(CONFIG_FILE)
+$$(TARGET_): $$(OBJS_) $$(CONFIG_FILE)
 	@mkdir -p $$(@D)
-	@echo "$$(CXX) $$($$(sig3)CXXFLAGS_) ... -o $$@ $$($$(sig3)LDFLAGS_)"
-	@$$(CXX) $$($$(sig3)CXXFLAGS_) $(filter-out %.$$(CONFIG_FILE_EXT),$$^) -o $$@ $$($$(sig3)LDFLAGS_)
+	@echo "$$(CXX) $$(CXXFLAGS_) ... -o $$@ $$(LDFLAGS_)"
+	@$$(CXX) $$(CXXFLAGS_) $(filter-out %.$$(CONFIG_FILE_EXT),$$^) -o $$@ $$(LDFLAGS_)
 	$$(call CHECK_BUILD_PARAMS)
 
-$$($$(sig3)OBJS_): $$(OBJ_DIR)/%.o: %.cpp
+$$(OBJS_): $$(OBJ_DIR)/%.o: %.cpp
 	@mkdir -p $$(@D)
-	$$(CXX) $$($$(sig3)CXXFLAGS_) -MMD -MP -c $$< -o $$@
+	$$(CXX) $$(CXXFLAGS_) -MMD -MP -c $$< -o $$@
 endef
 
 # =============================================================================
 
 define DEBUG_PRINT_CONFIG
 $(info CONFIG_NAME=$1)
-$(info sig=$(sig4))
-$(info CXXFLAGS=$($(sig4)CXXFLAGS_))
-$(info LDFLAGS=$($(sig4)LDFLAGS_))
-$(info TARGET=$($(sig4)TARGET_))
-$(info OBJS=$($(sig4)OBJS_))
-$(info DEPS=$($(sig4)DEPS_))
+$(info CXXFLAGS_=$(CXXFLAGS_))
+$(info LDFLAGS_=$(LDFLAGS_))
+$(info TARGET_=$(TARGET_))
+$(info OBJS_=$(OBJS_))
+$(info DEPS_=$(DEPS_))
 $(info -----------------------------------------------------------------------)
 endef
 
 $(eval $(call REGISTER_CONFIG,ASCAN_CONFIG))
+$(eval $(call DEBUG_PRINT_CONFIG,ASCAN_CONFIG))
+
 $(eval $(call REGISTER_CONFIG,OPT_PARSER_CONFIG))
-# $(info $(f525788f923adabdd9bbf9a6dde75616CXXFLAGS_))
+$(eval $(call DEBUG_PRINT_CONFIG,OPT_PARSER_CONFIG))
 
-# $(eval $(call DEBUG_PRINT_CONFIG,ASCAN_CONFIG))
-# $(eval $(call DEBUG_PRINT_CONFIG,OPT_PARSER_CONFIG))
-# $(info OBJS=$(OBJS))
-# $(info DEPS=$(DEPS))
-
-sig4 = f525788f923adabdd9bbf9a6dde75616
+$(info OBJS=$(OBJS))
+$(info DEPS=$(DEPS))
 
 debug_print_config:
-	@echo "CXXFLAGS_ = $($(sig4)CXXFLAGS_)"
-	@echo "LDFLAGS_ = $($(sig4)LDFLAGS_)"
-	@echo "TARGET_ = $($(sig4)TARGET_)"
-	@echo "OBJS_ = $($(sig4)OBJS_)"
-	@echo "DEPS_ = $($(sig4)DEPS_)"
+	@echo "CXXFLAGS_ = $(CXXFLAGS_)"
+	@echo "LDFLAGS_ = $(LDFLAGS_)"
+	@echo "TARGET_ = $(TARGET_)"
+	@echo "OBJS_ = $(OBJS_)"
+	@echo "DEPS_ = $(DEPS_)"
 
 # RULES
 
@@ -199,12 +197,12 @@ clean:
 
 # CHECK BUILD PARAMS
 
-RED		  = $(shell tput setaf 1)
-GREEN	  = $(shell tput setaf 2)
-YELLOW	  = $(shell tput setaf 3)
-BOLD 	  = $(shell tput bold)
-UNDERLINE = $(shell tput smul)
-RESET	  = $(shell tput sgr0)
+RED		  := $(shell tput setaf 1)
+GREEN	  := $(shell tput setaf 2)
+YELLOW	  := $(shell tput setaf 3)
+BOLD 	  := $(shell tput bold)
+UNDERLINE := $(shell tput smul)
+RESET	  := $(shell tput sgr0)
 
 define SAVE_BUILD_PARAMS
 	@echo "PROJECT=$(PROJECT)" > "$(1)"
