@@ -49,8 +49,6 @@ endif
 CXXFLAGS = -Wall -Wextra -std=$(STD) -I. -I./libs
 LDFLAGS = -L./libs -lfmt
 
-TARGETS = ascan opt_parser
-
 ifeq ($(CONFIG),debug)
 	CXXFLAGS += -g -O0 -DDEBUG
 else ifeq ($(CONFIG),release)
@@ -58,65 +56,115 @@ else ifeq ($(CONFIG),release)
 else ifeq ($(CONFIG),test)
 	CXXFLAGS += -g -O0 -DTEST -Igoogletest/include
 	LDFLAGS += -Lgoogletest/lib -lgtest -lgtest_main -lpthread
-	TARGETS := $(addsuffix _test,$(TARGETS))
 endif
 
-# TARGETS
+default: all
 
-BIN_TARGETS = $(addprefix $(BIN_DIR)/,$(TARGETS))
+# CONFIGS
 
-.PHONY:
-all: $(BIN_TARGETS)
+# =============================================================================
 
-# SOURCES
+define ASCAN_CONFIG
+sig1 = $(shell echo "a$1b" | md5sum | cut -c1-32)
 
-ASCAN_SRCS = src/ascan.cpp 		\
-			 src/cfile.cpp 		\
-			 src/config.cpp 	\
-			 src/mfile.cpp 		\
-			 src/mfilev3.cpp 	\
-			 src/mfilev4.cpp 	\
-			 src/parser.cpp 	\
-			 src/settings.cpp 	\
-			 src/utils.cpp
-OPT_PARSER_SRCS = experiment/opt_parser.cpp
+$$(sig1)target = $(BIN_DIR)/ascan
 
-# PROCESS
+$$(sig1)cxxflags = -g0
+$$(sig1)ldflags =
 
-define REGISTER_SRCS
-_SIG = $(shell echo "a$1$2b" | md5sum | cut -c1-32)
-$(_SIG)_OBJS = $(foreach src,$2,$(OBJ_DIR)/$(basename $(src)).o)
-OBJS += $$($(_SIG)_OBJS)
-DEPS += $$($(_SIG)_OBJS:.o=.d)
-$(BIN_DIR)/$1: $$($(_SIG)_OBJS)
+$$(sig1)srcs = src/ascan.cpp 	\
+	   src/cfile.cpp 	\
+	   src/config.cpp 	\
+	   src/mfile.cpp 	\
+	   src/mfilev3.cpp 	\
+	   src/mfilev4.cpp 	\
+	   src/parser.cpp 	\
+	   src/settings.cpp \
+	   src/utils.cpp
 endef
 
-$(eval $(call REGISTER_SRCS,ascan,$(ASCAN_SRCS)))
-$(eval $(call REGISTER_SRCS,opt_parser,$(OPT_PARSER_SRCS)))
+# =============================================================================
 
-# $(info $(OBJS))
-# $(info $(DEPS))
+define OPT_PARSER_CONFIG
+sig2 = $(shell echo "a$1b" | md5sum | cut -c1-32)
+
+$$(sig2)target = $(BIN_DIR)/opt_parser
+
+$$(sig2)cxxflags = -g1
+$$(sig2)ldflags =
+
+$$(sig2)srcs = experiment/opt_parser.cpp
+endef
+
+# =============================================================================
+
+define REGISTER_CONFIG
+$(eval $(call $1,$1))
+
+sig3 = $(shell echo "a$1b" | md5sum | cut -c1-32)
+
+$$(sig3)CXXFLAGS_ = $(strip $(CXXFLAGS) $$($$(sig3)cxxflags))
+$$(sig3)LDFLAGS_ = $(strip $(LDFLAGS) $$($$(sig3)ldflags))
+$$(sig3)TARGET_ = $$($$(sig3)target)
+$$(sig3)OBJS_ = $(foreach src,$$($$(sig3)srcs),$(OBJ_DIR)/$(basename $(src)).o)
+$$(sig3)DEPS_ = $$($$(sig3)OBJS_:.o=.d)
+
+OBJS += $$($(sig3)OBJS_)
+DEPS += $$($(sig3)DEPS_)
+TARGETS += $$($$(sig3)TARGET_)
+
+-include $$($$(sig3)DEPS_)
+
+all: $$($$(sig3)TARGET_)
+
+$$($$(sig3)TARGET_): $$($$(sig3)OBJS_) $$(CONFIG_FILE)
+	@mkdir -p $$(@D)
+	@echo "$$(CXX) $$($$(sig3)CXXFLAGS_) ... -o $$@ $$($$(sig3)LDFLAGS_)"
+	@$$(CXX) $$($$(sig3)CXXFLAGS_) $(filter-out %.$$(CONFIG_FILE_EXT),$$^) -o $$@ $$($$(sig3)LDFLAGS_)
+	$$(call CHECK_BUILD_PARAMS)
+
+$$($$(sig3)OBJS_): $$(OBJ_DIR)/%.o: %.cpp
+	@mkdir -p $$(@D)
+	$$(CXX) $$($$(sig3)CXXFLAGS_) -MMD -MP -c $$< -o $$@
+endef
+
+# =============================================================================
+
+define DEBUG_PRINT_CONFIG
+$(info CONFIG_NAME=$1)
+$(info sig=$(sig4))
+$(info CXXFLAGS=$($(sig4)CXXFLAGS_))
+$(info LDFLAGS=$($(sig4)LDFLAGS_))
+$(info TARGET=$($(sig4)TARGET_))
+$(info OBJS=$($(sig4)OBJS_))
+$(info DEPS=$($(sig4)DEPS_))
+$(info -----------------------------------------------------------------------)
+endef
+
+$(eval $(call REGISTER_CONFIG,ASCAN_CONFIG))
+$(eval $(call REGISTER_CONFIG,OPT_PARSER_CONFIG))
+# $(info $(f525788f923adabdd9bbf9a6dde75616CXXFLAGS_))
+
+# $(eval $(call DEBUG_PRINT_CONFIG,ASCAN_CONFIG))
+# $(eval $(call DEBUG_PRINT_CONFIG,OPT_PARSER_CONFIG))
+# $(info OBJS=$(OBJS))
+# $(info DEPS=$(DEPS))
+
+sig4 = f525788f923adabdd9bbf9a6dde75616
+
+debug_print_config:
+	@echo "CXXFLAGS_ = $($(sig4)CXXFLAGS_)"
+	@echo "LDFLAGS_ = $($(sig4)LDFLAGS_)"
+	@echo "TARGET_ = $($(sig4)TARGET_)"
+	@echo "OBJS_ = $($(sig4)OBJS_)"
+	@echo "DEPS_ = $($(sig4)DEPS_)"
 
 # RULES
-
-$(BIN_TARGETS): %: $(CONFIG_FILE)
-	@mkdir -p $(@D)
-	@echo "$(CXX) $(CXXFLAGS) ... -o $@ $(LDFLAGS)"
-	@$(CXX) $(CXXFLAGS) $(filter-out %.$(CONFIG_FILE_EXT),$^) -o $@ $(LDFLAGS)
-	$(call CHECK_BUILD_PARAMS)
-
-$(OBJ_DIR)/%.o: %.cpp
-	@mkdir -p $(@D)
-	$(CXX) $(CXXFLAGS) -MMD -MP -c $< -o $@
 
 $(BLD_DIR)/%.$(CONFIG_FILE_EXT):
 	@mkdir -p $(@D)
 	@rm -f $(@D)/*.$(CONFIG_FILE_EXT)
 	@touch $@
-
-# DEPENDENCIES
-
--include $(DEPS)
 
 # PHONY TARGETS
 
@@ -147,7 +195,7 @@ clean:
 		rm -rf "$(BIN_DIR)"; \
 	fi
 
-.PHONY: debug release test clean
+.PHONY: default all debug release test clean
 
 # CHECK BUILD PARAMS
 
