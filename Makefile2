@@ -6,12 +6,12 @@ PROJECT := ascan
 
 # OPTIONS
 
-MODE ?= debug
+CONFIG = debug
 
-CC ?= gcc
-CXX ?= g++
-CSTD ?= c11
-CXXSTD ?= c++17
+CC := gcc
+CXX := clang++
+CSTD := c11
+CXXSTD := c++17
 
 # DIRECTORIES
 
@@ -24,7 +24,7 @@ BIN_DIR := bin
 EXTRA_ARGS :=
 ARGS_SIGNATURE := $(shell echo "a$(EXTRA_ARGS)b" | md5sum | cut -c1-12)
 # Where to put object files for each build configuration. Must be subdirectory of the project root!
-OBJ_DIR = $(BLD_DIR)/$(MODE)/$(CC).$(CXX).$(CSTD).$(CXXSTD).$(ARGS_SIGNATURE)
+OBJ_DIR = $(BLD_DIR)/$(CONFIG)/$(CC).$(CXX).$(CSTD).$(CXXSTD).$(ARGS_SIGNATURE)
 # Should not be a commonly used extension!
 CONFIG_FILE_EXT := ascan.conf
 
@@ -46,14 +46,18 @@ endif
 
 # BUILD DETAILS
 
+CFLAGS := -Wall -Wextra -std=$(CSTD)
 CXXFLAGS := -Wall -Wextra -std=$(CXXSTD) -I. -I./libs
 LDFLAGS := -L./libs -lfmt
 
-ifeq ($(MODE),debug)
+ifeq ($(CONFIG),debug)
+	CFLAGS += -g -O0 -DDEBUG
 	CXXFLAGS += -g -O0 -DDEBUG
-else ifeq ($(MODE),release)
+else ifeq ($(CONFIG),release)
+	CFLAGS += -flto=4 -O3 -march=native -DNDEBUG
 	CXXFLAGS += -flto=4 -O3 -march=native -DNDEBUG
-else ifeq ($(MODE),test)
+else ifeq ($(CONFIG),test)
+	CFLAGS += -g -O0 -DTEST -Igoogletest/include
 	CXXFLAGS += -g -O0 -DTEST -Igoogletest/include
 	LDFLAGS += -Lgoogletest/lib -lgtest -lgtest_main -lpthread
 endif
@@ -64,9 +68,12 @@ default: all
 
 # Override the following variables to change the build configuration for each CONFIG
 define REDEFINE
-compiler := $(CXX)
-std := $(CXXSTD)
-compiler_flags := $(CXXFLAGS)
+cc := $(CC)
+cxx := $(CXX)
+cstd := $(CSTD)
+cxxstd := $(CXXSTD)
+cflags := $(CFLAGS)
+cxxflags := $(CXXFLAGS)
 ldflags := $(LDFLAGS)
 endef
 
@@ -75,7 +82,7 @@ endef
 define ASCAN_CONFIG
 target := $(BIN_DIR)/ascan
 
-compiler_flags := $(CXXFLAGS) -g0
+cxxflags := $(CXXFLAGS) -g0
 
 srcs := src/ascan.cpp 		\
 	    src/cfile.cpp 		\
@@ -93,7 +100,7 @@ endef
 define OPT_PARSER_CONFIG
 target := $(BIN_DIR)/opt_parser
 
-compiler_flags := $(CXXFLAGS) -g1
+cxxflags := $(CXXFLAGS) -g1
 
 srcs := experiment/opt_parser.cpp
 endef
@@ -106,11 +113,16 @@ TARGETS :=
 
 define GEN_VARS
 objs := $(foreach src,$(srcs),$(OBJ_DIR)/$(basename $(src)).o)
+cobjs := $(foreach src,$(filter %.c,$(srcs)),$(OBJ_DIR)/$(basename $(src)).o)
+ccobjs := $(foreach src,$(filter %.cc,$(srcs)),$(OBJ_DIR)/$(basename $(src)).o)
+cxxobjs := $(foreach src,$(filter %.cpp,$(srcs)),$(OBJ_DIR)/$(basename $(src)).o)
 deps := $$(objs:.o=.d)
 
 # This file is used to store the configuration of the last successful build, so that
 # when the configuration changes, we can rebuild the target.
-config_file := $(BLD_DIR)/$(notdir $(target))/$(compiler).$(std).$(MODE).$(ARGS_SIGNATURE).$(CONFIG_FILE_EXT)
+configs := $(CONFIG),$(BLD_DIR),$(BIN_DIR),$(OBJ_DIR),\
+		   $(cc),$(cxx),$(cstd),$(cxxstd),$(cflags),$(cxxflags),$(ldflags),$(target),$(srcs)
+config_file := $(BLD_DIR)/$(notdir $(target))/$$(shell echo $$(configs) | md5sum | cut -c1-32).$(CONFIG_FILE_EXT)
 endef
 
 define REGISTER_CONFIG
@@ -118,39 +130,46 @@ $(eval $(call REDEFINE))
 $(eval $(call $1,$1))
 $(eval $(call GEN_VARS))
 
+$(notdir $(target)): $(target)
+
 OBJS += $(objs)
 DEPS += $(deps)
 TARGETS += $(target)
 
 -include $(deps)
 
-all: $(target)
-
-$(notdir $(target)): $(target)
-
 $(target): $(objs) $(config_file)
 	@mkdir -p $$(@D)
-	@echo "$(compiler) $(compiler_flags) ... -o $$@ $(ldflags)"
-	@$(compiler) $(compiler_flags) $(objs) -o $$@ $(ldflags)
+	@echo "$(cxx) $(cxxflags) ... -o $$@ $(ldflags)"
+	@$(cxx) $(cxxflags) $(objs) -o $$@ $(ldflags)
 	$$(call CHECK_BUILD_ARGS)
 
-$(objs): $(OBJ_DIR)/%.o: %.cpp
+$(cobjs): $(OBJ_DIR)/%.o: %.c
 	@mkdir -p $$(@D)
-	$(compiler) $(compiler_flags) -MMD -MP -c $$< -o $$@
+	$(cc) $(cflags) -MMD -MP -c $$< -o $$@
+
+$(ccobjs): $(OBJ_DIR)/%.o: %.cc
+	@mkdir -p $$(@D)
+	$(cxx) $(cxxflags) -MMD -MP -c $$< -o $$@
+
+$(cxxobjs): $(OBJ_DIR)/%.o: %.cpp
+	@mkdir -p $$(@D)
+	$(cxx) $(cxxflags) -MMD -MP -c $$< -o $$@
 
 $(config_file):
 	@mkdir -p $$(@D)
 	@rm -f $$(@D)/*.$(CONFIG_FILE_EXT)
-	@touch $$@
+	@echo "$(configs)" > $$@
 endef
 
 # =============================================================================
 
 define DEBUG_PRINT_CONFIG
 $(info CONFIG_NAME=$1)
-$(info compiler_flags=$(compiler_flags))
-$(info ldflags=$(ldflags))
 $(info target=$(target))
+$(info cflags=$(cflags))
+$(info cxxflags=$(cxxflags))
+$(info ldflags=$(ldflags))
 $(info objs=$(objs))
 $(info deps=$(deps))
 $(info -----------------------------------------------------------------------)
@@ -164,33 +183,36 @@ $(eval $(call REGISTER_CONFIG,OPT_PARSER_CONFIG))
 
 # $(info OBJS=$(OBJS))
 # $(info DEPS=$(DEPS))
+# $(info TARGETS=$(TARGETS))
 
 # RULES
 
 # PHONY TARGETS
 
+all: $(TARGETS)
+
 debug:
-	@$(MAKE) MODE=debug --no-print-directory
+	@$(MAKE) CONFIG=debug --no-print-directory
 
 release:
-	@$(MAKE) MODE=release --no-print-directory
+	@$(MAKE) CONFIG=release --no-print-directory
 
 test:
-	@$(MAKE) MODE=test --no-print-directory
+	@$(MAKE) CONFIG=test --no-print-directory
 
 clean:
 	@echo "Cleaning..."
-	@rm -f $(BIN_TARGETS) $(OBJS) $(DEPS) $(BLD_DIR)/*.$(CONFIG_FILE_EXT)
+	@rm -f $(TARGETS) $(OBJS) $(DEPS) $(BLD_DIR)/*.$(CONFIG_FILE_EXT)
 
 	@#! CAUTION: rm -rf command
-	@if [ echo "$(abspath $(BLD_DIR))" | grep -q "^$(PROJECT_ROOT)" ] && \
+	@if echo "$(abspath $(BLD_DIR))" | grep -q "^$(PROJECT_ROOT)" && \
 		[ "$(BLD_DIR)" != "." ] && \
 		[ "$(BLD_DIR)" != "/"  ]; then \
 		rm -rf "$(BLD_DIR)"; \
 	fi
 
 	@#! CAUTION: rm -rf command
-	@if [ echo "$(abspath $(BIN_DIR))" | grep -q "^$(PROJECT_ROOT)" ] && \
+	@if echo "$(abspath $(BIN_DIR))" | grep -q "^$(PROJECT_ROOT)" && \
 		[ "$(BIN_DIR)" != "." ] && \
 		[ "$(BIN_DIR)" != "/"  ]; then \
 		rm -rf "$(BIN_DIR)"; \
@@ -209,10 +231,9 @@ RESET	  := $(shell tput sgr0)
 
 define SAVE_BUILD_ARGS
 	@echo "PROJECT=$(PROJECT)" > "$(1)"
-	@echo "MODE=$(MODE)" >> "$(1)"
+	@echo "CONFIG=$(CONFIG)" >> "$(1)"
 	@echo "CC=$(CC)" >> "$(1)"
 	@echo "CXX=$(CXX)" >> "$(1)"
-	@echo "STD=$(STD)" >> "$(1)"
 	@echo "CSTD=$(CSTD)" >> "$(1)"
 	@echo "CXXSTD=$(CXXSTD)" >> "$(1)"
 	@echo "BLD_DIR=$(BLD_DIR)" >> "$(1)"
