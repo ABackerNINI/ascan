@@ -1,4 +1,6 @@
-PROJECT_ROOT := $(abspath $(dir $(abspath $(lastword $(MAKEFILE_LIST)))))
+PROJECT_ROOT := $(CURDIR)
+
+CUR_MAKEFILE := $(lastword $(MAKEFILE_LIST))
 
 # PROJECT
 
@@ -9,7 +11,7 @@ PROJECT := ascan
 CONFIG = debug
 
 CC := gcc
-CXX := clang++
+CXX := g++
 CSTD := c11
 CXXSTD := c++17
 
@@ -54,8 +56,8 @@ ifeq ($(CONFIG),debug)
 	CFLAGS += -g -O0 -DDEBUG
 	CXXFLAGS += -g -O0 -DDEBUG
 else ifeq ($(CONFIG),release)
-	CFLAGS += -flto=4 -O3 -march=native -DNDEBUG
-	CXXFLAGS += -flto=4 -O3 -march=native -DNDEBUG
+	CFLAGS += -flto -O3 -march=native -DNDEBUG
+	CXXFLAGS += -flto -O3 -march=native -DNDEBUG
 else ifeq ($(CONFIG),test)
 	CFLAGS += -g -O0 -DTEST -Igoogletest/include
 	CXXFLAGS += -g -O0 -DTEST -Igoogletest/include
@@ -192,13 +194,13 @@ $(eval $(call REGISTER_CONFIG,OPT_PARSER_CONFIG))
 all: $(TARGETS)
 
 debug:
-	@$(MAKE) CONFIG=debug --no-print-directory
+	@$(MAKE) -f $(CUR_MAKEFILE) CONFIG=debug --no-print-directory
 
 release:
-	@$(MAKE) CONFIG=release --no-print-directory
+	@$(MAKE) -f $(CUR_MAKEFILE) CONFIG=release --no-print-directory
 
 test:
-	@$(MAKE) CONFIG=test --no-print-directory
+	@$(MAKE) -f $(CUR_MAKEFILE) CONFIG=test --no-print-directory
 
 clean:
 	@echo "Cleaning..."
