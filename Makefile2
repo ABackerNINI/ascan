@@ -2,19 +2,22 @@ PROJECT_ROOT := $(CURDIR)
 
 CUR_MAKEFILE := $(lastword $(MAKEFILE_LIST))
 
+# ======================================================================================================================
 # PROJECT
 
 PROJECT := ascan
 
+# ======================================================================================================================
 # OPTIONS
 
-CONFIG = debug
+MODE := debug
 
 CC := gcc
 CXX := g++
 CSTD := c11
 CXXSTD := c++17
 
+# ======================================================================================================================
 # DIRECTORIES
 
 # Where to put object files. Must be subdirectory of the project root! Can be set to ".".
@@ -26,10 +29,11 @@ BIN_DIR := bin
 EXTRA_ARGS :=
 ARGS_SIGNATURE := $(shell echo "a$(EXTRA_ARGS)b" | md5sum | cut -c1-12)
 # Where to put object files for each build configuration. Must be subdirectory of the project root!
-OBJ_DIR = $(BLD_DIR)/$(CONFIG)/$(CC).$(CXX).$(CSTD).$(CXXSTD).$(ARGS_SIGNATURE)
+OBJ_DIR = $(BLD_DIR)/$(MODE)/$(CC).$(CXX).$(CSTD).$(CXXSTD).$(ARGS_SIGNATURE)
 # Should not be a commonly used extension!
 CONFIG_FILE_EXT := ascan.conf
 
+# ======================================================================================================================
 # CHECK DIRECTORIES
 
 # Check that directories do not contain spaces.
@@ -46,19 +50,20 @@ ifeq ($(filter 0,$(SUB_DIR_CHECKS)),0)
 $(error "BLD_DIR, OBJ_DIR, BIN_DIR must be subdirectories of the project root. Please check your Makefile.")
 endif
 
+# ======================================================================================================================
 # BUILD DETAILS
 
 CFLAGS := -Wall -Wextra -std=$(CSTD)
 CXXFLAGS := -Wall -Wextra -std=$(CXXSTD) -I. -I./libs
 LDFLAGS := -L./libs -lfmt
 
-ifeq ($(CONFIG),debug)
+ifeq ($(MODE),debug)
 	CFLAGS += -g -O0 -DDEBUG
 	CXXFLAGS += -g -O0 -DDEBUG
-else ifeq ($(CONFIG),release)
+else ifeq ($(MODE),release)
 	CFLAGS += -flto -O3 -march=native -DNDEBUG
 	CXXFLAGS += -flto -O3 -march=native -DNDEBUG
-else ifeq ($(CONFIG),test)
+else ifeq ($(MODE),test)
 	CFLAGS += -g -O0 -DTEST -Igoogletest/include
 	CXXFLAGS += -g -O0 -DTEST -Igoogletest/include
 	LDFLAGS += -Lgoogletest/lib -lgtest -lgtest_main -lpthread
@@ -66,6 +71,7 @@ endif
 
 default: all
 
+# ======================================================================================================================
 # CONFIGS
 
 # Override the following variables to change the build configuration for each CONFIG
@@ -79,7 +85,7 @@ cxxflags := $(CXXFLAGS)
 ldflags := $(LDFLAGS)
 endef
 
-# =============================================================================
+# ----------------------------------------------------------------------------------------------------------------------
 
 define ASCAN_CONFIG
 target := $(BIN_DIR)/ascan
@@ -97,7 +103,7 @@ srcs := src/ascan.cpp 		\
 	    src/utils.cpp
 endef
 
-# =============================================================================
+# ----------------------------------------------------------------------------------------------------------------------
 
 define OPT_PARSER_CONFIG
 target := $(BIN_DIR)/opt_parser
@@ -107,11 +113,7 @@ cxxflags := $(CXXFLAGS) -g1
 srcs := experiment/opt_parser.cpp
 endef
 
-# =============================================================================
-
-OBJS :=
-DEPS :=
-TARGETS :=
+# ----------------------------------------------------------------------------------------------------------------------
 
 define GEN_VARS
 objs := $(foreach src,$(srcs),$(OBJ_DIR)/$(basename $(src)).o)
@@ -122,10 +124,16 @@ deps := $$(objs:.o=.d)
 
 # This file is used to store the configuration of the last successful build, so that
 # when the configuration changes, we can rebuild the target.
-configs := $(CONFIG),$(BLD_DIR),$(BIN_DIR),$(OBJ_DIR),\
+configs := $(MODE),$(BLD_DIR),$(BIN_DIR),$(OBJ_DIR),\
 		   $(cc),$(cxx),$(cstd),$(cxxstd),$(cflags),$(cxxflags),$(ldflags),$(target),$(srcs)
 config_file := $(BLD_DIR)/$(notdir $(target))/$$(shell echo $$(configs) | md5sum | cut -c1-32).$(CONFIG_FILE_EXT)
 endef
+
+# ----------------------------------------------------------------------------------------------------------------------
+
+OBJS :=
+DEPS :=
+TARGETS :=
 
 define REGISTER_CONFIG
 $(eval $(call REDEFINE))
@@ -164,7 +172,7 @@ $(config_file):
 	@echo "$(configs)" > $$@
 endef
 
-# =============================================================================
+# ----------------------------------------------------------------------------------------------------------------------
 
 define DEBUG_PRINT_CONFIG
 $(info CONFIG_NAME=$1)
@@ -177,6 +185,8 @@ $(info deps=$(deps))
 $(info -----------------------------------------------------------------------)
 endef
 
+# ----------------------------------------------------------------------------------------------------------------------
+
 $(eval $(call REGISTER_CONFIG,ASCAN_CONFIG))
 # $(eval $(call DEBUG_PRINT_CONFIG,ASCAN_CONFIG))
 
@@ -187,23 +197,23 @@ $(eval $(call REGISTER_CONFIG,OPT_PARSER_CONFIG))
 # $(info DEPS=$(DEPS))
 # $(info TARGETS=$(TARGETS))
 
-# RULES
-
+# ======================================================================================================================
 # PHONY TARGETS
 
 all: $(TARGETS)
 
 debug:
-	@$(MAKE) -f $(CUR_MAKEFILE) CONFIG=debug --no-print-directory
+	@$(MAKE) -f $(CUR_MAKEFILE) MODE=debug --no-print-directory
 
 release:
-	@$(MAKE) -f $(CUR_MAKEFILE) CONFIG=release --no-print-directory
+	@$(MAKE) -f $(CUR_MAKEFILE) MODE=release --no-print-directory
 
 test:
-	@$(MAKE) -f $(CUR_MAKEFILE) CONFIG=test --no-print-directory
+	@$(MAKE) -f $(CUR_MAKEFILE) MODE=test --no-print-directory
 
 clean:
 	@echo "Cleaning..."
+
 	@rm -f $(TARGETS) $(OBJS) $(DEPS) $(BLD_DIR)/*.$(CONFIG_FILE_EXT)
 
 	@#! CAUTION: rm -rf command
@@ -222,6 +232,7 @@ clean:
 
 .PHONY: default all debug release test clean
 
+# ======================================================================================================================
 # CHECK BUILD PARAMS
 
 RED		  := $(shell tput setaf 1)
@@ -231,9 +242,11 @@ BOLD 	  := $(shell tput bold)
 UNDERLINE := $(shell tput smul)
 RESET	  := $(shell tput sgr0)
 
+# ----------------------------------------------------------------------------------------------------------------------
+
 define SAVE_BUILD_ARGS
 	@echo "PROJECT=$(PROJECT)" > "$(1)"
-	@echo "CONFIG=$(CONFIG)" >> "$(1)"
+	@echo "MODE=$(MODE)" >> "$(1)"
 	@echo "CC=$(CC)" >> "$(1)"
 	@echo "CXX=$(CXX)" >> "$(1)"
 	@echo "CSTD=$(CSTD)" >> "$(1)"
@@ -247,14 +260,17 @@ define SAVE_BUILD_ARGS
 	@echo "LDFLAGS=$(LDFLAGS)" >> "$(1)"
 endef
 
+# ----------------------------------------------------------------------------------------------------------------------
+
 define CHECK_BUILD_ARGS
 	$(call SAVE_BUILD_ARGS,$(OBJ_DIR)/temp.txt)
 
 	@if [ -f $(OBJ_DIR)/build_args.txt ]; then \
 		if ! diff -q "$(OBJ_DIR)/build_args.txt" "$(OBJ_DIR)/temp.txt" >/dev/null 2>&1 ; then \
 			echo "$(RED)$(BOLD)"; \
-			echo -n "WARNING: Build arguments mismatch, most likely due to Makefile changes, or a hash collision, "; \
-			echo "you may need a 'make clean'."; \
+			echo "WARNING: Build arguments mismatch!"; \
+			echo "  Most likely due to Makefile changes, or a hash collision."; \
+			echo "  You may need a 'make clean'."; \
 			echo "$(RESET)"; \
 			echo "Diff of build arguments (last vs current):"; \
 			diff --ignore-space-change --color --minimal "$(OBJ_DIR)/build_args.txt" "$(OBJ_DIR)/temp.txt"; \
