@@ -61,8 +61,8 @@ ifeq ($(MODE),debug)
 	CFLAGS += -g -O0 -DDEBUG
 	CXXFLAGS += -g -O0 -DDEBUG
 else ifeq ($(MODE),release)
-	CFLAGS += -flto -O3 -march=native -DNDEBUG
-	CXXFLAGS += -flto -O3 -march=native -DNDEBUG
+	CFLAGS += -flto=auto -O3 -march=native -DNDEBUG
+	CXXFLAGS += -flto=auto -O3 -march=native -DNDEBUG
 else ifeq ($(MODE),test)
 	CFLAGS += -g -O0 -DTEST -Igoogletest/include
 	CXXFLAGS += -g -O0 -DTEST -Igoogletest/include
@@ -122,6 +122,13 @@ ccobjs := $(foreach src,$(filter %.cc,$(srcs)),$(OBJ_DIR)/$(basename $(src)).o)
 cxxobjs := $(foreach src,$(filter %.cpp,$(srcs)),$(OBJ_DIR)/$(basename $(src)).o)
 deps := $$(objs:.o=.d)
 
+target_type := cxx
+ifeq ($$(ccobjs),)
+	ifeq ($$(cxxobjs),)
+		target_type := c
+	endif
+endif
+
 # This file is used to store the configuration of the last successful build, so that
 # when the configuration changes, we can rebuild the target.
 configs := $(MODE),$(BLD_DIR),$(BIN_DIR),$(OBJ_DIR),\
@@ -148,11 +155,19 @@ TARGETS += $(target)
 
 -include $(deps)
 
+ifeq ($(target_type),c)
+$(target): $(objs) $(config_file)
+	@mkdir -p $$(@D)
+	@echo "$(cc) $(cflags) ... -o $$@ $(ldflags)"
+	@$(cc) $(cflags) $(objs) -o $$@ $(ldflags)
+	$$(call CHECK_BUILD_ARGS)
+else
 $(target): $(objs) $(config_file)
 	@mkdir -p $$(@D)
 	@echo "$(cxx) $(cxxflags) ... -o $$@ $(ldflags)"
 	@$(cxx) $(cxxflags) $(objs) -o $$@ $(ldflags)
 	$$(call CHECK_BUILD_ARGS)
+endif
 
 $(cobjs): $(OBJ_DIR)/%.o: %.c
 	@mkdir -p $$(@D)
@@ -181,7 +196,11 @@ $(info cflags=$(cflags))
 $(info cxxflags=$(cxxflags))
 $(info ldflags=$(ldflags))
 $(info objs=$(objs))
+$(info cobjs=$(cobjs))
+$(info ccobjs=$(ccobjs))
+$(info cxxobjs=$(cxxobjs))
 $(info deps=$(deps))
+$(info target_type=$(target_type))
 $(info -----------------------------------------------------------------------)
 endef
 
