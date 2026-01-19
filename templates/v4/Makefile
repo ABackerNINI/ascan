@@ -6,7 +6,7 @@ PROJECT = ascan
 
 # OPTIONS
 
-CONFIG 	?= debug
+CONFIG ?= debug
 
 CC ?= gcc
 CXX	?= g++
@@ -38,7 +38,7 @@ CONFIG_FILE = $(BLD_DIR)/$(CONFIG).$(CC).$(CXX).$(CSTD).$(CXXSTD).$(PARAMS_SIGNA
 
 # Check that directories do not contain spaces.
 SPACE_CHECKS = $(words $(SRC_DIR)) $(words $(BLD_DIR)) \
-		 	 $(words $(OBJ_DIR)) $(words $(BIN_DIR))
+		 	   $(words $(OBJ_DIR)) $(words $(BIN_DIR))
 ifneq ($(filter-out 1, $(SPACE_CHECKS)),)
 $(error "SRC_DIR, BLD_DIR, OBJ_DIR, BIN_DIR must be set to a directory. Please check your Makefile.")
 endif
@@ -75,17 +75,18 @@ endif
 # SOURCES
 
 # SRCS = $(wildcard $(SRC_DIR)/*.cpp)
-SRCS := ascan.cpp options.cpp parser.cpp cfile.cpp align.cpp mfile.cpp  \
-		common.cpp config.cpp
+ASCAN_SRCS = ascan.cpp options.cpp parser.cpp cfile.cpp align.cpp mfile.cpp  \
+			 common.cpp config.cpp
+FOO_SRCS = foo.cpp
+BAR_SRCS = bar.cpp
 
 # OBJECTS
 
 OBJS = $(SRCS:%.cpp=$(OBJ_DIR)/$(SRC_DIR)/%.o)
 DEPS = $(OBJS:.o=.d)
-OBJS1 = $(SRCS:%.cpp=$(OBJ_DIR)/$(SRC_DIR)/%.o)
-DEPS1 = $(OBJS:.o=.d)
-OBJS2 = $(SRCS:%.cpp=$(OBJ_DIR)/$(SRC_DIR)/%.o)
-DEPS2 = $(OBJS:.o=.d)
+ASCAN_OBJS = $(ASCAN_SRCS:%.cpp=$(OBJ_DIR)/$(SRC_DIR)/%.o)
+FOO_OBJS = $(FOO_SRCS:%.cpp=$(OBJ_DIR)/$(SRC_DIR)/%.o)
+DEPS = $(ASCAN_OBJS:.o=.d) $(FOO_OBJS:.o=.d)
 
 # TARGETS
 

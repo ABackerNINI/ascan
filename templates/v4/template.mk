@@ -63,8 +63,7 @@ __ASCAN::SOURCES_SECTION__
 
 # OBJECTS
 
-OBJS = $(SRCS:%.cpp=$(OBJ_DIR)/$(SRC_DIR)/%.o)
-DEPS = $(OBJS:.o=.d)
+__ASCAN::OBJECTS_SECTION__
 
 # TARGETS
 

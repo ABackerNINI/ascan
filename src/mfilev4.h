@@ -46,6 +46,7 @@ class MFileV4 : public MFile {
     void build_targets();
     void build_c_cxx_flags_amend();
     void build_sources_section();
+    void build_objects_section();
     void build_targets_section();
 
   protected:
@@ -75,6 +76,7 @@ class MFileV4 : public MFile {
         MCompComponent c_cxx_flags_debug_amend{"\n"};
         MCompComponent c_cxx_flags_release_amend{"\n"};
         MCompComponent sources_section{"\n"};
+        MCompComponent objects_section{"\n"};
         MCompComponent targets_section{"\n"};
     } t;
 

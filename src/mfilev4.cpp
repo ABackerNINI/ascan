@@ -58,6 +58,7 @@ int MFileV4::build() {
     build_c_cxx_flags_amend();
     build_targets();
     build_sources_section();
+    build_objects_section();
     build_targets_section();
 
     fs::path tempfile = "templates/v4/template.mk";
@@ -77,6 +78,7 @@ int MFileV4::build() {
     replaces.push_back({"__ASCAN::C_CXX_FLAGS_RELEASE_AMEND__", t.c_cxx_flags_release_amend.to_string()});
     replaces.push_back({"__ASCAN::LD_FLAGS__", t.ldflags});
     replaces.push_back({"__ASCAN::SOURCES_SECTION__", t.sources_section.to_string()});
+    replaces.push_back({"__ASCAN::OBJECTS_SECTION__", t.objects_section.to_string()});
     replaces.push_back({"__ASCAN::TARGETS_SECTION__", t.targets_section.to_string()});
 
     size_t num_replaced = safe_replacer::replace(temp, replaces);
@@ -322,12 +324,12 @@ static void find_all_sources_and_headers(std::vector<cfile> &files, cfile *file)
 }
 
 void MFileV4::build_sources_section() {
-    int index = 0;
+    int index = 1;
     for (auto &exec : m_executable) {
         // TODO: wildcard sources
+        std::string index_str = (index == 1 && m_executable.size() == 1) ? "" : std::to_string(index);
 
-        MVariableDef sources{"SRCS" + (index == 0 && m_executable.size() == 1 ? "" : std::to_string(index + 1)),
-                             VariableAssignmentType::RECURSIVELY_EXPANDED};
+        MVariableDef sources{"SRCS" + index_str};
 
         find_all_sources_and_headers(cfiles_, exec);
 
@@ -355,6 +357,30 @@ void MFileV4::build_sources_section() {
 
         index++;
     }
+}
+
+void MFileV4::build_objects_section() {
+    // OBJS1 = $(SRCS1:%.cpp=$(OBJ_DIR)/$(SRC_DIR)/%.o)
+    // OBJS2 = $(SRCS2:%.cpp=$(OBJ_DIR)/$(SRC_DIR)/%.o)
+    // DEPS = $(OBJS1:.o=.d) $(OBJS2:.o=.d)
+
+    MVariableDef deps("DEPS");
+    
+
+    // TODO: break the line if too long
+
+    for (size_t index = 1; index <= m_executable.size(); index++) {
+        std::string index_str = (index == 1 && m_executable.size() == 1) ? "" : std::to_string(index);
+
+        MVariableDef objects("OBJS" + index_str);
+        objects.add_component(MSimpleVariable{"SRCS" + index_str + ":%.cpp=$(OBJ_DIR)/$(SRC_DIR)/%.o"});
+
+        deps.add_component(MSimpleVariable{"OBJS" + index_str + ".o=.d"});
+
+        t.objects_section.add_component(std::move(objects));
+    }
+
+    t.objects_section.add_component(std::move(deps));
 }
 
 void MFileV4::build_targets_section() {
