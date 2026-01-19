@@ -115,6 +115,15 @@ endef
 
 # ----------------------------------------------------------------------------------------------------------------------
 
+RED		  := $(shell tput setaf 1)
+GREEN	  := $(shell tput setaf 2)
+YELLOW	  := $(shell tput setaf 3)
+BOLD 	  := $(shell tput bold)
+UNDERLINE := $(shell tput smul)
+RESET	  := $(shell tput sgr0)
+
+# ----------------------------------------------------------------------------------------------------------------------
+
 define GEN_VARS
 objs := $(foreach src,$(srcs),$(OBJ_DIR)/$(basename $(src)).o)
 cobjs := $(foreach src,$(filter %.c,$(srcs)),$(OBJ_DIR)/$(basename $(src)).o)
@@ -156,35 +165,56 @@ TARGETS += $(target)
 -include $(deps)
 
 ifeq ($(target_type),c)
-$(target): $(objs) $(config_file)
+$(target): $(config_file) $(objs)
 	@mkdir -p $$(@D)
-	@echo "$(cc) $(cflags) ... -o $$@ $(ldflags)"
+	@echo -n " > $(YELLOW)$(BOLD)$$(@F)$(RESET)"
 	@$(cc) $(cflags) $(objs) -o $$@ $(ldflags)
 	$$(call CHECK_BUILD_ARGS)
+	@echo " $(GREEN)OK$(RESET)"
+	@echo -n ""
 else
-$(target): $(objs) $(config_file)
+$(target): $(config_file) $(objs)
 	@mkdir -p $$(@D)
-	@echo "$(cxx) $(cxxflags) ... -o $$@ $(ldflags)"
+	@echo -n " > $(YELLOW)$(BOLD)$$(@F)$(RESET)"
 	@$(cxx) $(cxxflags) $(objs) -o $$@ $(ldflags)
 	$$(call CHECK_BUILD_ARGS)
+	@echo " $(GREEN)OK$(RESET)"
+	@echo -n ""
 endif
 
 $(cobjs): $(OBJ_DIR)/%.o: %.c
 	@mkdir -p $$(@D)
-	$(cc) $(cflags) -MMD -MP -c $$< -o $$@
+	@echo -n " > $$(@F)"
+	@$(cc) $(cflags) -MMD -MP -c $$< -o $$@
+	@echo " $(GREEN)OK$(RESET)"
 
 $(ccobjs): $(OBJ_DIR)/%.o: %.cc
 	@mkdir -p $$(@D)
-	$(cxx) $(cxxflags) -MMD -MP -c $$< -o $$@
+	@echo -n " > $$(@F)"
+	@$(cxx) $(cxxflags) -MMD -MP -c $$< -o $$@
+	@echo " $(GREEN)OK$(RESET)"
 
 $(cxxobjs): $(OBJ_DIR)/%.o: %.cpp
 	@mkdir -p $$(@D)
-	$(cxx) $(cxxflags) -MMD -MP -c $$< -o $$@
+	@echo -n " > $$(@F)"
+	@$(cxx) $(cxxflags) -MMD -MP -c $$< -o $$@
+	@echo " $(GREEN)OK$(RESET)"
 
 $(config_file):
 	@mkdir -p $$(@D)
 	@rm -f $$(@D)/*.$(CONFIG_FILE_EXT)
 	@echo "$(configs)" > $$@
+
+	@echo "$(GREEN)### Compiling $(target)$(RESET)"
+	@if [ $(target_type) = "c" ]; then \
+		echo "CC       = $(CC)"; \
+		echo "CFLAGS   = $(cflags)"; \
+	else \
+		echo "CXX      = $(CXX)"; \
+		echo "CXXFLAGS = $(cxxflags)"; \
+	fi
+	@echo "LDFLAGS  = $(ldflags)"
+	@echo "OBJ_DIR  = $(OBJ_DIR)"
 endef
 
 # ----------------------------------------------------------------------------------------------------------------------
@@ -239,6 +269,7 @@ clean:
 	@if echo "$(abspath $(BLD_DIR))" | grep -q "^$(PROJECT_ROOT)" && \
 		[ "$(BLD_DIR)" != "." ] && \
 		[ "$(BLD_DIR)" != "/"  ]; then \
+		echo "rm -rf \"$(BLD_DIR)\""; \
 		rm -rf "$(BLD_DIR)"; \
 	fi
 
@@ -246,6 +277,7 @@ clean:
 	@if echo "$(abspath $(BIN_DIR))" | grep -q "^$(PROJECT_ROOT)" && \
 		[ "$(BIN_DIR)" != "." ] && \
 		[ "$(BIN_DIR)" != "/"  ]; then \
+		echo "rm -rf \"$(BIN_DIR)\""; \
 		rm -rf "$(BIN_DIR)"; \
 	fi
 
@@ -253,15 +285,6 @@ clean:
 
 # ======================================================================================================================
 # CHECK BUILD PARAMS
-
-RED		  := $(shell tput setaf 1)
-GREEN	  := $(shell tput setaf 2)
-YELLOW	  := $(shell tput setaf 3)
-BOLD 	  := $(shell tput bold)
-UNDERLINE := $(shell tput smul)
-RESET	  := $(shell tput sgr0)
-
-# ----------------------------------------------------------------------------------------------------------------------
 
 define SAVE_BUILD_ARGS
 	@echo "PROJECT=$(PROJECT)" > "$(1)"
